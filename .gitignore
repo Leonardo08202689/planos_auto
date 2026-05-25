@@ -1,0 +1,17 @@
+# Credenciales
+.env
+
+# Logs de ejecución
+*.log
+log_*.txt
+
+# PDFs generados (son de salida, no de código)
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+
+# QGIS
+*.qgs~
+*.qgz~
