@@ -1,0 +1,153 @@
+{
+  "_comentario": "Configuración específica del proyecto SONITRONIES — CONCISE.",
+  "nombre_proyecto": "SONITRONIES S DE RL DE CV DEPARTAMENTO CONCISE",
+  "tipo_tramite":    "Licencia Ambiental Integral",
+  "capa_poligono":   "poligono_trabajo",
+
+  "defaults_capa": {
+    "geom_col":        "geom",
+    "tipo_geom":       "MultiPolygon",
+    "key":             "gid",
+    "opacidad":        0.6,
+    "grid_intervalo":  300,
+    "escala":          5000
+  },
+
+  "capas": [
+    {
+      "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
+      "tabla_postgis":   "suelos_edafologia_v3",
+      "nombre_plano":    "Plano. Tipos de Suelos",
+      "nombre_capa":     "Tipo_de_Suelo",
+      "escala":          5000,
+      "tipo_geom":       "Polygon",
+      "key":             "ogc_fid",
+      "campo_categoria": "Grupo1",
+      "campo_etiqueta":  "Grupo1",
+      "paleta":          "suelos",
+      "fuente":          "Conjunto de Datos Vectorial Edafológico. Escala 1:250 000 Serie III. INEGI."
+    },
+    {
+      "tabla_postgis":   "Geologia",
+      "nombre_plano":    "Plano. Tipos de Roca",
+      "nombre_capa":     "Tipos_de_Roca",
+      "escala":          5000,
+      "key":             "id",
+      "campo_categoria": "tipo_roca",
+      "campo_etiqueta":  "tipo_roca",
+      "paleta":          "geologia",
+      "fuente":          "Continúo Nacional de Geología de la República Mexicana escala 1:250,000."
+    },
+    {
+      "tabla_postgis":   "Clima",
+      "nombre_plano":    "Plano. Tipos de Clima",
+      "nombre_capa":     "Clima",
+      "escala":          5000,
+      "key":             "id",
+      "campo_categoria": "etiqueta_clima",
+      "campo_etiqueta":  "etiqueta_clima",
+      "paleta":          "clima",
+      "fuente":          "Conjunto de Datos Nacionales de Unidades Climáticas, Escala 1:1 000 000, INEGI."
+    },
+    {
+      "tabla_postgis":   "Vegetacion",
+      "nombre_plano":    "Plano. Tipo de Vegetación",
+      "nombre_capa":     "Vegetacion",
+      "escala":          5000,
+      "campo_categoria": "descripcio",
+      "campo_etiqueta":  "descripcio",
+      "paleta":          "vegetacion",
+      "fuente":          "Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. Serie VII."
+    },
+    {
+      "tabla_postgis":   "hidrologia_superficial",
+      "nombre_plano":    "Plano. Hidrología Superficial",
+      "nombre_capa":     "Hidrologia_Superficial",
+      "escala":          35000,
+      "campo_categoria": "subcuenca",
+      "campo_etiqueta":  "subcuenca",
+      "paleta":          "agua",
+      "opacidad":        0.55,
+      "grid_intervalo":  2500,
+      "marcador":        "punto",
+      "fuente":          "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000."
+    },
+    {
+      "tipo":           "vertices",
+      "nombre_plano":   "Plano. Plano de Vértices",
+      "nombre_capa":    "Vertices_Proyecto",
+      "escala":         2000,
+      "opacidad":       1.0,
+      "grid_intervalo": 100,
+      "fuente":         "Vértices del polígono del proyecto."
+    },
+
+    {
+      "_grupo": "Figuras (Plantilla_figuras)",
+      "tabla_postgis":   "poet_sonora",
+      "nombre_plano":    "Figura. POET Sonora",
+      "nombre_capa":     "POET",
+      "escala":          50000,
+      "campo_categoria": "uga",
+      "campo_etiqueta":  "uga",
+      "grid_intervalo":  2500,
+      "layout_nombre":   "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
+    },
+    {
+      "tabla_postgis":   "aica_nacional",
+      "nombre_plano":    "Figura. Áreas de Importancia para la Conservación de Aves",
+      "nombre_capa":     "AICA",
+      "escala":          1000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "paleta":          "conservacion",
+      "grid_intervalo":  50000,
+      "layout_nombre":   "Plantilla_figuras",
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
+    },
+    {
+      "tabla_postgis":   "anp_estatales",
+      "nombre_plano":    "Figura. Áreas Naturales Protegidas Estatales",
+      "nombre_capa":     "ANP_Estatales",
+      "escala":          2000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "paleta":          "conservacion",
+      "grid_intervalo":  100000,
+      "layout_nombre":   "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Comisión de Ecología y Desarrollo Sustentable del Estado de Sonora (CEDES)."
+    },
+    {
+      "tabla_postgis":   "regiones_hidrologicas_prioritarias",
+      "nombre_plano":    "Figura. Regiones Hidrológicas Prioritarias",
+      "nombre_capa":     "RHP",
+      "escala":          10000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "paleta":          "agua",
+      "layout_nombre":   "Plantilla_figuras",
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
+    },
+    {
+      "tabla_postgis":   "regiones_terrestres_prioritarias",
+      "nombre_plano":    "Figura. Regiones Terrestres Prioritarias",
+      "nombre_capa":     "RTP",
+      "escala":          1000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "paleta":          "conservacion",
+      "grid_intervalo":  50000,
+      "layout_nombre":   "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
+    }
+  ]
+}

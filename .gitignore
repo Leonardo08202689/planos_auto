@@ -1,17 +1,17 @@
-# Credenciales
+# ── Credenciales (NUNCA subir a Git) ──
 .env
 
-# Logs de ejecución
-*.log
+# ── Salida generada ──
+salida/
+*.png
+*.pdf
 log_*.txt
 
-# PDFs generados (son de salida, no de código)
-*.pdf
-
-# Python
+# ── Python ──
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
 
-# QGIS
-*.qgs~
-*.qgz~
+# ── Sistema ──
+.DS_Store
+Thumbs.db
