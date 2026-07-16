@@ -47,9 +47,10 @@ def cargar_capa_postgis(cfg_capa: dict, pg: dict, bbox_wkt: str, log):
         )
 
     uri = QgsDataSourceUri()
+    # sslmode va como argumento de setConnection: setSslMode() no existe
+    # en los bindings de QGIS 3.28
     uri.setConnection(pg["host"], str(pg["port"]), pg["dbname"],
-                      pg["user"], pg["password"])
-    uri.setSslMode(QgsDataSourceUri.SslDisable)
+                      pg["user"], pg["password"], QgsDataSourceUri.SslDisable)
     uri.setDataSource(pg["schema"], cfg_capa["tabla_postgis"],
                       cfg_capa["geom_col"], filtro_sql, key)
     wkb = QgsWkbTypes.parseType(cfg_capa["tipo_geom"])
