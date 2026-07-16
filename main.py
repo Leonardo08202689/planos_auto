@@ -33,8 +33,14 @@ SOLO_CAPAS: list = []
 # =============================================================================
 # ② RECARGA DE MÓDULOS (evita caché en QGIS) Y EJECUCIÓN
 # =============================================================================
-for mod_name in list(sys.modules.keys()):
-    if mod_name.startswith("core.") or mod_name == "generar_planos":
+# utils y configuracion primero: los demás módulos importan de ellos y una
+# recarga en orden alfabético los dejaría ligados a la versión anterior.
+_PRIMERO = ["core.utils", "core.configuracion"]
+for mod_name in _PRIMERO + sorted(
+    m for m in sys.modules
+    if (m.startswith("core.") or m == "generar_planos") and m not in _PRIMERO
+):
+    if mod_name in sys.modules:
         importlib.reload(sys.modules[mod_name])
 
 from core.configuracion import cargar_config  # noqa: E402

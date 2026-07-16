@@ -52,18 +52,36 @@ def _s_punto():
 # PostGIS helpers
 # ---------------------------------------------------------------------------
 
-def _capa_pg(nombre, tabla, schema, pg, filtro, log):
+def _capa_pg(nombre, tabla, schema, pg, filtro, log,
+             geom_col="geom", key="ogc_fid"):
     from qgis.core import QgsDataSourceUri
     uri = QgsDataSourceUri()
     uri.setConnection(pg["host"], str(pg["port"]), pg["dbname"], pg["user"], pg["password"])
-    # Para cartografía base de mapitas, usamos geom y ogc_fid por defecto
-    uri.setDataSource(schema, tabla, "geom", filtro, "ogc_fid")
-    
+    uri.setDataSource(schema, tabla, geom_col, filtro, key)
+
     c = QgsVectorLayer(uri.uri(), nombre, "postgres")
     if not c.isValid():
         log.warning(f" → No se pudo cargar '{nombre}' ({schema}.{tabla})")
         return None
     return c
+
+
+def _params_cartografia(cfg_mapitas: dict) -> dict:
+    """Tablas y campos de la cartografía base, con defaults, validados."""
+    from .utils import valida_id
+    p = {
+        "schema":     cfg_mapitas.get("schema",           "cartografia_base"),
+        "t_estados":  cfg_mapitas.get("tabla_estados",    "mexico_estados"),
+        "t_munis":    cfg_mapitas.get("tabla_municipios", "mexico_municipios"),
+        "c_nombre":   cfg_mapitas.get("campo_nombre",     "nomgeo"),
+        "c_cve_ent":  cfg_mapitas.get("campo_cve_ent",    "cve_ent"),
+        "c_cvegeo":   cfg_mapitas.get("campo_cvegeo_mun", "cvegeo"),
+        "geom_col":   cfg_mapitas.get("geom_col",         "geom"),
+        "key":        cfg_mapitas.get("key",              "ogc_fid"),
+    }
+    for ctx, valor in p.items():
+        valida_id(valor, f"mapitas → {ctx}")
+    return p
 
 
 def _extent_margen(capa, factor: float) -> QgsRectangle:
@@ -85,8 +103,9 @@ def _extent_margen(capa, factor: float) -> QgsRectangle:
 # ---------------------------------------------------------------------------
 
 def detectar_ubicacion(centroid_geom, crs_proyecto, pg: dict,
-                        schema: str, project, log) -> dict:
+                        cfg_mapitas: dict, project, log) -> dict:
     """Retorna {cve_ent, nomgeo_estado, cvegeo_mun, nomgeo_municipio}."""
+    p = _params_cartografia(cfg_mapitas)
     crs_4326 = QgsCoordinateReferenceSystem(CRS_REF)
     pt_4326  = QgsCoordinateTransform(crs_proyecto, crs_4326, project)\
                    .transform(centroid_geom.asPoint())
@@ -94,11 +113,16 @@ def detectar_ubicacion(centroid_geom, crs_proyecto, pg: dict,
     res = {"cve_ent": "", "nomgeo_estado": "", "cvegeo_mun": "", "nomgeo_municipio": ""}
 
     for tabla, key_id, key_nom, out_id, out_nom in [
-        ("mexico_estados",    "cve_ent", "nomgeo", "cve_ent",   "nomgeo_estado"),
-        ("mexico_municipios", "cvegeo",  "nomgeo", "cvegeo_mun","nomgeo_municipio"),
+        (p["t_estados"], p["c_cve_ent"], p["c_nombre"], "cve_ent",    "nomgeo_estado"),
+        (p["t_munis"],   p["c_cvegeo"],  p["c_nombre"], "cvegeo_mun", "nomgeo_municipio"),
     ]:
-        c = _capa_pg(f"_dt_{tabla}", tabla, schema, pg,
-                     f"ST_Contains(geom, ST_Transform(ST_GeomFromText('{wkt}', 4326), ST_SRID(geom)))", log)
+        filtro = (
+            f"ST_Contains({p['geom_col']}, "
+            f"ST_Transform(ST_GeomFromText('{wkt}', 4326), "
+            f"ST_SRID({p['geom_col']})))"
+        )
+        c = _capa_pg(f"_dt_{tabla}", tabla, p["schema"], pg, filtro, log,
+                     geom_col=p["geom_col"], key=p["key"])
         if c and c.featureCount() > 0:
             f = next(c.getFeatures())
             res[out_id]  = str(f[key_id])
@@ -125,11 +149,12 @@ def preparar_capas_referencia(centroid_geom, crs_proyecto, pg: dict,
         for capa_previa in project.mapLayersByName(nombre):
             project.removeMapLayer(capa_previa.id())
 
-    schema = cfg_mapitas.get("schema", "cartografia_base")
-    ub     = detectar_ubicacion(centroid_geom, crs_proyecto, pg, schema, project, log)
+    p  = _params_cartografia(cfg_mapitas)
+    ub = detectar_ubicacion(centroid_geom, crs_proyecto, pg, cfg_mapitas, project, log)
 
-    cve_ent    = ub["cve_ent"]
-    cvegeo_mun = ub["cvegeo_mun"]
+    # Los valores vienen de la BD (claves INEGI); se escapan por si acaso
+    cve_ent    = ub["cve_ent"].replace("'", "''")
+    cvegeo_mun = ub["cvegeo_mun"].replace("'", "''")
 
     if not cve_ent:
         log.warning(" → Ubicación no detectada; mapitas omitidos.")
@@ -141,11 +166,15 @@ def preparar_capas_referencia(centroid_geom, crs_proyecto, pg: dict,
             project.addMapLayer(c, False)
         return c
 
+    def _cargar(nombre, tabla, filtro):
+        return _capa_pg(nombre, tabla, p["schema"], pg, filtro, log,
+                        geom_col=p["geom_col"], key=p["key"])
+
     # Capas
-    c_estados   = _reg(_capa_pg("ref_estados",   "mexico_estados",    schema, pg, "",                        log), _s_fondo())
-    c_estado_hl = _reg(_capa_pg("ref_estado_hl", "mexico_estados",    schema, pg, f"cve_ent='{cve_ent}'",   log), _s_highlight())
-    c_munis     = _reg(_capa_pg("ref_munis",      "mexico_municipios", schema, pg, f"cve_ent='{cve_ent}'",  log), _s_fondo())
-    c_muni_hl   = _reg(_capa_pg("ref_muni_hl",   "mexico_municipios", schema, pg, f"cvegeo='{cvegeo_mun}'", log), _s_highlight()) \
+    c_estados   = _reg(_cargar("ref_estados",   p["t_estados"], ""),                                    _s_fondo())
+    c_estado_hl = _reg(_cargar("ref_estado_hl", p["t_estados"], f"{p['c_cve_ent']}='{cve_ent}'"),      _s_highlight())
+    c_munis     = _reg(_cargar("ref_munis",     p["t_munis"],   f"{p['c_cve_ent']}='{cve_ent}'"),      _s_fondo())
+    c_muni_hl   = _reg(_cargar("ref_muni_hl",   p["t_munis"],   f"{p['c_cvegeo']}='{cvegeo_mun}'"),    _s_highlight()) \
                   if cvegeo_mun else None
 
     # Punto del proyecto (estrella roja) en EPSG:4326

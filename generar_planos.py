@@ -6,6 +6,7 @@ La configuración llega desde main.py (o directamente como dict).
 """
 
 import os
+import traceback
 
 import processing
 from qgis.core import (
@@ -42,7 +43,7 @@ from core.simbologia import (
     aplicar_opacidad_capa,
     aplicar_renderer_categorizado,
 )
-from core.utils      import crear_logger, sanitizar_nombre
+from core.utils      import crear_logger, formato_escala, sanitizar_nombre
 
 
 # =============================================================================
@@ -59,15 +60,15 @@ def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log):
     set_label_text(comp, ids.get("lbl_proyecto", ""), cfg.get("nombre_proyecto", ""), log)
     set_label_text(comp, ids.get("lbl_licencia", ""), cfg.get("tipo_tramite", ""),    log)
     set_label_text(comp, ids.get("lbl_plano", ""),    cfg_capa.get("nombre_plano", ""), log)
-    
+
     escala = cfg_capa.get("escala", 0)
     if escala:
-        set_label_text(comp, ids.get("lbl_escala", ""), f"Escala 1:{escala:,}".replace(",", " "), log)
-    
+        set_label_text(comp, ids.get("lbl_escala", ""), formato_escala(escala), log)
+
     ahora = datetime.now()
     fecha = cfg.get("fecha_plano") or f"{_MESES_ES[ahora.month - 1]} {ahora.year}"
     set_label_text(comp, ids.get("lbl_fecha", ""), f"Fecha: {fecha}", log)
-    
+
     set_label_text(comp, ids.get("lbl_fuente", ""), cfg_capa.get("fuente", ""), log)
     set_label_text(comp, ids.get("lbl_coordsys", ""), cfg.get("coordenadas", ""), log)
     fijar_logo(comp, ids.get("logo", ""), cfg.get("logo_ruta", ""), log)
@@ -208,20 +209,32 @@ def generar_composiciones(cfg: dict) -> None:
     resultados: list = []
 
     # =========================================================================
-    # LOOP PRINCIPAL — una iteración por capa/plano
+    # PROCESAMIENTO DE UN PLANO
     # =========================================================================
-    for cfg_capa_raw in cfg["capas"]:
+    def _procesar_plano(cfg_capa_raw: dict):
+        """
+        Genera un plano. Devuelve el dict de resultado para el índice HTML,
+        o None si la entrada no es un plano (comentario o filtrada).
+        """
         # Ignorar entradas de comentario (_grupo, etc.)
         if not cfg_capa_raw.get("nombre_plano"):
-            continue
+            return None
 
         # Filtro para regenerar solo algunos planos (main.py → SOLO_CAPAS)
         if solo_capas and cfg_capa_raw.get("nombre_capa") not in solo_capas:
-            continue
+            return None
 
         # Aplicar defaults_capa
         cfg_capa = dict(cfg.get("defaults_capa", {}))
         cfg_capa.update(cfg_capa_raw)
+
+        def _fallo():
+            return {
+                "nombre_plano": cfg_capa["nombre_plano"],
+                "escala":       cfg_capa.get("escala"),
+                "png":          None,
+                "exito":        False,
+            }
 
         es_vertices = cfg_capa.get("tipo") == "vertices"
         nombre_comp = f"Comp_{cfg_capa['nombre_capa']}"
@@ -241,18 +254,18 @@ def generar_composiciones(cfg: dict) -> None:
                     log.warning(
                         f" → Capa '{cfg_capa['nombre_capa']}' no encontrada en el proyecto, se omite."
                     )
-                    continue
+                    return _fallo()
                 capa_pg = capas_proy[0]
             else:
                 capa_pg = cargar_capa_postgis(cfg_capa, cfg["pg"], bbox_wkt, log)
                 if not capa_pg:
-                    continue
+                    return _fallo()
                 count = capa_pg.featureCount()
                 if count == 0:
                     log.warning(
                         f" → Sin datos para '{cfg_capa['nombre_capa']}' (featureCount=0), se omite."
                     )
-                    continue
+                    return _fallo()
                 elif count == -1:
                     log.info(
                         f" → featureCount no disponible para '{cfg_capa['nombre_capa']}' (PostGIS), continuando..."
@@ -268,7 +281,7 @@ def generar_composiciones(cfg: dict) -> None:
         plantilla_base = obtener_plantilla(layout_actual)
         if not plantilla_base:
             log.warning(f" → Plantilla '{layout_actual}' no disponible, se omite.")
-            continue
+            return _fallo()
 
         nueva_comp = plantilla_base.clone()
         nueva_comp.setName(nombre_comp)
@@ -290,12 +303,14 @@ def generar_composiciones(cfg: dict) -> None:
                 f"IDs disponibles: {ids_disp}. "
                 f"Ajusta 'ids_override → mapa' en la config."
             )
-            continue
+            return _fallo()
 
         escala_capa = cfg_capa.get("escala")
         if not escala_capa:
             escala_capa = 5000
             log.warning(" → 'escala' no definida en la config; usando 1:5 000.")
+        # La etiqueta lbl_escala debe reflejar la escala realmente usada
+        cfg_capa["escala"] = escala_capa
 
         frame_size = map_item.sizeWithUnits()
         frame_pos  = map_item.positionWithUnits()
@@ -336,27 +351,51 @@ def generar_composiciones(cfg: dict) -> None:
                 nueva_comp, cfg_capa, feature_poligono.id(),
                 output_dir, cfg["dpi"], formatos, log,
             )
-            resultados.append({
+            return {
                 "nombre_plano": cfg_capa["nombre_plano"],
                 "escala":       escala_capa,
                 "png":          rutas.get("png"),
                 "exito":        bool(rutas),
-            })
-            continue
+            }
 
-        # ── d. Sanear geometrías ──────────────────────────────────────────────
+        # ── d. Pre-filtro por bbox en el CRS de la capa fuente ────────────────
+        # Reduce las capas amplias (sin_bbox_filter) al área visible ANTES de
+        # sanear y reproyectar, que son los pasos caros.
+        crs_capa = capa_pg.crs()
+        if crs_capa.authid() != crs_origen.authid():
+            transf_pre  = QgsCoordinateTransform(crs_origen, crs_capa, project)
+            rect_fuente = transf_pre.transformBoundingBox(extent_en_escala)
+        else:
+            rect_fuente = extent_en_escala
+        # Margen del 2% contra imprecisiones de la transformación del bbox
+        rect_fuente = rect_fuente.buffered(
+            max(rect_fuente.width(), rect_fuente.height()) * 0.02
+        )
+        extent_str = (
+            f"{rect_fuente.xMinimum()},{rect_fuente.xMaximum()},"
+            f"{rect_fuente.yMinimum()},{rect_fuente.yMaximum()} "
+            f"[{crs_capa.authid()}]"
+        )
+        res_pre = processing.run("native:extractbyextent", {
+            "INPUT": capa_pg, "EXTENT": extent_str, "CLIP": False,
+            "OUTPUT": "memory:",
+        })
+        capa_candidatos = res_pre["OUTPUT"]
+        log.info(f" → Pre-filtro bbox: {capa_candidatos.featureCount()} candidato(s).")
+
+        # ── e. Sanear geometrías (solo candidatos) ────────────────────────────
         log.info(" → Saneando geometrías (fixgeometries)...")
         res_fix = processing.run("native:fixgeometries", {
-            "INPUT": capa_pg, "OUTPUT": "memory:",
+            "INPUT": capa_candidatos, "OUTPUT": "memory:",
         })
 
-        # ── e. Reproyectar ────────────────────────────────────────────────────
+        # ── f. Reproyectar ────────────────────────────────────────────────────
         res_reproj    = processing.run("native:reprojectlayer", {
             "INPUT": res_fix["OUTPUT"], "TARGET_CRS": crs_origen, "OUTPUT": "memory:",
         })
         capa_reproyectada = res_reproj["OUTPUT"]
 
-        # ── f. Máscara de recorte (en el CRS real de la capa reproyectada) ────
+        # ── g. Recorte preciso al extent visible ──────────────────────────────
         crs_reproyectada = capa_reproyectada.crs()
         if crs_reproyectada.authid() != crs_origen.authid():
             log.info(
@@ -375,7 +414,6 @@ def generar_composiciones(cfg: dict) -> None:
         f_ext.setGeometry(QgsGeometry.fromRect(rect_clip))
         layer_extent.dataProvider().addFeatures([f_ext])
 
-        # ── g. Recortar ───────────────────────────────────────────────────────
         res_clip      = processing.run("native:clip", {
             "INPUT": capa_reproyectada, "OVERLAY": layer_extent, "OUTPUT": "memory:",
         })
@@ -461,19 +499,46 @@ def generar_composiciones(cfg: dict) -> None:
             nueva_comp, cfg_capa, feature_poligono.id(),
             output_dir, cfg["dpi"], formatos, log,
         )
-        resultados.append({
+        return {
             "nombre_plano": cfg_capa["nombre_plano"],
             "escala":       escala_capa,
             "png":          rutas.get("png"),
             "exito":        bool(rutas),
-        })
+        }
+
+    # =========================================================================
+    # LOOP PRINCIPAL — un error en un plano no aborta los demás
+    # =========================================================================
+    for cfg_capa_raw in cfg["capas"]:
+        try:
+            resultado = _procesar_plano(cfg_capa_raw)
+        except Exception:
+            nombre = cfg_capa_raw.get("nombre_plano", "(sin nombre)")
+            log.error(
+                f" ✗ Error inesperado en '{nombre}'; se continúa con el siguiente:\n"
+                f"{traceback.format_exc()}"
+            )
+            resultado = {
+                "nombre_plano": nombre,
+                "escala":       cfg_capa_raw.get("escala"),
+                "png":          None,
+                "exito":        False,
+            }
+        if resultado:
+            resultados.append(resultado)
 
     # ── Índice HTML con miniaturas de todos los planos ────────────────────────
     if resultados:
         generar_indice_html(resultados, output_dir, cfg["nombre_proyecto"], log)
 
+    n_ok     = sum(1 for r in resultados if r.get("exito"))
+    fallidos = [r["nombre_plano"] for r in resultados if not r.get("exito")]
+
     log.info(f"\n{'=' * 65}")
     log.info("✓ PROCESO TERMINADO — Revisa tu panel de Diseños en QGIS")
+    log.info(f"  Planos exitosos: {n_ok}/{len(resultados)}")
+    if fallidos:
+        log.warning(f"  Fallidos u omitidos: {', '.join(fallidos)}")
     log.info(f"  Ruta de salida: {output_dir}")
     log.info(f"  Índice: {os.path.join(output_dir, 'index_planos.html')}")
     log.info("=" * 65)

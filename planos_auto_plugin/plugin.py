@@ -42,6 +42,13 @@ class PlanosAutoPlugin:
         # Import tardío para que "Recargar plugin" tome cambios del diálogo
         from .dialogo import DialogoPlanos
 
+        # Si hay una generación en curso, reusar el diálogo (la UI sigue viva
+        # por processEvents y un clic aquí crearía un duplicado a media corrida)
+        if self.dialogo and getattr(self.dialogo, "en_ejecucion", False):
+            self.dialogo.show()
+            self.dialogo.raise_()
+            return
+
         # Se recrea cada vez: así refresca la lista de proyectos/capas
         self.dialogo = DialogoPlanos(repo_base(), self.iface.mainWindow())
         self.dialogo.show()

@@ -9,6 +9,8 @@ from qgis.PyQt.QtCore import QCoreApplication
 
 from .utils import sanitizar_nombre
 
+_FORMATOS_SOPORTADOS = {"png"}
+
 
 def exportar_plano(
     layout_comp,
@@ -25,6 +27,10 @@ def exportar_plano(
     """
     QCoreApplication.processEvents()
 
+    desconocidos = [f for f in formatos if f not in _FORMATOS_SOPORTADOS]
+    if desconocidos:
+        log.warning(f" → Formatos no soportados ignorados: {desconocidos}")
+
     base       = f"{sanitizar_nombre(cfg_capa['nombre_plano'])}_ID{feature_id}"
     exportador = QgsLayoutExporter(layout_comp)
     rutas      = {}
@@ -40,10 +46,3 @@ def exportar_plano(
             log.error(f" ✗ Falló exportación PNG: {ruta}")
 
     return rutas
-
-
-def exportar_png(layout_comp, cfg_capa, feature_id, output_dir, dpi, log) -> bool:
-    """Compatibilidad: exporta solo PNG. Preferir exportar_plano()."""
-    return bool(
-        exportar_plano(layout_comp, cfg_capa, feature_id, output_dir, dpi, ["png"], log)
-    )

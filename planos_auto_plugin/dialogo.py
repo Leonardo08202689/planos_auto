@@ -38,15 +38,20 @@ class _HandlerLogQt(logging.Handler):
         self.setFormatter(logging.Formatter("%(levelname)-8s %(message)s"))
 
     def emit(self, record):
-        self.widget.appendPlainText(self.format(record))
-        # La generación corre en el hilo principal: refrescar la UI aquí
-        QCoreApplication.processEvents()
+        try:
+            self.widget.appendPlainText(self.format(record))
+            # La generación corre en el hilo principal: refrescar la UI aquí
+            QCoreApplication.processEvents()
+        except RuntimeError:
+            # El widget de log fue destruido (diálogo cerrado); no abortar la corrida
+            pass
 
 
 class DialogoPlanos(QDialog):
     def __init__(self, base: str, parent=None):
         super().__init__(parent)
         self.base = base
+        self.en_ejecucion = False
         if base not in sys.path:
             sys.path.insert(0, base)
 
@@ -111,12 +116,14 @@ class DialogoPlanos(QDialog):
             for f in (os.listdir(carpeta) if os.path.isdir(carpeta) else [])
             if f.endswith(".json")
         )
+        # Señales bloqueadas durante todo el rearmado: _cargar_capas se llama
+        # una sola vez, explícitamente, al final.
         self.combo_proyecto.blockSignals(True)
         self.combo_proyecto.clear()
         self.combo_proyecto.addItems(proyectos)
-        self.combo_proyecto.blockSignals(False)
         if seleccionar and seleccionar in proyectos:
             self.combo_proyecto.setCurrentText(seleccionar)
+        self.combo_proyecto.blockSignals(False)
         if not proyectos:
             QMessageBox.warning(
                 self, "Planos Auto",
@@ -181,6 +188,8 @@ class DialogoPlanos(QDialog):
         ]
 
     def _generar(self):
+        if self.en_ejecucion:
+            return
         proyecto = self.combo_proyecto.currentText()
         if not proyecto:
             return
@@ -194,6 +203,7 @@ class DialogoPlanos(QDialog):
         solo_capas = [] if len(marcadas) == self.lista_capas.count() else marcadas
 
         self.panel_log.clear()
+        self.en_ejecucion = True
         self.btn_generar.setEnabled(False)
         self.btn_generar.setText("Generando…")
         QCoreApplication.processEvents()
@@ -204,23 +214,50 @@ class DialogoPlanos(QDialog):
                 "✗ ERROR INESPERADO:\n" + traceback.format_exc()
             )
         finally:
+            self.en_ejecucion = False
             self.btn_generar.setEnabled(True)
             self.btn_generar.setText("Generar planos")
 
     def _ejecutar(self, proyecto: str, solo_capas: list, dpi: int):
-        # Recargar módulos del repo para evitar caché en QGIS (igual que main.py)
-        for mod_name in sorted(sys.modules):
-            if mod_name.startswith("core.") or mod_name == "generar_planos":
+        # Recargar módulos del repo para evitar caché en QGIS (igual que main.py):
+        # utils y configuracion primero porque los demás importan de ellos.
+        primero = ["core.utils", "core.configuracion"]
+        for mod_name in primero + sorted(
+            m for m in sys.modules
+            if (m.startswith("core.") or m == "generar_planos") and m not in primero
+        ):
+            if mod_name in sys.modules:
                 importlib.reload(sys.modules[mod_name])
+
+        from qgis.core import QgsProject
 
         from core import utils
         from core.configuracion import cargar_config
         from generar_planos import generar_composiciones
 
+        cfg = cargar_config(self.base, proyecto, solo_capas=solo_capas, dpi=dpi)
+
+        # Pre-verificación con mensaje claro (el generador también valida,
+        # pero su error quedaría solo como una línea en el log)
+        capas_poly = QgsProject.instance().mapLayersByName(cfg["capa_poligono"])
+        if not capas_poly:
+            QMessageBox.warning(
+                self, "Planos Auto",
+                f"La capa '{cfg['capa_poligono']}' no está cargada "
+                f"en el proyecto de QGIS."
+            )
+            return
+        if not capas_poly[0].selectedFeatures():
+            QMessageBox.warning(
+                self, "Planos Auto",
+                f"Selecciona el polígono de trabajo en la capa "
+                f"'{cfg['capa_poligono']}' antes de generar."
+            )
+            return
+
         handler = _HandlerLogQt(self.panel_log)
         utils.EXTRA_HANDLERS.append(handler)
         try:
-            cfg = cargar_config(self.base, proyecto, solo_capas=solo_capas, dpi=dpi)
             generar_composiciones(cfg)
         finally:
             utils.EXTRA_HANDLERS.remove(handler)

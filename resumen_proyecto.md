@@ -97,10 +97,17 @@ Cada capa se configura en el JSON del proyecto con estos campos clave:
 | 8 | Fecha dependiente del locale del sistema | Meses en español hardcodeados (`_MESES_ES`) |
 | 9 | Falsos avisos de "extent MUY GRANDE" en figuras 1:1M | El umbral de `validar_extent()` ahora es proporcional a la escala |
 | 10 | FileHandlers del logger nunca se cerraban | `crear_logger()` cierra los handlers previos antes de limpiarlos |
+| 11 | Un error en un plano abortaba toda la corrida | Loop principal con try/except por plano; los fallidos se registran y aparecen en el índice HTML |
+| 12 | URI PostGIS armada a mano y `key` sin validar | `capas.py` usa `QgsDataSourceUri` + `valida_id` en `key` |
+| 13 | `mapitas.py` ignoraba tablas/campos de `global.json` | `_params_cartografia()` lee la config (con defaults) y valida identificadores |
+| 14 | Capas amplias se saneaban/reproyectaban completas | Pre-filtro `extractbyextent` antes de `fixgeometries`/`reproject` |
+| 15 | Vértices: crash con geometría vacía; multipartes silenciadas | `extraer_vertices_poligono` valida vacío y numera todas las partes |
+| 16 | Recarga de módulos en orden alfabético dejaba refs viejas | `core.utils` y `core.configuracion` se recargan primero |
+| 17 | Sin validación de esquema en los JSON de proyecto | `_validar_capas()` en `core/configuracion.py` |
+| 18 | Plugin: reentrancia y widget de log destruido a media corrida | Flag `en_ejecucion` + guard en `_HandlerLogQt.emit` + pre-check de polígono |
 
 ### ⏳ Pendientes (baja prioridad)
 
 1. **Los QML de `estilos/` no se usan**: existen estilos para Clima, Geología, Suelos, Vegetación e Hidrología pero ninguna capa del JSON tiene `"estilo_qml"`. Decidir si conectarlos o eliminarlos.
-2. **Validación de esquema JSON** al cargar configs (campos obligatorios: `nombre_capa`, `tabla_postgis`/`tipo`).
-3. **`QgsDataSourceUri` en `capas.py`** en vez de armar la URI a mano (una contraseña con comillas la rompería).
-4. **Inyección SQL teórica** en `bbox_wkt`: no explotable hoy (lo genera QGIS), pero el patrón es frágil si se reutiliza con input de usuario.
+2. **Patrón SQL por interpolación** en los filtros (`bbox_wkt`, claves de mapitas): los identificadores ya se validan y los valores se escapan, pero el patrón sigue siendo por concatenación (inherente al parámetro `sql=` del proveedor PostGIS de QGIS).
+3. **Mejoras UX del plugin** (opcionales): combo de capas para `capa_poligono`, reescalado de planos en modo edición, recordar último proyecto/DPI con `QSettings`.

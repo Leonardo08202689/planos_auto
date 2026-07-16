@@ -7,6 +7,8 @@ import html
 import os
 from datetime import datetime
 
+from .utils import formato_escala
+
 
 # ---------------------------------------------------------------------------
 # Índice HTML de planos generados
@@ -41,7 +43,7 @@ def generar_indice_html(resultados: list, output_dir: str,
                     f'<a href="{os.path.basename(r[fmt])}" target="_blank">'
                     f'{fmt.upper()}</a>'
                 )
-        info = f"Escala 1:{escala:,}".replace(",", " ") if escala else ""
+        info = formato_escala(escala) if escala else ""
 
         tarjetas.append(f"""
       <div class="tarjeta {'ok' if exito else 'error'}">
