@@ -56,12 +56,15 @@ class DialogoProyecto(QDialog):
         form = QFormLayout()
 
         self.edit_slug = QLineEdit()
-        self.edit_slug.setEnabled(self.proyecto_existente is None)
         form.addRow("Identificador de archivo:", self.edit_slug)
+        pista = (
+            "Cambiarlo renombra el .json en config/proyectos/."
+            if self.proyecto_existente else
+            "Nombre del .json en config/proyectos/."
+        )
         form.addRow(
             "", QLabel(
-                "<small>Nombre del .json en config/proyectos/ "
-                "(solo letras, números y guion bajo).</small>"
+                f"<small>{pista} Solo letras, números y guion bajo.</small>"
             )
         )
 
@@ -232,7 +235,8 @@ class DialogoProyecto(QDialog):
             return
 
         ruta = self._ruta(slug)
-        if not self.proyecto_existente and os.path.exists(ruta):
+        renombrado = bool(self.proyecto_existente) and slug != self.proyecto_existente
+        if (not self.proyecto_existente or renombrado) and os.path.exists(ruta):
             QMessageBox.warning(
                 self, "Planos Auto",
                 f"Ya existe un proyecto con ese identificador:\n{ruta}"
@@ -266,6 +270,16 @@ class DialogoProyecto(QDialog):
         with open(ruta, "w", encoding="utf-8") as fh:
             json.dump(datos, fh, ensure_ascii=False, indent=2)
             fh.write("\n")
+
+        if renombrado:
+            try:
+                os.remove(self._ruta(self.proyecto_existente))
+            except OSError as exc:
+                QMessageBox.warning(
+                    self, "Planos Auto",
+                    f"Se guardó '{slug}.json' pero no se pudo borrar el "
+                    f"archivo anterior '{self.proyecto_existente}.json':\n{exc}"
+                )
 
         self.slug_guardado = slug
         self.accept()

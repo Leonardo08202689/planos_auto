@@ -37,7 +37,7 @@ graph TD
 
 ### Flujo de Ejecución
 
-1. **Inicio** ([main.py](file:///home/leonardo/Codigos/Planos_auto/main.py)): Se ejecuta en la consola de QGIS. Carga variables de entorno (`.env`), configuración global (`global.json`) y del proyecto activo (`sonitronies_concise.json`). Ensambla un diccionario `CONFIG` unificado.
+1. **Inicio** ([main.py](file:///home/leonardo/Codigos/Planos_auto/main.py)): Se ejecuta en la consola de QGIS. Carga variables de entorno (`.env`), configuración global (`global.json`) y del proyecto activo (`plantilla.json`). Ensambla un diccionario `CONFIG` unificado.
 
 2. **Orquestación** ([generar_planos.py](file:///home/leonardo/Codigos/Planos_auto/generar_planos.py)):
    - Localiza el polígono de trabajo seleccionado en QGIS

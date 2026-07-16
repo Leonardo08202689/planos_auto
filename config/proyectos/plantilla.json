@@ -1,5 +1,5 @@
 {
-  "_comentario": "Configuración específica del proyecto SONITRONIES — CONCISE.",
+  "_comentario": "Proyecto plantilla base: lista completa de planos para clonar en proyectos nuevos (origen: SONITRONIES — CONCISE).",
   "nombre_proyecto": "SONITRONIES S DE RL DE CV DEPARTAMENTO CONCISE",
   "tipo_tramite":    "Licencia Ambiental Integral",
   "capa_poligono":   "poligono_trabajo",

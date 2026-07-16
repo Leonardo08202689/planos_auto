@@ -30,7 +30,8 @@ Planos_auto/
 ├── config/
 │   ├── global.json                ← IDs de layout, DPI, CRS
 │   └── proyectos/
-│       └── sonitronies_concise.json  ← Capas y metadata del proyecto
+│       ├── plantilla.json         ← Proyecto plantilla (lista base de planos)
+│       └── Magna.json             ← Proyecto real
 ├── plantillas/
 │   ├── Plantilla_Corporativa.qpt
 │   └── Plantilla_figuras.qpt
@@ -63,9 +64,9 @@ Flujo:
 3. El log aparece en vivo en el propio diálogo (y también se guarda en la
    carpeta de salida, como siempre).
 
-### Crear o editar los datos del proyecto desde el plugin
+### Crear, editar o eliminar proyectos desde el plugin
 
-Junto al combo de proyecto hay dos botones:
+Junto al combo de proyecto hay tres botones:
 
 - **Nuevo proyecto…** — pide un identificador de archivo (el nombre del
   `.json`), nombre del proyecto, tipo de trámite, capa polígono y los
@@ -83,10 +84,14 @@ Junto al combo de proyecto hay dos botones:
 - **Editar datos…** — abre el mismo formulario precargado con los valores
   del proyecto seleccionado y los sobrescribe al guardar (sin tocar sus
   planos existentes ni la opción de plantilla, que solo aplica al crear).
+  Cambiar el identificador de archivo renombra el `.json`.
+- **Eliminar…** — borra el `.json` del proyecto seleccionado, previa
+  confirmación (muestra cuántos planos define). Los PNG ya generados
+  no se tocan.
 
 Los campos avanzados por plano (tabla PostGIS, categoría, paleta, fuente,
 overrides de ids/layout…) siguen editándose directamente en el JSON —
-ver la estructura de `sonitronies_concise.json` más abajo.
+ver la estructura de `plantilla.json` más abajo.
 
 Como el plugin se instala por symlink, los cambios en el repo se reflejan
 al reabrir QGIS (o con el plugin "Plugin Reloader").
@@ -120,7 +125,7 @@ PROYECTO_ACTIVO = "nombre_proyecto"   # debe existir en config/proyectos/
 ```
 
 Luego crea `config/proyectos/nombre_proyecto.json` siguiendo la estructura
-de `sonitronies_concise.json`.
+de `plantilla.json`.
 
 ## Variables de entorno (`.env`)
 

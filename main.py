@@ -24,7 +24,7 @@ if _BASE not in sys.path:
 # =============================================================================
 # ① SELECCIÓN DE PROYECTO — edita solo esta variable para cambiar de proyecto
 # =============================================================================
-PROYECTO_ACTIVO = "sonitronies_concise"
+PROYECTO_ACTIVO = "plantilla"
 
 # Para regenerar solo algunos planos, lista aquí sus 'nombre_capa'.
 # Vacío = generar todos.  Ej.: SOLO_CAPAS = ["Clima", "Vegetacion"]

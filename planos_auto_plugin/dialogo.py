@@ -76,6 +76,9 @@ class DialogoPlanos(QDialog):
         btn_editar_proy = QPushButton("Editar datos…")
         btn_editar_proy.clicked.connect(self._editar_proyecto)
         fila_proy.addWidget(btn_editar_proy)
+        btn_borrar_proy = QPushButton("Eliminar…")
+        btn_borrar_proy.clicked.connect(self._eliminar_proyecto)
+        fila_proy.addWidget(btn_borrar_proy)
         lay.addLayout(fila_proy)
 
         lay.addWidget(QLabel("Planos a generar:"))
@@ -148,6 +151,38 @@ class DialogoPlanos(QDialog):
         dlg = DialogoProyecto(self.base, proyecto_existente=proyecto, parent=self)
         if dlg.exec_() and dlg.slug_guardado:
             self._cargar_proyectos(seleccionar=dlg.slug_guardado)
+
+    def _eliminar_proyecto(self):
+        proyecto = self.combo_proyecto.currentText()
+        if not proyecto:
+            QMessageBox.warning(self, "Planos Auto", "Elige un proyecto primero.")
+            return
+        ruta = os.path.join(self.base, "config", "proyectos", f"{proyecto}.json")
+        n_planos = 0
+        try:
+            with open(ruta, encoding="utf-8") as fh:
+                n_planos = sum(
+                    1 for c in json.load(fh).get("capas", [])
+                    if c.get("nombre_plano")
+                )
+        except (OSError, json.JSONDecodeError):
+            pass
+        respuesta = QMessageBox.question(
+            self, "Planos Auto",
+            f"¿Eliminar el proyecto '{proyecto}' ({n_planos} plano(s) definidos)?\n\n"
+            f"Se borrará el archivo:\n{ruta}\n\n"
+            f"Los PNG ya generados no se tocan.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if respuesta != QMessageBox.Yes:
+            return
+        try:
+            os.remove(ruta)
+        except OSError as exc:
+            QMessageBox.warning(self, "Planos Auto", f"No se pudo eliminar:\n{exc}")
+            return
+        self._cargar_proyectos()
 
     def _cargar_capas(self, proyecto: str):
         self.lista_capas.clear()
