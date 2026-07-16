@@ -1,29 +1,32 @@
 # Generador Automático de Planos — SINERGIA
 
-Script QGIS para generar composiciones cartográficas y exportarlas a PNG/PDF
+Script QGIS para generar composiciones cartográficas y exportarlas a PNG
 de forma automática, a partir de capas PostGIS y plantillas QPT.
 
 Además de los planos, cada corrida produce:
 
-- **`superficies_<capa>.csv`** — hectáreas y % del polígono por categoría
-  (suelos, vegetación, etc.), listo para pegar en el estudio.
 - **`index_planos.html`** — índice con miniaturas de todos los planos,
-  su estado y ligas a PNG/PDF/CSV. Ábrelo en el navegador para revisar
+  su estado y liga al PNG. Ábrelo en el navegador para revisar
   la corrida completa de un vistazo.
 
 ## Estructura del proyecto
 
 ```
 Planos_auto/
-├── main.py                        ← Punto de entrada (ejecutar en QGIS)
+├── main.py                        ← Punto de entrada (consola de QGIS)
 ├── generar_planos.py              ← Orquestador principal
+├── instalar_plugin.sh             ← Enlaza el plugin al perfil de QGIS
+├── planos_auto_plugin/            ← Interfaz gráfica (plugin de QGIS)
+│   ├── plugin.py                  ← Botón de barra + menú
+│   └── dialogo.py                 ← Diálogo: proyecto, planos, DPI, log
 ├── core/
 │   ├── utils.py                   ← Paleta, env, logger, sanitizar
+│   ├── configuracion.py           ← Ensamblaje del CONFIG (global+proyecto+env)
 │   ├── capas.py                   ← Carga PostGIS, extracción de vértices
 │   ├── simbologia.py              ← Renderers, etiquetas PAL, opacidad
 │   ├── composicion.py             ← Layouts, leyenda, grid, logo, labels
-│   ├── exportar.py                ← Exportación a PNG/PDF
-│   └── reportes.py                ← CSV de superficies + índice HTML
+│   ├── exportar.py                ← Exportación a PNG
+│   └── reportes.py                ← Índice HTML
 ├── config/
 │   ├── global.json                ← IDs de layout, DPI, CRS
 │   └── proyectos/
@@ -39,7 +42,56 @@ Planos_auto/
 └── .env.example                   ← Plantilla de credenciales
 ```
 
-## Uso rápido
+## Uso con interfaz gráfica (plugin de QGIS)
+
+Instalación (una sola vez):
+
+```bash
+./instalar_plugin.sh
+```
+
+Luego en QGIS: **Complementos → Administrar e instalar complementos →
+Instalados → activar "Planos Auto"** (marca "Mostrar también complementos
+experimentales" si no aparece). Queda un botón en la barra de herramientas.
+
+Flujo:
+
+1. Abre tu proyecto con la capa `poligono_trabajo` y **selecciona** el
+   polígono en el mapa.
+2. Clic en el botón **Planos Auto** → elige proyecto, marca los planos a
+   generar, ajusta el DPI y pulsa **Generar planos**.
+3. El log aparece en vivo en el propio diálogo (y también se guarda en la
+   carpeta de salida, como siempre).
+
+### Crear o editar los datos del proyecto desde el plugin
+
+Junto al combo de proyecto hay dos botones:
+
+- **Nuevo proyecto…** — pide un identificador de archivo (el nombre del
+  `.json`), nombre del proyecto, tipo de trámite, capa polígono y los
+  valores por defecto de cada plano (columna de geometría, tipo de
+  geometría, columna llave, escala, opacidad, grid).
+
+  Como los planos casi siempre son los mismos entre proyectos (solo cambia
+  la escala según el tamaño del predio), también puedes elegir
+  **"Copiar planos de:"** otro proyecto existente y un **factor de
+  escala** (1.0 = igual, 2.0 = el doble, 0.5 = la mitad). Se clona la
+  lista completa de planos multiplicando `escala` y `grid_intervalo` de
+  cada uno — el proyecto plantilla no se modifica. Si dejas
+  "(ninguno)", el proyecto queda con `"capas": []` para editar el JSON
+  a mano.
+- **Editar datos…** — abre el mismo formulario precargado con los valores
+  del proyecto seleccionado y los sobrescribe al guardar (sin tocar sus
+  planos existentes ni la opción de plantilla, que solo aplica al crear).
+
+Los campos avanzados por plano (tabla PostGIS, categoría, paleta, fuente,
+overrides de ids/layout…) siguen editándose directamente en el JSON —
+ver la estructura de `sonitronies_concise.json` más abajo.
+
+Como el plugin se instala por symlink, los cambios en el repo se reflejan
+al reabrir QGIS (o con el plugin "Plugin Reloader").
+
+## Uso desde la consola Python (alternativa)
 
 1. Abre QGIS y carga tu proyecto con la capa `poligono_trabajo`.
 2. **Selecciona** el polígono del proyecto en el mapa.
@@ -51,7 +103,8 @@ exec(open('/home/leonardo/Codigos/Planos_auto/main.py').read())
 
 ### Regenerar solo algunos planos
 
-Para no correr las 11 capas cuando solo ajustaste una, edita en `main.py`:
+En el plugin basta con marcar solo los planos deseados. Por consola,
+edita en `main.py`:
 
 ```python
 SOLO_CAPAS = ["Clima"]   # lista de 'nombre_capa'; vacía = todos
@@ -59,7 +112,8 @@ SOLO_CAPAS = ["Clima"]   # lista de 'nombre_capa'; vacía = todos
 
 ## Cambiar de proyecto
 
-Edita únicamente la variable `PROYECTO_ACTIVO` en `main.py`:
+En el plugin se elige del combo "Proyecto". Por consola, edita la
+variable `PROYECTO_ACTIVO` en `main.py`:
 
 ```python
 PROYECTO_ACTIVO = "nombre_proyecto"   # debe existir en config/proyectos/
@@ -111,7 +165,6 @@ Campos opcionales adicionales:
 |-------|---------|--------|
 | `paleta` | `default`, `suelos`, `geologia`, `clima`, `vegetacion`, `agua`, `conservacion` | Paleta de colores temática del renderer categorizado |
 | `estilo_qml` | nombre de archivo en `estilos/` | Aplica un QML en vez del renderer categorizado |
-| `reporte_superficies` | `true`/`false` (default `true`) | Genera o no el CSV de superficies |
 | `sin_bbox_filter` | `true` | Carga la tabla completa sin filtro espacial |
 | `layout_nombre` | nombre de QPT en `plantillas/` | Usa una plantilla alternativa |
 | `marcador` | `"punto"` | Muestra la estrella del centroide en vez del polígono |
@@ -121,5 +174,5 @@ Campos opcionales adicionales:
 En `config/global.json` (o por proyecto):
 
 ```json
-"formatos": ["png", "pdf"]
+"formatos": ["png"]
 ```

@@ -13,7 +13,7 @@
     "logo":         "logo_empresa"
   },
   "dpi": 200,
-  "formatos": ["png", "pdf"],
+  "formatos": ["png"],
   "layout_nombre": "Plantilla_Corporativa",
   "coordenadas":   "COORDENADAS UTM WGS84, R12",
   "fecha_plano":   "",

@@ -121,6 +121,11 @@ def valida_id(nombre: str, ctx: str) -> None:
 # Logger
 # ---------------------------------------------------------------------------
 
+# Handlers adicionales (p. ej. el panel de log del plugin) que crear_logger
+# conserva cada vez que reconstruye el logger.
+EXTRA_HANDLERS: list = []
+
+
 def crear_logger(output_dir: str) -> logging.Logger:
     """Crea y devuelve un logger con handlers de archivo y consola."""
     os.makedirs(output_dir, exist_ok=True)
@@ -140,4 +145,6 @@ def crear_logger(output_dir: str) -> logging.Logger:
     sh.setFormatter(fmt)
     logger.addHandler(fh)
     logger.addHandler(sh)
+    for extra in EXTRA_HANDLERS:
+        logger.addHandler(extra)
     return logger

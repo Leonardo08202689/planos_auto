@@ -1,5 +1,5 @@
 """
-core/exportar.py — Exportación de composiciones a PNG y/o PDF.
+core/exportar.py — Exportación de composiciones a PNG.
 """
 
 import os
@@ -20,7 +20,7 @@ def exportar_plano(
     log,
 ) -> dict:
     """
-    Exporta 'layout_comp' a los formatos indicados ('png', 'pdf').
+    Exporta 'layout_comp' a los formatos indicados ('png').
     Devuelve {formato: ruta} solo con las exportaciones exitosas.
     """
     QCoreApplication.processEvents()
@@ -38,16 +38,6 @@ def exportar_plano(
             log.info(f" ✓ PNG exportado: {os.path.basename(ruta)}")
         else:
             log.error(f" ✗ Falló exportación PNG: {ruta}")
-
-    if "pdf" in formatos:
-        cfg_pdf     = QgsLayoutExporter.PdfExportSettings()
-        cfg_pdf.dpi = dpi
-        ruta = os.path.join(output_dir, f"{base}.pdf")
-        if exportador.exportToPdf(ruta, cfg_pdf) == QgsLayoutExporter.Success:
-            rutas["pdf"] = ruta
-            log.info(f" ✓ PDF exportado: {os.path.basename(ruta)}")
-        else:
-            log.error(f" ✗ Falló exportación PDF: {ruta}")
 
     return rutas
 

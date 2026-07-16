@@ -1,88 +1,11 @@
 """
 core/reportes.py — Reportes de apoyo al estudio:
-  - CSV de superficies por categoría dentro del polígono (ha y %)
   - Índice HTML con miniaturas de todos los planos generados
 """
 
-import csv
 import html
 import os
 from datetime import datetime
-
-
-# ---------------------------------------------------------------------------
-# Superficies por categoría
-# ---------------------------------------------------------------------------
-
-def reporte_superficies(capa_tematica, feature_poligono, crs, campo: str,
-                        nombre_capa: str, output_dir: str, log):
-    """
-    Cruza la capa temática con el polígono del proyecto y escribe un CSV
-    con la superficie (ha) y el porcentaje que ocupa cada categoría.
-    Devuelve la ruta del CSV o None si no se pudo calcular.
-    """
-    # Imports locales para que el resto del módulo funcione fuera de QGIS
-    import processing
-    from qgis.core import (
-        QgsDistanceArea,
-        QgsFeature,
-        QgsProject,
-        QgsUnitTypes,
-        QgsVectorLayer,
-    )
-
-    if not campo or capa_tematica.fields().lookupField(campo) == -1:
-        return None
-
-    poly_mem = QgsVectorLayer(
-        f"Polygon?crs={crs.authid()}", "poligono_superficies_tmp", "memory"
-    )
-    f_poly = QgsFeature()
-    f_poly.setGeometry(feature_poligono.geometry())
-    poly_mem.dataProvider().addFeatures([f_poly])
-
-    try:
-        res = processing.run("native:intersection", {
-            "INPUT": capa_tematica, "OVERLAY": poly_mem, "OUTPUT": "memory:",
-        })
-    except Exception as exc:
-        log.warning(f" → No se pudo calcular superficies para '{nombre_capa}': {exc}")
-        return None
-
-    da = QgsDistanceArea()
-    da.setSourceCrs(res["OUTPUT"].crs(), QgsProject.instance().transformContext())
-    da.setEllipsoid("WGS84")
-
-    superficies: dict = {}
-    for feat in res["OUTPUT"].getFeatures():
-        geom = feat.geometry()
-        if geom.isEmpty():
-            continue
-        ha = da.convertAreaMeasurement(
-            da.measureArea(geom), QgsUnitTypes.AreaHectares
-        )
-        clave = str(feat[campo])
-        superficies[clave] = superficies.get(clave, 0.0) + ha
-
-    total = sum(superficies.values())
-    if not superficies or total <= 0:
-        log.warning(f" → Intersección vacía; sin reporte de superficies para '{nombre_capa}'.")
-        return None
-
-    ruta = os.path.join(output_dir, f"superficies_{nombre_capa}.csv")
-    # utf-8-sig para que Excel abra las tildes correctamente
-    with open(ruta, "w", newline="", encoding="utf-8-sig") as fh:
-        writer = csv.writer(fh)
-        writer.writerow([campo, "superficie_ha", "porcentaje"])
-        for clave, ha in sorted(superficies.items(), key=lambda kv: -kv[1]):
-            writer.writerow([clave, f"{ha:.4f}", f"{100 * ha / total:.2f}"])
-        writer.writerow(["TOTAL", f"{total:.4f}", "100.00"])
-
-    log.info(
-        f" ✓ Superficies: {len(superficies)} categoría(s), "
-        f"{total:.2f} ha → {os.path.basename(ruta)}"
-    )
-    return ruta
 
 
 # ---------------------------------------------------------------------------
@@ -93,8 +16,8 @@ def generar_indice_html(resultados: list, output_dir: str,
                         nombre_proyecto: str, log) -> str:
     """
     Escribe index_planos.html en 'output_dir' con una miniatura por plano,
-    su estado y ligas a PNG/PDF/CSV. 'resultados' es una lista de dicts:
-      {nombre_plano, escala, png, pdf, csv, exito}
+    su estado y liga al PNG. 'resultados' es una lista de dicts:
+      {nombre_plano, escala, png, exito}
     """
     tarjetas = []
     for r in resultados:
@@ -112,7 +35,7 @@ def generar_indice_html(resultados: list, output_dir: str,
             cuerpo = '<div class="sin-img">✗ No generado</div>'
 
         ligas = []
-        for fmt in ("png", "pdf", "csv"):
+        for fmt in ("png",):
             if r.get(fmt):
                 ligas.append(
                     f'<a href="{os.path.basename(r[fmt])}" target="_blank">'

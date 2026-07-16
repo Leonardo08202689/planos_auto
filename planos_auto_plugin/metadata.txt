@@ -1,0 +1,13 @@
+[general]
+name=Planos Auto
+qgisMinimumVersion=3.16
+description=Generador automático de planos SINERGIA: composiciones desde capas PostGIS y plantillas QPT, exportadas a PNG.
+version=0.1
+author=Leonardo
+email=leo.men2689@gmail.com
+about=Interfaz gráfica del proyecto Planos_auto. Selecciona el proyecto, los planos a generar y el DPI; requiere tener seleccionado el polígono de trabajo en el canvas.
+repository=
+tracker=
+homepage=
+category=Plugins
+experimental=True

@@ -103,5 +103,4 @@ Cada capa se configura en el JSON del proyecto con estos campos clave:
 1. **Los QML de `estilos/` no se usan**: existen estilos para Clima, Geología, Suelos, Vegetación e Hidrología pero ninguna capa del JSON tiene `"estilo_qml"`. Decidir si conectarlos o eliminarlos.
 2. **Validación de esquema JSON** al cargar configs (campos obligatorios: `nombre_capa`, `tabla_postgis`/`tipo`).
 3. **`QgsDataSourceUri` en `capas.py`** en vez de armar la URI a mano (una contraseña con comillas la rompería).
-4. **Exportar a PDF** además de PNG (`QgsLayoutExporter.exportToPdf`).
-5. **Inyección SQL teórica** en `bbox_wkt`: no explotable hoy (lo genera QGIS), pero el patrón es frágil si se reutiliza con input de usuario.
+4. **Inyección SQL teórica** en `bbox_wkt`: no explotable hoy (lo genera QGIS), pero el patrón es frágil si se reutiliza con input de usuario.

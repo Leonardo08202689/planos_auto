@@ -34,7 +34,7 @@ from core.composicion import (
 )
 from core.exportar   import exportar_plano
 from core.mapitas    import configurar_mapitas, preparar_capas_referencia
-from core.reportes   import generar_indice_html, reporte_superficies
+from core.reportes   import generar_indice_html
 from core.simbologia import (
     aplicar_estilo_poligono,
     aplicar_estilo_vertices,
@@ -340,8 +340,6 @@ def generar_composiciones(cfg: dict) -> None:
                 "nombre_plano": cfg_capa["nombre_plano"],
                 "escala":       escala_capa,
                 "png":          rutas.get("png"),
-                "pdf":          rutas.get("pdf"),
-                "csv":          None,
                 "exito":        bool(rutas),
             })
             continue
@@ -458,14 +456,7 @@ def generar_composiciones(cfg: dict) -> None:
         _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log)
         nueva_comp.refresh()
 
-        # ── k. Reporte de superficies y exportación ───────────────────────────
-        csv_ruta = None
-        if campo_cat and cfg_capa.get("reporte_superficies", True):
-            csv_ruta = reporte_superficies(
-                capa_reproyectada, feature_poligono, crs_origen,
-                campo_cat, cfg_capa["nombre_capa"], output_dir, log,
-            )
-
+        # ── k. Exportación ─────────────────────────────────────────────────────
         rutas = exportar_plano(
             nueva_comp, cfg_capa, feature_poligono.id(),
             output_dir, cfg["dpi"], formatos, log,
@@ -474,8 +465,6 @@ def generar_composiciones(cfg: dict) -> None:
             "nombre_plano": cfg_capa["nombre_plano"],
             "escala":       escala_capa,
             "png":          rutas.get("png"),
-            "pdf":          rutas.get("pdf"),
-            "csv":          csv_ruta,
             "exito":        bool(rutas),
         })
 
