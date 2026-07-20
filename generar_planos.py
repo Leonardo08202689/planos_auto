@@ -43,7 +43,7 @@ from core.simbologia import (
     aplicar_opacidad_capa,
     aplicar_renderer_categorizado,
 )
-from core.utils      import crear_logger, formato_escala, sanitizar_nombre
+from core.utils      import crear_logger, formato_escala, sanitizar_nombre, titulo_capa
 
 
 # =============================================================================
@@ -56,10 +56,14 @@ _MESES_ES = [
 ]
 
 
-def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log):
+def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log, capas_ref=None):
     set_label_text(comp, ids.get("lbl_proyecto", ""), cfg.get("nombre_proyecto", ""), log)
     set_label_text(comp, ids.get("lbl_licencia", ""), cfg.get("tipo_tramite", ""),    log)
     set_label_text(comp, ids.get("lbl_plano", ""),    cfg_capa.get("nombre_plano", ""), log)
+
+    if capas_ref:
+        set_label_text(comp, ids.get("lbl_estado", ""),    capas_ref.get("nomgeo_estado", ""),    log)
+        set_label_text(comp, ids.get("lbl_municipio", ""), capas_ref.get("nomgeo_municipio", ""), log)
 
     escala = cfg_capa.get("escala", 0)
     if escala:
@@ -327,7 +331,7 @@ def generar_composiciones(cfg: dict) -> None:
         if es_vertices:
             capa_vertices = extraer_vertices_poligono(feature_poligono, crs_origen, log)
             aplicar_estilo_vertices(capa_vertices, log)
-            capa_vertices.setName(cfg_capa["nombre_capa"])
+            capa_vertices.setName(titulo_capa(cfg_capa))
             project.addMapLayer(capa_vertices, False)
             grupo_mia.insertLayer(0, capa_vertices)
 
@@ -342,10 +346,10 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(nueva_comp, map_item, log)
+            reenlazar_barra_escala(nueva_comp, map_item, log, unidades_por_segmento=50)
             configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 100), log)
             actualizar_leyenda(nueva_comp, ids, capa_vertices, poly_layer)
-            _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log)
+            _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
             rutas = exportar_plano(
                 nueva_comp, cfg_capa, feature_poligono.id(),
@@ -357,6 +361,15 @@ def generar_composiciones(cfg: dict) -> None:
                 "png":          rutas.get("png"),
                 "exito":        bool(rutas),
             }
+
+        # ── d0. Sanear geometrías de origen ─────────────────────────────────────
+        # Se hace ANTES del pre-filtro bbox: 'native:extractbyextent' evalúa el
+        # predicado espacial vía GEOS y truena si algún feature de origen trae
+        # geometría inválida (p. ej. anillos autointersectados).
+        res_fix_src = processing.run("native:fixgeometries", {
+            "INPUT": capa_pg, "OUTPUT": "memory:",
+        })
+        capa_pg = res_fix_src["OUTPUT"]
 
         # ── d. Pre-filtro por bbox en el CRS de la capa fuente ────────────────
         # Reduce las capas amplias (sin_bbox_filter) al área visible ANTES de
@@ -418,7 +431,7 @@ def generar_composiciones(cfg: dict) -> None:
             "INPUT": capa_reproyectada, "OVERLAY": layer_extent, "OUTPUT": "memory:",
         })
         capa_recortada = res_clip["OUTPUT"]
-        capa_recortada.setName(cfg_capa["nombre_capa"])
+        capa_recortada.setName(titulo_capa(cfg_capa))
 
         n_clip, n_orig = capa_recortada.featureCount(), capa_pg.featureCount()
         if n_orig > 0 and n_clip == n_orig:
@@ -491,7 +504,7 @@ def generar_composiciones(cfg: dict) -> None:
         reenlazar_barra_escala(nueva_comp, map_item, log)
         configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 500), log)
         actualizar_leyenda(nueva_comp, ids, capa_recortada, poly_layer)
-        _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log)
+        _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
         nueva_comp.refresh()
 
         # ── k. Exportación ─────────────────────────────────────────────────────

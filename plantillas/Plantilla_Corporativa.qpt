@@ -82,7 +82,7 @@
   </LayoutItem>
   <GuideCollection visible="1"/>
  </PageCollection>
- <LayoutItem type="65641" position="378.517,64.8018,mm" halign="1" templateUuid="{f129f219-dc8f-40ee-9ce4-e71bc7eab2cc}" itemRotation="0" marginY="0" zValue="55" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="378.517,64.8018,mm" opacity="1" blendMode="0" uuid="{f129f219-dc8f-40ee-9ce4-e71bc7eab2cc}" id="" valign="32" labelText="Nogales" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
+ <LayoutItem type="65641" position="378.517,64.8018,mm" halign="1" templateUuid="{f129f219-dc8f-40ee-9ce4-e71bc7eab2cc}" itemRotation="0" marginY="0" zValue="55" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="378.517,64.8018,mm" opacity="1" blendMode="0" uuid="{f129f219-dc8f-40ee-9ce4-e71bc7eab2cc}" id="lbl_municipio" valign="32" labelText="Nogales" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
   <FrameColor alpha="255" red="0" green="0" blue="0"/>
   <BackgroundColor alpha="255" red="255" green="255" blue="255"/>
   <LayoutObject>
@@ -284,7 +284,7 @@
    </dd_properties>
   </text-style>
  </LayoutItem>
- <LayoutItem type="65641" position="402.09,13.7906,mm" halign="1" templateUuid="{1855a9a3-5a68-4ef8-99c3-0f9214019628}" itemRotation="0" marginY="0" zValue="40" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="402.09,13.7906,mm" opacity="1" blendMode="0" uuid="{1855a9a3-5a68-4ef8-99c3-0f9214019628}" id="" valign="32" labelText="Nogales" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
+ <LayoutItem type="65641" position="402.09,13.7906,mm" halign="1" templateUuid="{1855a9a3-5a68-4ef8-99c3-0f9214019628}" itemRotation="0" marginY="0" zValue="40" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="402.09,13.7906,mm" opacity="1" blendMode="0" uuid="{1855a9a3-5a68-4ef8-99c3-0f9214019628}" id="lbl_municipio" valign="32" labelText="Nogales" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
   <FrameColor alpha="255" red="0" green="0" blue="0"/>
   <BackgroundColor alpha="255" red="255" green="255" blue="255"/>
   <LayoutObject>
@@ -587,7 +587,7 @@
    </dd_properties>
   </text-style>
  </LayoutItem>
- <LayoutItem type="65641" position="354.344,16.0997,mm" halign="1" templateUuid="{a693beff-d417-4dd2-91a6-aaa90faebd2a}" itemRotation="0" marginY="0" zValue="26" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="354.344,16.0997,mm" opacity="1" blendMode="0" uuid="{a693beff-d417-4dd2-91a6-aaa90faebd2a}" id="" valign="32" labelText="Sonora" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
+ <LayoutItem type="65641" position="354.344,16.0997,mm" halign="1" templateUuid="{a693beff-d417-4dd2-91a6-aaa90faebd2a}" itemRotation="0" marginY="0" zValue="26" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="354.344,16.0997,mm" opacity="1" blendMode="0" uuid="{a693beff-d417-4dd2-91a6-aaa90faebd2a}" id="lbl_estado" valign="32" labelText="Sonora" referencePoint="0" htmlState="0" size="20.1008,4.61818,mm" outlineWidthM="0.3,mm" marginX="0">
   <FrameColor alpha="255" red="0" green="0" blue="0"/>
   <BackgroundColor alpha="255" red="255" green="255" blue="255"/>
   <LayoutObject>

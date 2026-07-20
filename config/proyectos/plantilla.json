@@ -20,7 +20,7 @@
       "nombre_plano":    "Plano. Tipos de Suelos",
       "nombre_capa":     "Tipo_de_Suelo",
       "escala":          5000,
-      "tipo_geom":       "Polygon",
+      "tipo_geom":       "MultiPolygon",
       "key":             "ogc_fid",
       "campo_categoria": "Grupo1",
       "campo_etiqueta":  "Grupo1",

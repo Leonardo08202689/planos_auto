@@ -6,6 +6,7 @@ core/composicion.py — Gestión de layouts QGIS: carga de plantillas,
 import os
 
 from qgis.core import (
+    QgsLayoutItem,
     QgsLayoutItemLegend,
     QgsLayoutItemMap,
     QgsLayoutItemMapGrid,
@@ -21,12 +22,12 @@ from qgis.core import (
 
 def cargar_o_importar_layout(project, layout_nombre: str, plantillas_dir: str, log):
     """
-    Busca el layout en el proyecto QGIS; si no existe, lo importa desde
-    el archivo QPT ubicado en 'plantillas_dir'.
+    Importa el layout maestro desde el QPT, reemplazando cualquier versión
+    previa cacheada en el proyecto, para que los cambios al .qpt siempre
+    se reflejen (si el archivo no se encuentra, reutiliza el layout ya
+    cargado en el proyecto como respaldo).
     """
-    layout = project.layoutManager().layoutByName(layout_nombre)
-    if layout:
-        return layout
+    layout_previo = project.layoutManager().layoutByName(layout_nombre)
 
     candidatos = [
         os.path.join(plantillas_dir, f"{layout_nombre}.qpt"),
@@ -35,11 +36,20 @@ def cargar_o_importar_layout(project, layout_nombre: str, plantillas_dir: str, l
     qpt_path = next((p for p in candidatos if os.path.exists(p)), None)
 
     if not qpt_path:
+        if layout_previo:
+            log.warning(
+                f" → '{layout_nombre}.qpt' no encontrado; "
+                f"se reutiliza el layout ya cargado en el proyecto."
+            )
+            return layout_previo
         log.error(
             f" ✗ '{layout_nombre}.qpt' no encontrado. "
             f"Buscado en: {candidatos}"
         )
         return None
+
+    if layout_previo:
+        project.layoutManager().removeLayout(layout_previo)
 
     log.info(f" → Importando plantilla desde: {qpt_path}")
     try:
@@ -111,13 +121,15 @@ def actualizar_leyenda(layout_comp, ids: dict, capa_tematica, capa_poligono) -> 
     leyenda.refresh()
 
 
-def reenlazar_barra_escala(layout_comp, map_item, log) -> None:
+def reenlazar_barra_escala(layout_comp, map_item, log, unidades_por_segmento=None) -> None:
     n = 0
     for item in layout_comp.items():
         if isinstance(item, QgsLayoutItemScaleBar):
             item.setLinkedMap(map_item)
             item.setUnits(QgsUnitTypes.DistanceMeters)
             item.setUnitLabel("m")
+            if unidades_por_segmento:
+                item.setUnitsPerSegment(unidades_por_segmento)
             item.refreshItemSize()
             item.refresh()
             n += 1
@@ -157,10 +169,16 @@ def fijar_logo(layout_comp, id_logo: str, logo_ruta: str, log) -> None:
 
 
 def set_label_text(layout_comp, item_id: str, texto: str, log=None) -> None:
+    """Asigna 'texto' a TODOS los ítems con id == item_id (puede haber más de uno,
+    p. ej. la misma etiqueta de municipio repetida en varios insertos)."""
     if not item_id:
         return
-    item = layout_comp.itemById(item_id)
-    if item:
-        item.setText(texto)
+    items = [
+        i for i in layout_comp.items()
+        if isinstance(i, QgsLayoutItem) and i.id() == item_id
+    ]
+    if items:
+        for item in items:
+            item.setText(texto)
     elif log:
         log.debug(f" → Ítem '{item_id}' no encontrado.")

@@ -195,7 +195,7 @@ def preparar_capas_referencia(centroid_geom, crs_proyecto, pg: dict,
 
     return {
         "capas_nacional":    [c for c in [c_estado_hl, c_estados]            if c],
-        "capas_estatal":     [c for c in [c_punto,     c_muni_hl,   c_munis] if c],
+        "capas_estatal":     [c for c in [c_muni_hl,   c_munis]                if c],
         "capas_municipal":   [c for c in [c_punto,     c_muni_hl]            if c],
         "ext_nacional":      ext_nac,
         "ext_estatal":       ext_est,

@@ -114,6 +114,25 @@ def sanitizar_nombre(texto: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Título legible para leyenda/simbología
+# ---------------------------------------------------------------------------
+
+def titulo_capa(cfg_capa: dict) -> str:
+    """
+    Nombre a mostrar como encabezado de capa en la leyenda del plano.
+
+    `nombre_capa` es un identificador técnico (se usa para buscar la capa en
+    el proyecto/PostGIS) y suele llevar guiones bajos, p. ej. "Tipo_de_Suelo".
+    Si la config trae "titulo_capa" se usa tal cual; si no, se deriva
+    reemplazando "_" por espacios (p. ej. "Tipo de Suelo").
+    """
+    titulo = cfg_capa.get("titulo_capa")
+    if titulo:
+        return titulo
+    return cfg_capa.get("nombre_capa", "").replace("_", " ").strip()
+
+
+# ---------------------------------------------------------------------------
 # Validación de identificadores SQL
 # ---------------------------------------------------------------------------
 

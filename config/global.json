@@ -10,6 +10,8 @@
     "lbl_fecha":    "lbl_fecha",
     "lbl_fuente":   "lbl_fuente",
     "lbl_coordsys": "lbl_coordsys",
+    "lbl_estado":   "lbl_estado",
+    "lbl_municipio":"lbl_municipio",
     "logo":         "logo_empresa"
   },
   "dpi": 200,
