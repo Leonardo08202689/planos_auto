@@ -16,7 +16,7 @@
   "capas": [
     {
       "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
-      "tabla_postgis":   "suelos_edafologia_v3",
+      "tabla_postgis":   "suelos_edafologia_serie2",
       "nombre_plano":    "Plano. Tipos de Suelos",
       "nombre_capa":     "Tipo_de_Suelo",
       "escala":          5000,
@@ -25,7 +25,7 @@
       "campo_categoria": "Grupo1",
       "campo_etiqueta":  "Grupo1",
       "paleta":          "suelos",
-      "fuente":          "Conjunto de Datos Vectorial Edafológico. Escala 1:250 000 Serie III. INEGI."
+      "fuente":          "Conjunto de Datos Vectorial Edafológico. Escala 1:250 000 Serie II. INEGI."
     },
     {
       "tabla_postgis":   "Geologia",
