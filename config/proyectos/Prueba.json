@@ -59,7 +59,17 @@
       "opacidad": 0.55,
       "grid_intervalo": 2500,
       "marcador": "punto",
-      "fuente": "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000."
+      "capas_extra": {
+        "ruta_gpkg": "/home/leonardo/QGIS/Topografico Sonora/cnit50k_26_gpkg/conjunto_de_datos/cnit50k.gpkg",
+        "capas": [
+          {"capa": "corriente_ag_l", "tipo_geom": "linea", "nombre": "Ríos y Arroyos",      "color": "50,110,200,255"},
+          {"capa": "corriente_ag_a", "tipo_geom": "area",  "nombre": "Ríos (cuerpo ancho)", "color": "70,130,220,200"},
+          {"capa": "canal_l",        "tipo_geom": "linea", "nombre": "Canales",             "color": "40,170,190,255"},
+          {"capa": "canal_a",        "tipo_geom": "area",  "nombre": "Canales (área)",      "color": "40,170,190,180"},
+          {"capa": "cuerpo_agua_a",  "tipo_geom": "area",  "nombre": "Cuerpos de Agua",     "color": "60,120,210,220"}
+        ]
+      },
+      "fuente": "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k)."
     },
     {
       "tipo": "vertices",

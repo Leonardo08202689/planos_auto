@@ -107,16 +107,18 @@ def validar_extent(extent, nombre_capa: str, log, escala: float = 0) -> None:
 # Actualizar elementos del layout
 # ---------------------------------------------------------------------------
 
-def actualizar_leyenda(layout_comp, ids: dict, capa_tematica, capa_poligono) -> None:
+def actualizar_leyenda(layout_comp, ids: dict, *capas) -> None:
+    """Reconstruye la leyenda con las capas dadas, en el orden recibido.
+    Las capas None se ignoran (permite pasar un slot opcional sin filtrar antes)."""
     leyenda = layout_comp.itemById(ids["leyenda"])
     if not (leyenda and isinstance(leyenda, QgsLayoutItemLegend)):
         return
     leyenda.setAutoUpdateModel(False)
     root = leyenda.model().rootGroup()
     root.removeAllChildren()
-    root.addLayer(capa_tematica)
-    if capa_poligono:
-        root.addLayer(capa_poligono)
+    for capa in capas:
+        if capa:
+            root.addLayer(capa)
     leyenda.adjustBoxSize()
     leyenda.refresh()
 

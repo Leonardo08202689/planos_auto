@@ -43,11 +43,26 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
                 f"no define 'nombre_capa'."
             )
         es_vertices = capa.get("tipo") == "vertices"
+        es_raster   = capa.get("tipo") == "raster"
+        es_rutas    = capa.get("tipo") == "rutas_acceso"
         de_proyecto = capa.get("origen") == "proyecto"
-        if not es_vertices and not de_proyecto and not capa.get("tabla_postgis"):
+        if es_raster and not capa.get("ruta_raster"):
+            raise ValueError(
+                f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='raster' "
+                f"pero no define 'ruta_raster'."
+            )
+        if es_rutas and not capa.get("ruta_gpkg"):
+            raise ValueError(
+                f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='rutas_acceso' "
+                f"pero no define 'ruta_gpkg' (debe generarse aparte con "
+                f"herramientas/rutas_cli.py; ya no se calcula en vivo)."
+            )
+        if (not es_vertices and not es_raster and not es_rutas
+                and not de_proyecto and not capa.get("tabla_postgis")):
             raise ValueError(
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) no define "
-                f"'tabla_postgis' (ni es tipo='vertices' u origen='proyecto')."
+                f"'tabla_postgis' (ni es tipo='vertices'/'raster'/'rutas_acceso' "
+                f"u origen='proyecto')."
             )
 
 
@@ -103,6 +118,8 @@ def cargar_config(base: str, proyecto: str,
         ),
         "plantillas_dir": os.path.join(base, "plantillas"),
         "estilos_dir":    os.path.join(base, "estilos"),
+        # Intérprete con OSMnx para las rutas de acceso (vacío = python3 del entorno)
+        "rutas_python":   env.get("RUTAS_PYTHON", ""),
 
         # ── Conexión PostGIS ──────────────────────────────────────────────────
         "pg": {

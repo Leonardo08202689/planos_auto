@@ -56,7 +56,10 @@ def _capa_pg(nombre, tabla, schema, pg, filtro, log,
              geom_col="geom", key="ogc_fid"):
     from qgis.core import QgsDataSourceUri
     uri = QgsDataSourceUri()
-    uri.setConnection(pg["host"], str(pg["port"]), pg["dbname"], pg["user"], pg["password"])
+    # sslmode va como argumento de setConnection: setSslMode() no existe
+    # en los bindings de QGIS 3.28
+    uri.setConnection(pg["host"], str(pg["port"]), pg["dbname"], pg["user"],
+                      pg["password"], QgsDataSourceUri.SslDisable)
     uri.setDataSource(schema, tabla, geom_col, filtro, key)
 
     c = QgsVectorLayer(uri.uri(), nombre, "postgres")

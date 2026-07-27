@@ -1,12 +1,15 @@
 """
-core/capas.py — Carga y procesamiento de capas vectoriales PostGIS.
+core/capas.py — Carga y procesamiento de capas vectoriales PostGIS y de
+                 archivo (GeoPackage/OGR).
 """
 
 from qgis.core import (
+    QgsCoordinateTransform,
     QgsDataSourceUri,
     QgsFeature,
-    QgsField,
     QgsGeometry,
+    QgsField,
+    QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
 )
@@ -110,4 +113,68 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
     dp.addFeatures(features)
     capa_vertices.updateExtents()
     log.info(f" ✓ {len(features)} vértices extraídos del polígono.")
+    return capa_vertices
+
+
+def cargar_recortar_gpkg(ruta_gpkg: str, nombre_layer: str, crs_destino,
+                        extent_en_escala, log, margen: float = 0.02):
+    """
+    Carga una capa vectorial de un GeoPackage (u otra fuente OGR), la sanea,
+    reproyecta y recorta al extent dado.
+
+    Pensada para fuentes de referencia grandes (p. ej. cartografía topográfica
+    de INEGI que cubre todo un estado): el pre-filtro por bbox usa el índice
+    espacial del propio GDAL antes de sanear/reproyectar/recortar, igual que
+    el flujo de capas PostGIS en generar_planos.py.
+
+    Retorna QgsVectorLayer recortado, o None si la capa no existe/es inválida
+    o no tiene features en el área de interés.
+    """
+    import processing
+
+    capa = QgsVectorLayer(f"{ruta_gpkg}|layername={nombre_layer}", nombre_layer, "ogr")
+    if not capa.isValid():
+        log.warning(f" → Capa '{nombre_layer}' no válida en {ruta_gpkg}, se omite.")
+        return None
+
+    crs_capa = capa.crs()
+    if crs_capa.authid() != crs_destino.authid():
+        transf = QgsCoordinateTransform(crs_destino, crs_capa, QgsProject.instance())
+        rect_fuente = transf.transformBoundingBox(extent_en_escala)
+    else:
+        rect_fuente = extent_en_escala
+    rect_fuente = rect_fuente.buffered(
+        max(rect_fuente.width(), rect_fuente.height()) * margen
+    )
+    extent_str = (
+        f"{rect_fuente.xMinimum()},{rect_fuente.xMaximum()},"
+        f"{rect_fuente.yMinimum()},{rect_fuente.yMaximum()} [{crs_capa.authid()}]"
+    )
+    res_pre = processing.run("native:extractbyextent", {
+        "INPUT": capa, "EXTENT": extent_str, "CLIP": False, "OUTPUT": "memory:",
+    })
+    candidatos = res_pre["OUTPUT"]
+    if candidatos.featureCount() == 0:
+        log.info(f" → '{nombre_layer}': sin features en el área de interés.")
+        return None
+
+    res_fix = processing.run("native:fixgeometries", {
+        "INPUT": candidatos, "OUTPUT": "memory:",
+    })
+    res_reproj = processing.run("native:reprojectlayer", {
+        "INPUT": res_fix["OUTPUT"], "TARGET_CRS": crs_destino, "OUTPUT": "memory:",
+    })
+
+    layer_extent = QgsVectorLayer(f"Polygon?crs={crs_destino.authid()}", "extent_tmp", "memory")
+    f_ext = QgsFeature()
+    f_ext.setGeometry(QgsGeometry.fromRect(extent_en_escala))
+    layer_extent.dataProvider().addFeatures([f_ext])
+
+    res_clip = processing.run("native:clip", {
+        "INPUT": res_reproj["OUTPUT"], "OVERLAY": layer_extent, "OUTPUT": "memory:",
+    })
+    capa_recortada = res_clip["OUTPUT"]
+    capa_recortada.setName(nombre_layer)
+    log.info(f" → '{nombre_layer}': {capa_recortada.featureCount()} feature(s) recortado(s).")
+    return capa_recortada
     return capa_vertices

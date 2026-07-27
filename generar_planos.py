@@ -13,16 +13,24 @@ from qgis.core import (
     QgsCoordinateReferenceSystem,
     QgsCoordinateTransform,
     QgsFeature,
+    QgsFillSymbol,
     QgsGeometry,
     QgsLayoutItemMap,
+    QgsLineSymbol,
     QgsMarkerSymbol,
     QgsProject,
     QgsRasterLayer,
+    QgsRectangle,
+    QgsSingleSymbolRenderer,
     QgsVectorLayer,
 )
 from datetime import datetime
 
-from core.capas      import cargar_capa_postgis, extraer_vertices_poligono
+from core.capas      import (
+    cargar_capa_postgis,
+    cargar_recortar_gpkg,
+    extraer_vertices_poligono,
+)
 from core.composicion import (
     actualizar_leyenda,
     cargar_o_importar_layout,
@@ -43,7 +51,13 @@ from core.simbologia import (
     aplicar_opacidad_capa,
     aplicar_renderer_categorizado,
 )
-from core.utils      import crear_logger, formato_escala, sanitizar_nombre, titulo_capa
+from core.utils      import (
+    color_para_categoria,
+    crear_logger,
+    formato_escala,
+    sanitizar_nombre,
+    titulo_capa,
+)
 
 
 # =============================================================================
@@ -241,6 +255,8 @@ def generar_composiciones(cfg: dict) -> None:
             }
 
         es_vertices = cfg_capa.get("tipo") == "vertices"
+        es_raster   = cfg_capa.get("tipo") == "raster"
+        es_rutas    = cfg_capa.get("tipo") == "rutas_acceso"
         nombre_comp = f"Comp_{cfg_capa['nombre_capa']}"
 
         log.info(f"\n{'─' * 55}")
@@ -251,7 +267,7 @@ def generar_composiciones(cfg: dict) -> None:
         layout_actual = cfg_capa.get("layout_nombre", cfg["layout_nombre"])
 
         # ── a. Cargar datos ───────────────────────────────────────────────────
-        if not es_vertices:
+        if not es_vertices and not es_raster and not es_rutas:
             if cfg_capa.get("origen") == "proyecto":
                 capas_proy = project.mapLayersByName(cfg_capa["nombre_capa"])
                 if not capas_proy:
@@ -349,6 +365,178 @@ def generar_composiciones(cfg: dict) -> None:
             reenlazar_barra_escala(nueva_comp, map_item, log, unidades_por_segmento=50)
             configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 100), log)
             actualizar_leyenda(nueva_comp, ids, capa_vertices, poly_layer)
+            _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
+            nueva_comp.refresh()
+            rutas = exportar_plano(
+                nueva_comp, cfg_capa, feature_poligono.id(),
+                output_dir, cfg["dpi"], formatos, log,
+            )
+            return {
+                "nombre_plano": cfg_capa["nombre_plano"],
+                "escala":       escala_capa,
+                "png":          rutas.get("png"),
+                "exito":        bool(rutas),
+            }
+
+        # ── Flujo especial: Plano con capa ráster (p. ej. localización) ────────
+        if es_raster:
+            capa_raster = QgsRasterLayer(cfg_capa["ruta_raster"], titulo_capa(cfg_capa))
+            if not capa_raster.isValid():
+                log.warning(f" → Ráster no válido: {cfg_capa['ruta_raster']}")
+                return _fallo()
+
+            project.addMapLayer(capa_raster, False)
+            grupo_mia.insertLayer(0, capa_raster)
+
+            # Capas extra de referencia (caminos, carreteras, calles, etc.) sobre el ráster
+            capas_extra_obj = []
+            extra_cfg = cfg_capa.get("capas_extra") or {}
+            for spec in extra_cfg.get("capas", []):
+                c = cargar_recortar_gpkg(
+                    extra_cfg["ruta_gpkg"], spec["capa"], crs_origen, extent_en_escala, log
+                )
+                if not c:
+                    continue
+                c.setName(spec.get("nombre", spec["capa"]))
+                color = spec.get("color", "70,130,220,220")
+                if spec.get("tipo_geom") == "area":
+                    simbolo = QgsFillSymbol.createSimple({
+                        "color": color, "outline_color": "40,80,150,255", "outline_width": "0.3",
+                    })
+                else:
+                    simbolo = QgsLineSymbol.createSimple({
+                        "color": color, "line_width": spec.get("ancho_linea", "0.6"),
+                    })
+                c.setRenderer(QgsSingleSymbolRenderer(simbolo))
+                if spec.get("campo_etiqueta"):
+                    aplicar_etiquetas_pal(c, spec["campo_etiqueta"], log)
+                project.addMapLayer(c, False)
+                grupo_mia.insertLayer(0, c)
+                capas_extra_obj.append(c)
+
+            usar_punto      = cfg_capa.get("marcador", "punto") == "punto"
+            capa_referencia = punto_layer if usar_punto else poly_layer
+
+            capas_visibles = [
+                r for r in [
+                    _ref(capa_referencia),
+                    *[_ref(c) for c in capas_extra_obj],
+                    _ref(capa_raster),
+                ] if r
+            ]
+
+            map_item.setKeepLayerSet(True)
+            map_item.setLayers(capas_visibles)
+            map_item.invalidateCache()
+            map_item.refresh()
+
+            reenlazar_barra_escala(nueva_comp, map_item, log)
+            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 1000), log)
+            # La estrella del proyecto y las capas extra en la leyenda; el ráster no lleva simbología.
+            actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_extra_obj)
+            _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
+            nueva_comp.refresh()
+            rutas = exportar_plano(
+                nueva_comp, cfg_capa, feature_poligono.id(),
+                output_dir, cfg["dpi"], formatos, log,
+            )
+            return {
+                "nombre_plano": cfg_capa["nombre_plano"],
+                "escala":       escala_capa,
+                "png":          rutas.get("png"),
+                "exito":        bool(rutas),
+            }
+
+        # ── Flujo especial: Figura de Rutas de Acceso (varias capas de un GPKG) ─
+        # A diferencia de los demás planos, el extent NO se centra en el polígono
+        # con una escala fija: las rutas se extienden mucho más allá del predio,
+        # así que el extent se calcula del conjunto de capas cargadas.
+        if es_rutas:
+            # 'ruta_gpkg' debe venir pre-generada en la config (modo manual):
+            # calcularla aquí en vivo (OSMnx) bloquea QGIS varios minutos y no
+            # se puede cancelar desde el diálogo, así que se quitó ese modo.
+            # Para generar el GPKG usa herramientas/rutas_cli.py aparte y
+            # apunta 'ruta_gpkg' al archivo resultante.
+            ruta_gpkg = cfg_capa["ruta_gpkg"]
+            nombres_rutas  = cfg_capa.get("capas_rutas", ["Ruta_1", "Ruta_2", "Ruta_3"])
+            nombre_destino = cfg_capa.get("capa_destino", "Destino")
+            nombre_entrada = cfg_capa.get("capa_entrada", "Puntos_Entrada")
+
+            def _capa_gpkg(nombre_layer):
+                c = QgsVectorLayer(f"{ruta_gpkg}|layername={nombre_layer}", nombre_layer, "ogr")
+                if not c.isValid():
+                    log.warning(f" → Capa '{nombre_layer}' no válida en el GPKG, se omite.")
+                    return None
+                return c
+
+            capas_ruta = []
+            for i, nombre_ruta in enumerate(nombres_rutas):
+                c = _capa_gpkg(nombre_ruta)
+                if not c:
+                    continue
+                c.setName(nombre_ruta.replace("_", " "))
+                simbolo = QgsLineSymbol.createSimple({
+                    "color": color_para_categoria(i, nombre_ruta, "agua"),
+                    "line_width": "0.9",
+                })
+                c.setRenderer(QgsSingleSymbolRenderer(simbolo))
+                capas_ruta.append(c)
+
+            capa_destino = _capa_gpkg(nombre_destino)
+            if capa_destino:
+                capa_destino.setName("Destino")
+                capa_destino.setRenderer(QgsSingleSymbolRenderer(QgsMarkerSymbol.createSimple({
+                    "name": "star", "color": "220,0,0,255",
+                    "outline_color": "255,255,255,255", "size": "5.0",
+                })))
+
+            capa_entrada = _capa_gpkg(nombre_entrada)
+            if capa_entrada:
+                capa_entrada.setName("Puntos de Entrada")
+                capa_entrada.setRenderer(QgsSingleSymbolRenderer(QgsMarkerSymbol.createSimple({
+                    "name": "circle", "color": "40,90,200,255",
+                    "outline_color": "255,255,255,255", "size": "3.5",
+                })))
+                aplicar_etiquetas_pal(capa_entrada, "direccion", log)
+
+            capas_cargadas = capas_ruta + [c for c in (capa_destino, capa_entrada) if c]
+            if not capas_cargadas:
+                log.error(" ✗ No se pudo cargar ninguna capa de rutas de acceso.")
+                return _fallo()
+
+            extent_total = QgsRectangle(capas_cargadas[0].extent())
+            for c in capas_cargadas[1:]:
+                extent_total.combineExtentWith(c.extent())
+            margen = max(extent_total.width(), extent_total.height()) * 0.08
+            extent_total = extent_total.buffered(margen)
+
+            for c in capas_cargadas:
+                project.addMapLayer(c, False)
+                grupo_mia.insertLayer(0, c)
+
+            map_item.setCrs(capas_cargadas[0].crs())
+            map_item.setExtent(extent_total)
+
+            # La leyenda/etiqueta de escala deben reflejar el zoom real resultante,
+            # no la 'escala' nominal de la config (que aquí es solo un placeholder).
+            escala_capa = round(map_item.scale() / 100) * 100
+            cfg_capa["escala"] = escala_capa
+
+            capas_visibles = [c for c in (capa_destino, capa_entrada) if c] + capas_ruta
+            capas_visibles = [_ref(c) for c in capas_visibles if _ref(c)]
+            if basemap_id:
+                r = project.mapLayer(basemap_id)
+                if r:
+                    capas_visibles.append(r)
+
+            map_item.setKeepLayerSet(True)
+            map_item.setLayers(capas_visibles)
+            map_item.invalidateCache()
+            map_item.refresh()
+
+            reenlazar_barra_escala(nueva_comp, map_item, log)
+            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 2500), log)
+            actualizar_leyenda(nueva_comp, ids, *capas_ruta, capa_destino, capa_entrada)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
             rutas = exportar_plano(
@@ -480,6 +668,30 @@ def generar_composiciones(cfg: dict) -> None:
         grupo_mia.insertLayer(0, capa_recortada)
         grupo_mia.insertLayer(0, capa_centroides)
 
+        # ── i2. Capas extra de referencia (ríos, canales, cuerpos de agua, etc.) ─
+        # Fuentes locales grandes (GeoPackage) que se recortan al mismo extent
+        # del plano; se dibujan encima de la capa temática principal.
+        capas_extra_obj = []
+        extra_cfg = cfg_capa.get("capas_extra") or {}
+        for spec in extra_cfg.get("capas", []):
+            c = cargar_recortar_gpkg(
+                extra_cfg["ruta_gpkg"], spec["capa"], crs_origen, extent_en_escala, log
+            )
+            if not c:
+                continue
+            c.setName(spec.get("nombre", spec["capa"]))
+            color = spec.get("color", "70,130,220,220")
+            if spec.get("tipo_geom") == "area":
+                simbolo = QgsFillSymbol.createSimple({
+                    "color": color, "outline_color": "40,80,150,255", "outline_width": "0.3",
+                })
+            else:
+                simbolo = QgsLineSymbol.createSimple({"color": color, "line_width": "0.6"})
+            c.setRenderer(QgsSingleSymbolRenderer(simbolo))
+            project.addMapLayer(c, False)
+            grupo_mia.insertLayer(0, c)
+            capas_extra_obj.append(c)
+
         # ── j. Configurar map_item ────────────────────────────────────────────
         usar_punto      = cfg_capa.get("marcador", "poligono") == "punto"
         capa_referencia = punto_layer if usar_punto else poly_layer
@@ -488,6 +700,7 @@ def generar_composiciones(cfg: dict) -> None:
             r for r in [
                 _ref(capa_referencia),
                 _ref(capa_centroides),
+                *[_ref(c) for c in capas_extra_obj],
                 _ref(capa_recortada),
             ] if r
         ]
@@ -503,7 +716,7 @@ def generar_composiciones(cfg: dict) -> None:
 
         reenlazar_barra_escala(nueva_comp, map_item, log)
         configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 500), log)
-        actualizar_leyenda(nueva_comp, ids, capa_recortada, poly_layer)
+        actualizar_leyenda(nueva_comp, ids, capa_recortada, *capas_extra_obj, poly_layer)
         _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
         nueva_comp.refresh()
 

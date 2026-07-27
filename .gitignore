@@ -15,3 +15,5 @@ __pycache__/
 # ── Sistema ──
 .DS_Store
 Thumbs.db
+cache_rutas/
+cache/
