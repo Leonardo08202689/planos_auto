@@ -7,8 +7,10 @@ from qgis.core import (
     QgsCoordinateTransform,
     QgsDataSourceUri,
     QgsFeature,
+    QgsFeatureRequest,
     QgsGeometry,
     QgsField,
+    QgsProcessingContext,
     QgsProject,
     QgsVectorLayer,
     QgsWkbTypes,
@@ -116,26 +118,19 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
     return capa_vertices
 
 
-def cargar_recortar_gpkg(ruta_gpkg: str, nombre_layer: str, crs_destino,
-                        extent_en_escala, log, margen: float = 0.02):
+def recortar_y_reproyectar(capa, crs_destino, extent_en_escala, log,
+                           margen: float = 0.02, nombre_log: str = "capa"):
     """
-    Carga una capa vectorial de un GeoPackage (u otra fuente OGR), la sanea,
-    reproyecta y recorta al extent dado.
+    Sanea, pre-filtra por bbox (índice espacial de origen), reproyecta y
+    recorta 'capa' (ya cargada, de cualquier proveedor) al extent dado.
 
-    Pensada para fuentes de referencia grandes (p. ej. cartografía topográfica
-    de INEGI que cubre todo un estado): el pre-filtro por bbox usa el índice
-    espacial del propio GDAL antes de sanear/reproyectar/recortar, igual que
-    el flujo de capas PostGIS en generar_planos.py.
+    Compartida por cargar_recortar_gpkg/cargar_recortar_shapefile y por las
+    capas PostGIS de figuras combinadas (varias tablas en una composición).
 
-    Retorna QgsVectorLayer recortado, o None si la capa no existe/es inválida
-    o no tiene features en el área de interés.
+    Retorna QgsVectorLayer recortado, o None si no hay features en el área
+    de interés.
     """
     import processing
-
-    capa = QgsVectorLayer(f"{ruta_gpkg}|layername={nombre_layer}", nombre_layer, "ogr")
-    if not capa.isValid():
-        log.warning(f" → Capa '{nombre_layer}' no válida en {ruta_gpkg}, se omite.")
-        return None
 
     crs_capa = capa.crs()
     if crs_capa.authid() != crs_destino.authid():
@@ -150,12 +145,16 @@ def cargar_recortar_gpkg(ruta_gpkg: str, nombre_layer: str, crs_destino,
         f"{rect_fuente.xMinimum()},{rect_fuente.xMaximum()},"
         f"{rect_fuente.yMinimum()},{rect_fuente.yMaximum()} [{crs_capa.authid()}]"
     )
+    # Geometrías inválidas en la fuente (p. ej. shapefiles de terceros) no deben
+    # abortar el pre-filtro; se omiten aquí y 'native:fixgeometries' corrige el resto.
+    context = QgsProcessingContext()
+    context.setInvalidGeometryCheck(QgsFeatureRequest.GeometrySkipInvalid)
     res_pre = processing.run("native:extractbyextent", {
         "INPUT": capa, "EXTENT": extent_str, "CLIP": False, "OUTPUT": "memory:",
-    })
+    }, context=context)
     candidatos = res_pre["OUTPUT"]
     if candidatos.featureCount() == 0:
-        log.info(f" → '{nombre_layer}': sin features en el área de interés.")
+        log.info(f" → '{nombre_log}': sin features en el área de interés.")
         return None
 
     res_fix = processing.run("native:fixgeometries", {
@@ -174,7 +173,51 @@ def cargar_recortar_gpkg(ruta_gpkg: str, nombre_layer: str, crs_destino,
         "INPUT": res_reproj["OUTPUT"], "OVERLAY": layer_extent, "OUTPUT": "memory:",
     })
     capa_recortada = res_clip["OUTPUT"]
-    capa_recortada.setName(nombre_layer)
-    log.info(f" → '{nombre_layer}': {capa_recortada.featureCount()} feature(s) recortado(s).")
+    log.info(f" → '{nombre_log}': {capa_recortada.featureCount()} feature(s) recortado(s).")
     return capa_recortada
-    return capa_vertices
+
+
+def cargar_recortar_gpkg(ruta_gpkg: str, nombre_layer: str, crs_destino,
+                        extent_en_escala, log, margen: float = 0.02):
+    """
+    Carga una capa de un GeoPackage por nombre, la recorta y reproyecta al
+    extent dado. Ver recortar_y_reproyectar() para el detalle del pre-filtro.
+
+    Pensada para fuentes de referencia grandes (p. ej. cartografía topográfica
+    de INEGI que cubre todo un estado), donde cargar el archivo completo sería
+    impráctico.
+
+    Retorna QgsVectorLayer recortado, o None si la capa no existe/es inválida
+    o no tiene features en el área de interés.
+    """
+    capa = QgsVectorLayer(f"{ruta_gpkg}|layername={nombre_layer}", nombre_layer, "ogr")
+    if not capa.isValid():
+        log.warning(f" → Capa '{nombre_layer}' no válida en {ruta_gpkg}, se omite.")
+        return None
+    capa_recortada = recortar_y_reproyectar(
+        capa, crs_destino, extent_en_escala, log, margen, nombre_log=nombre_layer
+    )
+    if capa_recortada:
+        capa_recortada.setName(nombre_layer)
+    return capa_recortada
+
+
+def cargar_recortar_shapefile(ruta_shp: str, crs_destino, extent_en_escala, log,
+                              margen: float = 0.02):
+    """
+    Carga un shapefile (u otra fuente OGR de una sola capa, sin 'layername'),
+    lo recorta y reproyecta al extent dado. Ver cargar_recortar_gpkg() para
+    fuentes tipo GeoPackage con varias capas nombradas.
+    """
+    import os as _os
+    nombre = _os.path.splitext(_os.path.basename(ruta_shp))[0]
+    capa = QgsVectorLayer(ruta_shp, nombre, "ogr")
+    if not capa.isValid():
+        log.warning(f" → Capa no válida: {ruta_shp}, se omite.")
+        return None
+    capa_recortada = recortar_y_reproyectar(
+        capa, crs_destino, extent_en_escala, log, margen, nombre_log=nombre
+    )
+    if capa_recortada:
+        capa_recortada.setName(nombre)
+    return capa_recortada

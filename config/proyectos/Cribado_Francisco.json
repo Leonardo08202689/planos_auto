@@ -1,10 +1,10 @@
 {
-  "nombre_proyecto": "Fletes Cribado",
+  "nombre_proyecto": "CRIBADO",
   "tipo_tramite": "LICENCIA AMBIENTAL INTEGRAL",
   "capa_poligono": "Área del Proyecto",
   "capas": [
     {
-      "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
+      "_grupo": "Planos (Plantilla_Corporativa)",
       "tabla_postgis": "suelos_edafologia_serie2",
       "nombre_plano": "PLANO. TIPOS DE SUELOS",
       "nombre_capa": "Tipo_de_Suelo",
@@ -97,15 +97,6 @@
       "fuente": "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k)."
     },
     {
-      "tipo": "vertices",
-      "nombre_plano": "PLANO. VÉRTICES DEL PROYECTO",
-      "nombre_capa": "Vertices_Proyecto",
-      "escala": 2000,
-      "opacidad": 1.0,
-      "grid_intervalo": 100,
-      "fuente": "Vértices del polígono del proyecto."
-    },
-    {
       "tipo": "raster",
       "ruta_raster": "/home/leonardo/QGIS/Mapa topografico Hermosillo/794551129623_t/26030.tif",
       "nombre_plano": "PLANO. LOCALIZACIÓN",
@@ -143,118 +134,6 @@
         ]
       },
       "fuente": "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III. Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
-    },
-    {
-      "_grupo": "Figuras (Plantilla_figuras)",
-      "tabla_postgis": "poet_sonora",
-      "nombre_plano": "FIGURA. PROGRAMA DE ORDENAMIENTO ECOLÓGICO TERRITORIAL DE SONORA",
-      "nombre_capa": "POET",
-      "titulo_capa": "Unidad de Gestión Ambiental",
-      "escala": 10000,
-      "campo_categoria": "uga",
-      "campo_legenda_extra": "clave",
-      "campo_etiqueta_expresion": "concat(\"uga\", ', ', \"clave\")",
-      "grid_intervalo": 2500,
-      "layout_nombre": "Plantilla_figuras",
-      "sin_bbox_filter": true,
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
-    },
-    {
-      "tabla_postgis": "aica_nacional",
-      "nombre_plano": "FIGURA. ÁREAS DE IMPORTANCIA PARA LA CONSERVACIÓN DE AVES",
-      "nombre_capa": "AICA",
-      "escala": 1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta": "nombre",
-      "paleta": "conservacion",
-      "grid_intervalo": 50000,
-      "sin_bbox_filter": true,
-      "layout_nombre": "Plantilla_figuras",
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
-    },
-    {
-      "tabla_postgis": "anp_estatales",
-      "nombre_plano": "FIGURA. ÁREAS NATURALES PROTEGIDAS ESTATALES",
-      "nombre_capa": "ANP_Estatales",
-      "escala": 2000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta": "nombre",
-      "paleta": "conservacion",
-      "grid_intervalo": 100000,
-      "layout_nombre": "Plantilla_figuras",
-      "sin_bbox_filter": true,
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Comisión de Ecología y Desarrollo Sustentable del Estado de Sonora (CEDES)."
-    },
-    {
-      "tabla_postgis": "regiones_hidrologicas_prioritarias",
-      "nombre_plano": "FIGURA. REGIONES HIDROLÓGICAS PRIORITARIAS",
-      "nombre_capa": "RHP",
-      "escala": 1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta": "nombre",
-      "paleta": "agua",
-      "grid_intervalo": 50000,
-      "sin_bbox_filter": true,
-      "layout_nombre": "Plantilla_figuras",
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
-    },
-    {
-      "tabla_postgis": "regiones_terrestres_prioritarias",
-      "nombre_plano": "FIGURA. REGIONES TERRESTRES PRIORITARIAS",
-      "nombre_capa": "RTP",
-      "escala": 1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta": "nombre",
-      "paleta": "conservacion",
-      "grid_intervalo": 50000,
-      "layout_nombre": "Plantilla_figuras",
-      "sin_bbox_filter": true,
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
-    },
-    {
-      "tabla_postgis": "uab_nacional",
-      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO EN REFERENCIA A LAS UNIDADES AMBIENTALES BIOFÍSICAS",
-      "nombre_capa": "UAB",
-      "escala": 1000000,
-      "campo_categoria": "nom",
-      "campo_etiqueta": "nom",
-      "paleta": "geologia",
-      "grid_intervalo": 50000,
-      "marcador": "punto",
-      "sin_bbox_filter": true,
-      "layout_nombre": "Plantilla_figuras",
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT."
-    },
-    {
-      "tipo": "rutas_acceso",
-      "ruta_gpkg": "/home/leonardo/Codigos/Rutas/MiProyecto_rutas_acceso.gpkg",
-      "nombre_plano": "FIGURA. RUTAS DE ACCESO",
-      "nombre_capa": "Rutas_Acceso",
-      "escala": 40000,
-      "grid_intervalo": 2500,
-      "layout_nombre": "Plantilla_figuras",
-      "ids_override": {
-        "mapa": "mapa_principal"
-      },
-      "fuente": "Rutas de acceso generadas a partir de la red vial (OpenStreetMap)."
     },
     {
       "tipo": "capas_combinadas",
@@ -317,6 +196,54 @@
         }
       ],
       "fuente": "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_figuras)",
+      "tabla_postgis": "poet_sonora",
+      "nombre_plano": "FIGURA. PROGRAMA DE ORDENAMIENTO ECOLÓGICO TERRITORIAL DE SONORA",
+      "nombre_capa": "POET",
+      "titulo_capa": "Unidad de Gestión Ambiental",
+      "escala": 10000,
+      "campo_categoria": "uga",
+      "campo_legenda_extra": "clave",
+      "campo_etiqueta_expresion": "concat(\"uga\", ', ', \"clave\")",
+      "grid_intervalo": 2500,
+      "layout_nombre": "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
+    },
+    {
+      "tabla_postgis": "uab_nacional",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO EN REFERENCIA A LAS UNIDADES AMBIENTALES BIOFÍSICAS",
+      "nombre_capa": "UAB",
+      "escala": 1000000,
+      "campo_categoria": "nom",
+      "campo_etiqueta": "nom",
+      "paleta": "geologia",
+      "grid_intervalo": 50000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "layout_nombre": "Plantilla_figuras",
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT."
+    },
+    {
+      "tipo": "rutas_acceso",
+      "ruta_gpkg": "/home/leonardo/Codigos/Rutas/MiProyecto_rutas_acceso.gpkg",
+      "nombre_plano": "FIGURA. VÍAS DE ACCESO AL SITIO",
+      "nombre_capa": "Rutas_Acceso",
+      "escala": 40000,
+      "grid_intervalo": 2500,
+      "layout_nombre": "Plantilla_figuras",
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Rutas de acceso generadas a partir de la red vial (OpenStreetMap)."
     }
   ],
   "defaults_capa": {

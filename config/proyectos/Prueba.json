@@ -6,7 +6,7 @@
     {
       "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
       "tabla_postgis": "suelos_edafologia_serie2",
-      "nombre_plano": "Plano. Tipos de Suelos",
+      "nombre_plano": "PLANO. TIPOS DE SUELOS",
       "nombre_capa": "Tipo_de_Suelo",
       "escala": 5000,
       "tipo_geom": "MultiPolygon",
@@ -18,7 +18,7 @@
     },
     {
       "tabla_postgis": "Geologia",
-      "nombre_plano": "Plano. Tipos de Roca",
+      "nombre_plano": "PLANO. TIPOS DE ROCA",
       "nombre_capa": "Tipos_de_Roca",
       "escala": 5000,
       "key": "id",
@@ -29,7 +29,7 @@
     },
     {
       "tabla_postgis": "Clima",
-      "nombre_plano": "Plano. Tipos de Clima",
+      "nombre_plano": "PLANO. TIPOS DE CLIMA",
       "nombre_capa": "Clima",
       "escala": 5000,
       "key": "id",
@@ -40,7 +40,7 @@
     },
     {
       "tabla_postgis": "Vegetacion",
-      "nombre_plano": "Plano. Tipo de Vegetación",
+      "nombre_plano": "PLANO. TIPO DE VEGETACIÓN",
       "nombre_capa": "Vegetacion",
       "escala": 5000,
       "campo_categoria": "descripcio",
@@ -50,7 +50,7 @@
     },
     {
       "tabla_postgis": "hidrologia_superficial",
-      "nombre_plano": "Plano. Hidrología Superficial",
+      "nombre_plano": "PLANO. HIDROLOGÍA SUPERFICIAL",
       "nombre_capa": "Hidrologia_Superficial",
       "escala": 35000,
       "campo_categoria": "subcuenca",
@@ -73,7 +73,7 @@
     },
     {
       "tipo": "vertices",
-      "nombre_plano": "Plano. Plano de Vértices",
+      "nombre_plano": "PLANO. VÉRTICES DEL PROYECTO",
       "nombre_capa": "Vertices_Proyecto",
       "escala": 2000,
       "opacidad": 1.0,
@@ -83,11 +83,13 @@
     {
       "_grupo": "Figuras (Plantilla_figuras)",
       "tabla_postgis": "poet_sonora",
-      "nombre_plano": "Figura. POET Sonora",
+      "nombre_plano": "FIGURA. PROGRAMA DE ORDENAMIENTO ECOLÓGICO TERRITORIAL DE SONORA",
       "nombre_capa": "POET",
-      "escala": 50000,
+      "titulo_capa": "Unidad de Gestión Ambiental",
+      "escala": 10000,
       "campo_categoria": "uga",
-      "campo_etiqueta": "uga",
+      "campo_legenda_extra": "clave",
+      "campo_etiqueta_expresion": "concat(\"uga\", ', ', \"clave\")",
       "grid_intervalo": 2500,
       "layout_nombre": "Plantilla_figuras",
       "sin_bbox_filter": true,
@@ -98,13 +100,14 @@
     },
     {
       "tabla_postgis": "aica_nacional",
-      "nombre_plano": "Figura. Áreas de Importancia para la Conservación de Aves",
+      "nombre_plano": "FIGURA. ÁREAS DE IMPORTANCIA PARA LA CONSERVACIÓN DE AVES",
       "nombre_capa": "AICA",
       "escala": 1000000,
       "campo_categoria": "nombre",
       "campo_etiqueta": "nombre",
       "paleta": "conservacion",
       "grid_intervalo": 50000,
+      "sin_bbox_filter": true,
       "layout_nombre": "Plantilla_figuras",
       "ids_override": {
         "mapa": "mapa_principal"
@@ -113,7 +116,7 @@
     },
     {
       "tabla_postgis": "anp_estatales",
-      "nombre_plano": "Figura. Áreas Naturales Protegidas Estatales",
+      "nombre_plano": "FIGURA. ÁREAS NATURALES PROTEGIDAS ESTATALES",
       "nombre_capa": "ANP_Estatales",
       "escala": 2000000,
       "campo_categoria": "nombre",
@@ -129,12 +132,14 @@
     },
     {
       "tabla_postgis": "regiones_hidrologicas_prioritarias",
-      "nombre_plano": "Figura. Regiones Hidrológicas Prioritarias",
+      "nombre_plano": "FIGURA. REGIONES HIDROLÓGICAS PRIORITARIAS",
       "nombre_capa": "RHP",
-      "escala": 10000,
+      "escala": 1000000,
       "campo_categoria": "nombre",
       "campo_etiqueta": "nombre",
       "paleta": "agua",
+      "grid_intervalo": 50000,
+      "sin_bbox_filter": true,
       "layout_nombre": "Plantilla_figuras",
       "ids_override": {
         "mapa": "mapa_principal"
@@ -143,7 +148,7 @@
     },
     {
       "tabla_postgis": "regiones_terrestres_prioritarias",
-      "nombre_plano": "Figura. Regiones Terrestres Prioritarias",
+      "nombre_plano": "FIGURA. REGIONES TERRESTRES PRIORITARIAS",
       "nombre_capa": "RTP",
       "escala": 1000000,
       "campo_categoria": "nombre",
@@ -156,6 +161,41 @@
         "mapa": "mapa_principal"
       },
       "fuente": "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
+    },
+    {
+      "tabla_postgis": "uab_nacional",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO EN REFERENCIA A LAS UNIDADES AMBIENTALES BIOFÍSICAS",
+      "nombre_capa": "UAB",
+      "escala": 1000000,
+      "campo_categoria": "nom",
+      "campo_etiqueta": "nom",
+      "paleta": "geologia",
+      "grid_intervalo": 50000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "layout_nombre": "Plantilla_figuras",
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT."
+    },
+    {
+      "tipo": "capas_combinadas",
+      "nombre_plano": "PLANO. ÁREAS NATURALES PROTEGIDAS",
+      "nombre_capa": "ANP_Conjunto",
+      "escala": 1650000,
+      "grid_intervalo": 50000,
+      "marcador": "punto",
+      "capas_postgis": [
+        {"tabla_postgis": "anp_estatales", "nombre": "ANP Estatal", "sin_bbox_filter": true, "color": "40,160,70,220", "color_borde": "20,100,40,255", "patron": "cross", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "aica_nacional", "nombre": "AICA", "sin_bbox_filter": true, "color": "235,190,20,220", "color_borde": "150,110,10,255", "patron": "b_diagonal", "estilo_borde": "dash", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "regiones_terrestres_prioritarias", "nombre": "RTP", "sin_bbox_filter": true, "color": "230,120,30,220", "color_borde": "150,70,10,255", "patron": "f_diagonal", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"}
+      ],
+      "capas_shapefile": [
+        {"ruta": "/home/leonardo/QGIS/ANP Federales/232-ANP_ITRF08_19162026/232-ANP_ITRF08_19162026.shp", "nombre": "ANP Federal", "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "NOMBRE"}
+      ],
+      "fuente": "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
     }
   ],
   "defaults_capa": {

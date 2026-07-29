@@ -30,9 +30,14 @@
     "campo_cvegeo_mun":   "cvegeo",
 
     "mapitas_layout": {
-      "Mapa 2": { "nivel": "nacional"  },
-      "Mapa 3": { "nivel": "estatal"   },
-      "Mapa 4": { "nivel": "municipal" }
+      "Plantilla_Corporativa": {
+        "Mapa 2": { "nivel": "nacional"  },
+        "Mapa 3": { "nivel": "estatal"   },
+        "Mapa 4": { "nivel": "municipal" }
+      },
+      "Plantilla_figuras": {
+        "Mapa 2": { "nivel": "estatal" }
+      }
     }
   }
 }

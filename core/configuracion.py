@@ -42,10 +42,11 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) "
                 f"no define 'nombre_capa'."
             )
-        es_vertices = capa.get("tipo") == "vertices"
-        es_raster   = capa.get("tipo") == "raster"
-        es_rutas    = capa.get("tipo") == "rutas_acceso"
-        de_proyecto = capa.get("origen") == "proyecto"
+        es_vertices  = capa.get("tipo") == "vertices"
+        es_raster    = capa.get("tipo") == "raster"
+        es_rutas     = capa.get("tipo") == "rutas_acceso"
+        es_combinada = capa.get("tipo") == "capas_combinadas"
+        de_proyecto  = capa.get("origen") == "proyecto"
         if es_raster and not capa.get("ruta_raster"):
             raise ValueError(
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='raster' "
@@ -57,12 +58,17 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
                 f"pero no define 'ruta_gpkg' (debe generarse aparte con "
                 f"herramientas/rutas_cli.py; ya no se calcula en vivo)."
             )
-        if (not es_vertices and not es_raster and not es_rutas
+        if es_combinada and not capa.get("capas_postgis") and not capa.get("capas_shapefile"):
+            raise ValueError(
+                f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='capas_combinadas' "
+                f"pero no define 'capas_postgis' ni 'capas_shapefile'."
+            )
+        if (not es_vertices and not es_raster and not es_rutas and not es_combinada
                 and not de_proyecto and not capa.get("tabla_postgis")):
             raise ValueError(
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) no define "
-                f"'tabla_postgis' (ni es tipo='vertices'/'raster'/'rutas_acceso' "
-                f"u origen='proyecto')."
+                f"'tabla_postgis' (ni es tipo='vertices'/'raster'/'rutas_acceso'/"
+                f"'capas_combinadas' u origen='proyecto')."
             )
 
 

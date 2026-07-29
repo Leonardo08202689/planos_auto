@@ -118,7 +118,10 @@ def actualizar_leyenda(layout_comp, ids: dict, *capas) -> None:
     root.removeAllChildren()
     for capa in capas:
         if capa:
-            root.addLayer(capa)
+            nodo = root.addLayer(capa)
+            nombre_custom = capa.customProperty("nombre_leyenda")
+            if nombre_custom:
+                nodo.setName(nombre_custom)
     leyenda.adjustBoxSize()
     leyenda.refresh()
 

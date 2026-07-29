@@ -1,7 +1,7 @@
 {
-  "_comentario": "Proyecto plantilla base: lista completa de planos para clonar en proyectos nuevos (origen: SONITRONIES — CONCISE).",
-  "nombre_proyecto": "SONITRONIES S DE RL DE CV DEPARTAMENTO CONCISE",
-  "tipo_tramite":    "Licencia Ambiental Integral",
+  "_comentario": "Plantilla LAI: subconjunto curado de planos y figuras para trámites de Licencia Ambiental Integral. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "nombre_proyecto": "NOMBRE DEL PROYECTO",
+  "tipo_tramite":    "LICENCIA AMBIENTAL INTEGRAL",
   "capa_poligono":   "poligono_trabajo",
 
   "defaults_capa": {
@@ -15,7 +15,7 @@
 
   "capas": [
     {
-      "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
+      "_grupo": "Planos (Plantilla_Corporativa)",
       "tabla_postgis":   "suelos_edafologia_serie2",
       "nombre_plano":    "PLANO. TIPOS DE SUELOS",
       "nombre_capa":     "Tipo_de_Suelo",
@@ -83,15 +83,6 @@
       "fuente":          "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k)."
     },
     {
-      "tipo":           "vertices",
-      "nombre_plano":   "PLANO. VÉRTICES DEL PROYECTO",
-      "nombre_capa":    "Vertices_Proyecto",
-      "escala":         2000,
-      "opacidad":       1.0,
-      "grid_intervalo": 100,
-      "fuente":         "Vértices del polígono del proyecto."
-    },
-    {
       "tipo":           "raster",
       "ruta_raster":    "/home/leonardo/QGIS/Mapa topografico Hermosillo/794551129623_t/26030.tif",
       "nombre_plano":   "PLANO. LOCALIZACIÓN",
@@ -111,7 +102,24 @@
       },
       "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III. Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
     },
-
+    {
+      "tipo":           "capas_combinadas",
+      "nombre_plano":   "PLANO. ÁREAS NATURALES PROTEGIDAS",
+      "nombre_capa":    "ANP_Conjunto",
+      "escala":         1650000,
+      "grid_intervalo": 50000,
+      "marcador":       "punto",
+      "capas_postgis": [
+        {"tabla_postgis": "anp_estatales", "nombre": "ANP Estatal", "sin_bbox_filter": true, "color": "40,160,70,220", "color_borde": "20,100,40,255", "patron": "cross", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "aica_nacional", "nombre": "AICA", "sin_bbox_filter": true, "color": "235,190,20,220", "color_borde": "150,110,10,255", "patron": "b_diagonal", "estilo_borde": "dash", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "regiones_terrestres_prioritarias", "nombre": "RTP", "sin_bbox_filter": true, "color": "230,120,30,220", "color_borde": "150,70,10,255", "patron": "f_diagonal", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"}
+      ],
+      "capas_shapefile": [
+        {"ruta": "/home/leonardo/QGIS/ANP Federales/232-ANP_ITRF08_19162026/232-ANP_ITRF08_19162026.shp", "nombre": "ANP Federal", "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "NOMBRE"}
+      ],
+      "fuente":         "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
+    },
     {
       "_grupo": "Figuras (Plantilla_figuras)",
       "tabla_postgis":   "poet_sonora",
@@ -127,62 +135,6 @@
       "sin_bbox_filter": true,
       "ids_override":    {"mapa": "mapa_principal"},
       "fuente":          "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
-    },
-    {
-      "tabla_postgis":   "aica_nacional",
-      "nombre_plano":    "FIGURA. ÁREAS DE IMPORTANCIA PARA LA CONSERVACIÓN DE AVES",
-      "nombre_capa":     "AICA",
-      "escala":          1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta":  "nombre",
-      "paleta":          "conservacion",
-      "grid_intervalo":  50000,
-      "sin_bbox_filter": true,
-      "layout_nombre":   "Plantilla_figuras",
-      "ids_override":    {"mapa": "mapa_principal"},
-      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
-    },
-    {
-      "tabla_postgis":   "anp_estatales",
-      "nombre_plano":    "FIGURA. ÁREAS NATURALES PROTEGIDAS ESTATALES",
-      "nombre_capa":     "ANP_Estatales",
-      "escala":          2000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta":  "nombre",
-      "paleta":          "conservacion",
-      "grid_intervalo":  100000,
-      "layout_nombre":   "Plantilla_figuras",
-      "sin_bbox_filter": true,
-      "ids_override":    {"mapa": "mapa_principal"},
-      "fuente":          "Comisión de Ecología y Desarrollo Sustentable del Estado de Sonora (CEDES)."
-    },
-    {
-      "tabla_postgis":   "regiones_hidrologicas_prioritarias",
-      "nombre_plano":    "FIGURA. REGIONES HIDROLÓGICAS PRIORITARIAS",
-      "nombre_capa":     "RHP",
-      "escala":          1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta":  "nombre",
-      "paleta":          "agua",
-      "grid_intervalo":  50000,
-      "sin_bbox_filter": true,
-      "layout_nombre":   "Plantilla_figuras",
-      "ids_override":    {"mapa": "mapa_principal"},
-      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
-    },
-    {
-      "tabla_postgis":   "regiones_terrestres_prioritarias",
-      "nombre_plano":    "FIGURA. REGIONES TERRESTRES PRIORITARIAS",
-      "nombre_capa":     "RTP",
-      "escala":          1000000,
-      "campo_categoria": "nombre",
-      "campo_etiqueta":  "nombre",
-      "paleta":          "conservacion",
-      "grid_intervalo":  50000,
-      "layout_nombre":   "Plantilla_figuras",
-      "sin_bbox_filter": true,
-      "ids_override":    {"mapa": "mapa_principal"},
-      "fuente":          "Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO)."
     },
     {
       "tabla_postgis":   "uab_nacional",
@@ -202,31 +154,13 @@
     {
       "tipo":           "rutas_acceso",
       "ruta_gpkg":       "/home/leonardo/Codigos/Rutas/MiProyecto_rutas_acceso.gpkg",
-      "nombre_plano":    "FIGURA. RUTAS DE ACCESO",
+      "nombre_plano":    "FIGURA. VÍAS DE ACCESO AL SITIO",
       "nombre_capa":     "Rutas_Acceso",
       "escala":          40000,
       "grid_intervalo":  2500,
       "layout_nombre":   "Plantilla_figuras",
       "ids_override":    {"mapa": "mapa_principal"},
       "fuente":          "Rutas de acceso generadas a partir de la red vial (OpenStreetMap)."
-    },
-    {
-      "tipo":           "capas_combinadas",
-      "nombre_plano":   "PLANO. ÁREAS NATURALES PROTEGIDAS",
-      "nombre_capa":    "ANP_Conjunto",
-      "escala":         1650000,
-      "grid_intervalo": 50000,
-      "marcador":       "punto",
-      "capas_postgis": [
-        {"tabla_postgis": "anp_estatales", "nombre": "ANP Estatal", "sin_bbox_filter": true, "color": "40,160,70,220", "color_borde": "20,100,40,255", "patron": "cross", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "aica_nacional", "nombre": "AICA", "sin_bbox_filter": true, "color": "235,190,20,220", "color_borde": "150,110,10,255", "patron": "b_diagonal", "estilo_borde": "dash", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "regiones_terrestres_prioritarias", "nombre": "RTP", "sin_bbox_filter": true, "color": "230,120,30,220", "color_borde": "150,70,10,255", "patron": "f_diagonal", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"}
-      ],
-      "capas_shapefile": [
-        {"ruta": "/home/leonardo/QGIS/ANP Federales/232-ANP_ITRF08_19162026/232-ANP_ITRF08_19162026.shp", "nombre": "ANP Federal", "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "NOMBRE"}
-      ],
-      "fuente":         "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
     }
   ]
 }

@@ -97,7 +97,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -198,7 +198,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -299,7 +299,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -400,7 +400,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Ubuntu Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -501,7 +501,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Ubuntu Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -602,7 +602,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -750,7 +750,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Ubuntu Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1094,7 +1094,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1195,7 +1195,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Ubuntu Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1296,7 +1296,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Ubuntu Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1397,7 +1397,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="10" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="10" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1498,7 +1498,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="10" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="10" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1599,7 +1599,7 @@
     <Option/>
    </customproperties>
   </LayoutObject>
-  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+  <text-style capitalization="0" fontWeight="75" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="8" fontStrikeout="0" namedStyle="Bold" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
    <families/>
    <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
    <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>
@@ -1930,7 +1930,7 @@
      <layerOpacity>1</layerOpacity>
      <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
       <DiagramCategory scaleDependency="Area" scaleBasedVisibility="0" labelPlacementMethod="XHeight" penWidth="0" backgroundColor="#ffffff" barWidth="5" diagramOrientation="Up" sizeScale="3x:0,0,0,0,0,0" penColor="#000000" minScaleDenominator="0" enabled="0" direction="0" width="15" height="15" lineSizeType="MM" sizeType="MM" rotationOffset="270" maxScaleDenominator="1e+08" opacity="1" showAxis="1" penAlpha="255" spacing="5" backgroundAlpha="255" spacingUnitScale="3x:0,0,0,0,0,0" minimumSize="0" spacingUnit="MM" lineSizeScale="3x:0,0,0,0,0,0">
-       <fontProperties style="" italic="0" bold="0" description="Ubuntu Sans,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
+       <fontProperties style="" italic="0" bold="0" description="Arial,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
        <axisSymbol>
         <symbol frame_rate="10" alpha="1" clip_to_extent="1" type="line" is_animated="0" force_rhr="0" name="">
          <data_defined_properties>
@@ -2406,7 +2406,7 @@ def my_form_open(dialog, layer, feature):
      <layerOpacity>1</layerOpacity>
      <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
       <DiagramCategory scaleDependency="Area" scaleBasedVisibility="0" labelPlacementMethod="XHeight" penWidth="0" backgroundColor="#ffffff" barWidth="5" diagramOrientation="Up" sizeScale="3x:0,0,0,0,0,0" penColor="#000000" minScaleDenominator="0" enabled="0" direction="0" width="15" height="15" lineSizeType="MM" sizeType="MM" rotationOffset="270" maxScaleDenominator="1e+08" opacity="1" showAxis="1" penAlpha="255" spacing="5" backgroundAlpha="255" spacingUnitScale="3x:0,0,0,0,0,0" minimumSize="0" spacingUnit="MM" lineSizeScale="3x:0,0,0,0,0,0">
-       <fontProperties style="" italic="0" bold="0" description="Ubuntu Sans,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
+       <fontProperties style="" italic="0" bold="0" description="Arial,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
        <attribute colorOpacity="1" color="#000000" field="" label=""/>
        <axisSymbol>
         <symbol frame_rate="10" alpha="1" clip_to_extent="1" type="line" is_animated="0" force_rhr="0" name="">
@@ -2965,7 +2965,7 @@ def my_form_open(dialog, layer, feature):
      <layerOpacity>1</layerOpacity>
      <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
       <DiagramCategory scaleDependency="Area" scaleBasedVisibility="0" labelPlacementMethod="XHeight" penWidth="0" backgroundColor="#ffffff" barWidth="5" diagramOrientation="Up" sizeScale="3x:0,0,0,0,0,0" penColor="#000000" minScaleDenominator="0" enabled="0" direction="0" width="15" height="15" lineSizeType="MM" sizeType="MM" rotationOffset="270" maxScaleDenominator="1e+08" opacity="1" showAxis="1" penAlpha="255" spacing="5" backgroundAlpha="255" spacingUnitScale="3x:0,0,0,0,0,0" minimumSize="0" spacingUnit="MM" lineSizeScale="3x:0,0,0,0,0,0">
-       <fontProperties style="" italic="0" bold="0" description="Ubuntu Sans,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
+       <fontProperties style="" italic="0" bold="0" description="Arial,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
        <axisSymbol>
         <symbol frame_rate="10" alpha="1" clip_to_extent="1" type="line" is_animated="0" force_rhr="0" name="">
          <data_defined_properties>
@@ -3381,7 +3381,7 @@ def my_form_open(dialog, layer, feature):
      <layerOpacity>1</layerOpacity>
      <SingleCategoryDiagramRenderer diagramType="Histogram" attributeLegend="1">
       <DiagramCategory scaleDependency="Area" scaleBasedVisibility="0" labelPlacementMethod="XHeight" penWidth="0" backgroundColor="#ffffff" barWidth="5" diagramOrientation="Up" sizeScale="3x:0,0,0,0,0,0" penColor="#000000" minScaleDenominator="0" enabled="0" direction="0" width="15" height="15" lineSizeType="MM" sizeType="MM" rotationOffset="270" maxScaleDenominator="1e+08" opacity="1" showAxis="1" penAlpha="255" spacing="5" backgroundAlpha="255" spacingUnitScale="3x:0,0,0,0,0,0" minimumSize="0" spacingUnit="MM" lineSizeScale="3x:0,0,0,0,0,0">
-       <fontProperties style="" italic="0" bold="0" description="Ubuntu Sans,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
+       <fontProperties style="" italic="0" bold="0" description="Arial,11,-1,5,50,0,0,0,0,0" strikethrough="0" underline="0"/>
        <attribute colorOpacity="1" color="#000000" field="" label=""/>
        <axisSymbol>
         <symbol frame_rate="10" alpha="1" clip_to_extent="1" type="line" is_animated="0" force_rhr="0" name="">
@@ -3643,19 +3643,19 @@ def my_form_open(dialog, layer, feature):
   </LayoutObject>
   <styles>
    <style alignment="1" indent="0" name="title" marginBottom="3.5">
-    <styleFont style="" italic="0" bold="1" description="Liberation Sans,15,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
+    <styleFont style="" italic="0" bold="1" description="Arial,15,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
    </style>
    <style marginTop="3" alignment="1" indent="0" name="group">
-    <styleFont style="" italic="0" bold="1" description="Liberation Sans,13,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
+    <styleFont style="" italic="0" bold="1" description="Arial,13,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
    </style>
    <style marginTop="3" alignment="1" indent="0" name="subgroup">
-    <styleFont style="" italic="0" bold="1" description="Liberation Sans,13,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
+    <styleFont style="" italic="0" bold="1" description="Arial,13,-1,5,75,0,0,0,0,0" underline="0" strikethrough="0"/>
    </style>
    <style marginTop="2.5" alignment="1" indent="0" name="symbol">
-    <styleFont style="" italic="0" bold="0" description="Ubuntu Sans,11,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0"/>
+    <styleFont style="" italic="0" bold="0" description="Arial,11,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0"/>
    </style>
    <style marginTop="2" marginLeft="2" alignment="4" indent="0" name="symbolLabel">
-    <styleFont style="" italic="0" bold="0" description="Liberation Sans,12,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0"/>
+    <styleFont style="" italic="0" bold="0" description="Arial,12,-1,5,50,0,0,0,0,0" underline="0" strikethrough="0"/>
    </style>
   </styles>
   <layer-tree-group>
@@ -3828,7 +3828,7 @@ def my_form_open(dialog, layer, feature):
     <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
     <geographicflag>false</geographicflag>
    </spatialrefsys>
-   <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Liberation Sans" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
+   <text-style capitalization="0" fontWeight="50" fontKerning="1" forcedItalic="0" fontItalic="0" forcedBold="0" fontSizeMapUnitScale="3x:0,0,0,0,0,0" textOpacity="1" multilineHeightUnit="Percentage" fontSize="7" fontStrikeout="0" namedStyle="Regular" allowHtml="0" fontLetterSpacing="0" blendMode="0" fontSizeUnit="Point" fontUnderline="0" fontWordSpacing="0" multilineHeight="1" fontFamily="Arial" previewBkgrdColor="255,255,255,255" textOrientation="horizontal" textColor="0,0,0,255">
     <families/>
     <text-buffer bufferBlendMode="0" bufferSizeUnits="MM" bufferOpacity="1" bufferNoFill="1" bufferSizeMapUnitScale="3x:0,0,0,0,0,0" bufferSize="1" bufferDraw="0" bufferJoinStyle="128" bufferColor="255,255,255,255"/>
     <text-mask maskJoinStyle="128" maskSizeMapUnitScale="3x:0,0,0,0,0,0" maskedSymbolLayers="" maskEnabled="0" maskOpacity="1" maskType="0" maskSize="1.5" maskSizeUnits="MM"/>

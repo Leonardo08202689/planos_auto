@@ -213,15 +213,24 @@ def preparar_capas_referencia(centroid_geom, crs_proyecto, pg: dict,
 # ---------------------------------------------------------------------------
 
 def configurar_mapitas(layout_comp, id_principal: str,
-                        cfg_mapitas: dict, capas_ref: dict, log) -> None:
+                        cfg_mapitas: dict, capas_ref: dict, log,
+                        layout_nombre: str = "") -> None:
     """
     Asigna capas y extents a los mapitas de referencia de 'layout_comp'.
     Llama preparar_capas_referencia() una vez antes del loop y pasa el resultado.
+
+    'mapitas_layout' en la config puede definirse por plantilla (clave = nombre
+    de la plantilla, p. ej. "Plantilla_figuras") o de forma plana (id de ítem
+    → nivel) para todas las plantillas; se prioriza la definición específica.
     """
     if not capas_ref or not cfg_mapitas:
         return
 
-    layout_map = cfg_mapitas.get("mapitas_layout", {})
+    layout_map_todo = cfg_mapitas.get("mapitas_layout", {})
+    if layout_nombre in layout_map_todo:
+        layout_map = layout_map_todo[layout_nombre]
+    else:
+        layout_map = layout_map_todo
     crs_ref    = QgsCoordinateReferenceSystem(CRS_REF)
 
     for item in layout_comp.items():
