@@ -186,17 +186,16 @@
           "patron": "horizontal",
           "estilo_borde": "dash_dot",
           "campo_etiqueta": "nombre"
-        }
-      ],
-      "capas_shapefile": [
+        },
         {
-          "ruta": "/home/leonardo/QGIS/ANP Federales/232-ANP_ITRF08_19162026/232-ANP_ITRF08_19162026.shp",
+          "tabla_postgis": "anp_federales",
           "nombre": "ANP Federal",
+          "sin_bbox_filter": true,
           "color": "160,50,160,220",
           "color_borde": "90,20,90,255",
           "patron": "vertical",
           "estilo_borde": "dash",
-          "campo_etiqueta": "NOMBRE"
+          "campo_etiqueta": "nombre"
         }
       ],
       "fuente": "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."

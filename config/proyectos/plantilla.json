@@ -227,10 +227,8 @@
         {"tabla_postgis": "anp_estatales", "nombre": "ANP Estatal", "sin_bbox_filter": true, "color": "40,160,70,220", "color_borde": "20,100,40,255", "patron": "cross", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
         {"tabla_postgis": "aica_nacional", "nombre": "AICA", "sin_bbox_filter": true, "color": "235,190,20,220", "color_borde": "150,110,10,255", "patron": "b_diagonal", "estilo_borde": "dash", "campo_etiqueta": "nombre"},
         {"tabla_postgis": "regiones_terrestres_prioritarias", "nombre": "RTP", "sin_bbox_filter": true, "color": "230,120,30,220", "color_borde": "150,70,10,255", "patron": "f_diagonal", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"}
-      ],
-      "capas_shapefile": [
-        {"ruta": "/home/leonardo/QGIS/ANP Federales/232-ANP_ITRF08_19162026/232-ANP_ITRF08_19162026.shp", "nombre": "ANP Federal", "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "NOMBRE"}
+        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"},
+        {"tabla_postgis": "anp_federales", "nombre": "ANP Federal", "sin_bbox_filter": true, "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "nombre"}
       ],
       "fuente":         "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
     }

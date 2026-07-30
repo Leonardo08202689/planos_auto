@@ -168,6 +168,63 @@ OUTPUT_BASE=/ruta/a/planos_salida
 LOGO_RUTA=/ruta/al/logo.jpg   # opcional, usa assets/logo_sinergia.jpg por defecto
 ```
 
+## Acceso remoto a la base de datos (otras computadoras)
+
+La base de datos (PostgreSQL/PostGIS) vive en la máquina de Leonardo. Para que otra
+computadora (en otra oficina, no en la misma red) se conecte, se usa
+[Tailscale](https://tailscale.com) (VPN gratuita, cifrada, no requiere abrir puertos
+al internet público) en vez de exponer el puerto 5432 directamente.
+
+**Configuración del lado del servidor** (ya hecha, documentado para referencia):
+
+- Tailscale instalado en la máquina con la base de datos; su IP de Tailscale se
+  obtiene con `tailscale ip -4`.
+- `postgresql.conf` → `listen_addresses` incluye esa IP de Tailscale (además de
+  `localhost`), no `'*'`.
+- `pg_hba.conf` → una regla `host gis_empresa <rol> 100.64.0.0/10 scram-sha-256`
+  por cada rol autorizado (100.64.0.0/10 es el rango interno de Tailscale).
+- Dos roles en la base:
+  - `qgis_user` — lectura y escritura (para administradores).
+  - `planos_lector` — solo lectura (`GRANT SELECT`, sin permisos de escritura;
+    incluye `ALTER DEFAULT PRIVILEGES` para que las tablas nuevas que se suban
+    después también queden visibles automáticamente).
+
+**Para dar acceso a un colega nuevo:**
+
+1. Compartir la máquina servidor desde el panel de Tailscale
+   (https://login.tailscale.com/admin/machines → menú de la máquina → **Share**)
+   con el correo del colega. Él necesita su propia cuenta de Tailscale (gratis).
+2. El colega instala Tailscale en su computadora y acepta la invitación.
+3. El colega clona este repo, instala QGIS + el plugin (ver sección de arriba) y
+   crea su propio `.env`:
+
+   ```
+   PG_HOST=<IP de Tailscale del servidor, ej. 100.77.90.48>
+   PG_PORT=5432
+   PG_DBNAME=gis_empresa
+   PG_SCHEMA=proyectos
+   PG_USER=planos_lector          # o qgis_user si es administrador
+   PG_PASSWORD=<la contraseña correspondiente a ese rol>
+   OUTPUT_BASE=/ruta/local/de/esa/computadora
+   ```
+
+La contraseña de cada rol se comparte por un canal aparte (no por este repo ni
+por el `.env`, que nunca se sube a Git).
+
+⚠️ **Pendiente:** dos planos siguen dependiendo de archivos locales que solo
+existen en la máquina de Leonardo, y por diseño (ver sección "Todas las capas
+viven en PostGIS") no se migran a PostGIS porque no son datos temáticos fijos:
+
+- `PLANO. LOCALIZACIÓN` — el ráster topográfico (`ruta_raster`).
+- `PLANO. HIDROLOGÍA SUPERFICIAL` / `PLANO. LOCALIZACIÓN` — el GeoPackage
+  `cnit50k.gpkg` de vías/ríos/canales usado como `capas_extra`.
+- `FIGURA. RUTAS DE ACCESO` — su GeoPackage se genera por proyecto con
+  `herramientas/rutas_cli.py`, no es un dato de referencia fijo.
+
+Esos planos no van a funcionar todavía en otra computadora sin copiar esos
+archivos ahí. (El shapefile de ANP Federal ya se migró a PostGIS —
+`proyectos.anp_federales` — y funciona igual que sus tablas hermanas.)
+
 ## Agregar una nueva capa a un proyecto
 
 En el JSON del proyecto añade un objeto al array `"capas"`:
