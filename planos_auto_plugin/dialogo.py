@@ -58,6 +58,15 @@ class DialogoPlanos(QDialog):
         self.setWindowTitle("Planos Auto — Generador")
         self.resize(700, 640)
         self._construir_ui()
+        if not os.path.exists(os.path.join(base, ".env")):
+            QMessageBox.information(
+                self, "Planos Auto",
+                "Antes de generar planos necesitas configurar la conexión "
+                "al servidor de mapas. Pide los datos a tu administrador."
+            )
+            self._configurar_conexion()
+        else:
+            self._verificar_conexion()
         self._cargar_proyectos()
 
     # ── UI ────────────────────────────────────────────────────────────────────
@@ -93,6 +102,13 @@ class DialogoPlanos(QDialog):
         fila_opts.addWidget(btn_todas)
         fila_opts.addWidget(btn_ninguna)
         fila_opts.addStretch()
+        self.led_conexion = QLabel("●")
+        self.led_conexion.setStyleSheet("color: grey; font-size: 16px;")
+        self.led_conexion.setToolTip("Verificando conexión…")
+        fila_opts.addWidget(self.led_conexion)
+        btn_conexion = QPushButton("Conexión…")
+        btn_conexion.clicked.connect(self._configurar_conexion)
+        fila_opts.addWidget(btn_conexion)
         fila_opts.addWidget(QLabel("DPI:"))
         self.spin_dpi = QSpinBox()
         self.spin_dpi.setRange(72, 600)
@@ -133,6 +149,37 @@ class DialogoPlanos(QDialog):
                 f"No hay proyectos en:\n{carpeta}",
             )
         self._cargar_capas(self.combo_proyecto.currentText())
+
+    def _configurar_conexion(self):
+        from .configurar_conexion import DialogoConexion
+
+        DialogoConexion(self.base, parent=self).exec_()
+        self._verificar_conexion()
+
+    def _verificar_conexion(self):
+        from core.utils import leer_env
+
+        env = leer_env(os.path.join(self.base, ".env"))
+        ok = False
+        if env.get("PG_HOST"):
+            try:
+                import psycopg2
+                conn = psycopg2.connect(
+                    host=env.get("PG_HOST", ""),
+                    port=env.get("PG_PORT", "5432"),
+                    dbname=env.get("PG_DBNAME", ""),
+                    user=env.get("PG_USER", ""),
+                    password=env.get("PG_PASSWORD", ""),
+                    connect_timeout=3,
+                )
+                conn.close()
+                ok = True
+            except Exception:
+                ok = False
+        color = "#2ecc71" if ok else "#e74c3c"  # verde / rojo
+        texto = "Conectado a la base de datos" if ok else "Sin conexión a la base de datos"
+        self.led_conexion.setStyleSheet(f"color: {color}; font-size: 16px;")
+        self.led_conexion.setToolTip(texto)
 
     def _nuevo_proyecto(self):
         from .editor_proyecto import DialogoProyecto

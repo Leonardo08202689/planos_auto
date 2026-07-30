@@ -34,7 +34,7 @@ Planos_auto/
 │   └── proyectos/                 ← Un .json por proyecto (nombre de archivo = identificador)
 │       ├── plantilla.json         ← Plantilla base (todos los planos/figuras disponibles)
 │       ├── Plantilla_LAI.json     ← Plantilla curada para trámites de Licencia Ambiental Integral
-│       └── *.json                 ← Proyectos reales, uno por trámite
+│       └── *.json                 ← Proyectos reales, uno por trámite (NO se suben a Git, ver abajo)
 ├── plantillas/
 │   ├── Plantilla_Corporativa.qpt  ← Layout de "Plano" (3 insertos: nacional/estatal/municipal)
 │   └── Plantilla_figuras.qpt      ← Layout de "Figura" (1 inserto de localización)
@@ -71,17 +71,34 @@ como `capas_extra` o en `rutas_acceso` — esos sí son intrínsecamente archivo
 
 ## Uso con interfaz gráfica (plugin de QGIS)
 
-Instalación (una sola vez):
+### Instalación para un colega (sin usar terminal)
 
-```bash
-./instalar_plugin.sh
-```
+1. Instala QGIS (instalador normal, como cualquier programa) y ábrelo una
+   vez.
+2. Descarga el proyecto: en la página de GitHub del repo, botón verde
+   **"Code" → "Download ZIP"**, y descomprímelo donde quieras.
+3. Adentro de esa carpeta:
+   - **Windows:** doble clic en **`Instalar.bat`**.
+   - **Linux:** clic derecho en **`instalar_plugin.sh`** → **"Ejecutar"**
+     (o doble clic, según el gestor de archivos).
+4. En QGIS: **Complementos → Administrar e instalar complementos →
+   Instalados → activar "Planos Auto"** (marca "Mostrar también complementos
+   experimentales" si no aparece). Queda un botón en la barra de
+   herramientas.
+5. La primera vez que abras el plugin te va a pedir configurar la conexión
+   al servidor: dirección, si eres administrador, contraseña y carpeta
+   donde guardar los planos — todo con un formulario, sin editar ningún
+   archivo. Esos datos te los da quien administra el servidor (ver
+   "Acceso remoto a la base de datos" más abajo). Si necesitas cambiarlos
+   después, hay un botón **"Conexión…"** dentro del plugin.
 
-Luego en QGIS: **Complementos → Administrar e instalar complementos →
-Instalados → activar "Planos Auto"** (marca "Mostrar también complementos
-experimentales" si no aparece). Queda un botón en la barra de herramientas.
+(Instalación técnica equivalente por terminal, para quien prefiera `git
+clone` + `./instalar_plugin.sh` / `powershell -ExecutionPolicy Bypass -File
+.\instalar_plugin.ps1`: funciona igual, ambos scripts solo enlazan
+`planos_auto_plugin/` a la carpeta de plugins del perfil de QGIS sin copiar
+archivos, así que actualizar el repo actualiza el plugin al instante.)
 
-Flujo:
+Flujo de uso:
 
 1. Abre tu proyecto con la capa `poligono_trabajo` y **selecciona** el
    polígono en el mapa.
@@ -153,7 +170,19 @@ PROYECTO_ACTIVO = "nombre_proyecto"   # debe existir en config/proyectos/
 Luego crea `config/proyectos/nombre_proyecto.json` siguiendo la estructura
 de `plantilla.json`.
 
+**Los proyectos reales son personales de cada computadora**, no se comparten
+por Git (por confidencialidad de clientes) — solo `plantilla.json` y
+`Plantilla_LAI.json` vienen con el repo. Cada quien crea sus propios proyectos
+localmente (desde el plugin, botón **"Nuevo proyecto…"**, o copiando una
+plantilla a mano). Si necesitas pasarle un proyecto específico a un colega,
+comparte ese `.json` por fuera del repo (correo, carpeta compartida, etc.), no
+lo subas a Git.
+
 ## Variables de entorno (`.env`)
+
+Si usas el plugin, el botón **"Conexión…"** genera este archivo por ti (ver
+"Instalación para un colega" arriba) — no hace falta tocarlo a mano. Esta
+sección es para uso por consola o edición manual:
 
 Copia `.env.example` → `.env` y llena tus valores:
 
@@ -194,22 +223,21 @@ al internet público) en vez de exponer el puerto 5432 directamente.
 1. Compartir la máquina servidor desde el panel de Tailscale
    (https://login.tailscale.com/admin/machines → menú de la máquina → **Share**)
    con el correo del colega. Él necesita su propia cuenta de Tailscale (gratis).
-2. El colega instala Tailscale en su computadora y acepta la invitación.
-3. El colega clona este repo, instala QGIS + el plugin (ver sección de arriba) y
-   crea su propio `.env`:
+2. El colega instala Tailscale (instalador normal) en su computadora y acepta
+   la invitación.
+3. El colega instala QGIS + el plugin siguiendo "Instalación para un colega"
+   más arriba (descarga ZIP, doble clic en `Instalar.bat`/`instalar_plugin.sh`
+   — sin terminal). La primera vez que abra el plugin le va a pedir estos
+   datos en un formulario (botón **"Conexión…"**):
+   - **Dirección del servidor:** la IP de Tailscale, ej. `100.77.90.48`.
+   - **¿Es administrador?**: solo si va a poder editar la base de datos.
+   - **Contraseña:** la del rol que le corresponda (`qgis_user` si es
+     administrador, `planos_lector` si no).
+   - **Carpeta de salida:** donde se guardarán sus PNG, la elige con el
+     explorador de archivos.
 
-   ```
-   PG_HOST=<IP de Tailscale del servidor, ej. 100.77.90.48>
-   PG_PORT=5432
-   PG_DBNAME=gis_empresa
-   PG_SCHEMA=proyectos
-   PG_USER=planos_lector          # o qgis_user si es administrador
-   PG_PASSWORD=<la contraseña correspondiente a ese rol>
-   OUTPUT_BASE=/ruta/local/de/esa/computadora
-   ```
-
-La contraseña de cada rol se comparte por un canal aparte (no por este repo ni
-por el `.env`, que nunca se sube a Git).
+Esos datos (sobre todo la contraseña) se le pasan por un canal aparte —
+WhatsApp, correo, etc. — nunca por este repo.
 
 ⚠️ **Pendiente:** dos planos siguen dependiendo de archivos locales que solo
 existen en la máquina de Leonardo, y por diseño (ver sección "Todas las capas

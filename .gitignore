@@ -1,6 +1,11 @@
 # ── Credenciales (NUNCA subir a Git) ──
 .env
 
+# ── Proyectos reales (personales de cada quien; solo las plantillas se comparten) ──
+config/proyectos/*.json
+!config/proyectos/plantilla.json
+!config/proyectos/Plantilla_LAI.json
+
 # ── Salida generada ──
 salida/
 *.png
