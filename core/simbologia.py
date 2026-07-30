@@ -178,6 +178,50 @@ def aplicar_renderer_categorizado(
     return True
 
 
+def capa_legend_ubicacion_actual(capa, campo: str, punto_geom, log):
+    """
+    Clona el renderer categorizado de 'capa' dejando una sola categoría: la
+    que contiene 'punto_geom' (el centroide del proyecto). Se usa en capas de
+    zonificación regional (p. ej. Unidades Ambientales Biofísicas) donde el
+    mapa muestra varias regiones vecinas como contexto espacial, pero la
+    leyenda solo debe nombrar la región donde realmente está el proyecto, no
+    todas las que aparecen recortadas en el extent del mapa.
+    Retorna una capa nueva (clon) o None si no se pudo determinar la categoría.
+    """
+    renderer = capa.renderer()
+    if not isinstance(renderer, QgsCategorizedSymbolRenderer):
+        return None
+
+    idx = capa.fields().lookupField(campo)
+    if idx == -1:
+        return None
+
+    valor_actual = None
+    for f in capa.getFeatures():
+        geom = f.geometry()
+        if geom and not geom.isEmpty() and geom.contains(punto_geom):
+            valor_actual = f[idx]
+            break
+
+    if valor_actual is None:
+        log.warning(
+            f" → No se detectó en qué '{campo}' cae el proyecto; "
+            f"leyenda sin filtrar por ubicación."
+        )
+        return None
+
+    categoria = next((c for c in renderer.categories() if c.value() == valor_actual), None)
+    if not categoria:
+        return None
+
+    capa_leyenda = capa.clone()
+    capa_leyenda.setRenderer(QgsCategorizedSymbolRenderer(
+        campo, [QgsRendererCategory(categoria.value(), categoria.symbol().clone(), categoria.label())]
+    ))
+    log.info(f" ✓ Leyenda filtrada a la ubicación actual: '{categoria.label()}'")
+    return capa_leyenda
+
+
 def aplicar_opacidad_capa(capa, opacidad: float, log) -> None:
     capa.setOpacity(opacidad)
     capa.triggerRepaint()

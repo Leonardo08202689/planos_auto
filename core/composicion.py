@@ -15,6 +15,8 @@ from qgis.core import (
     QgsUnitTypes,
 )
 
+from .utils import segmento_barra_escala
+
 
 # ---------------------------------------------------------------------------
 # Carga de plantillas QPT
@@ -127,19 +129,26 @@ def actualizar_leyenda(layout_comp, ids: dict, *capas) -> None:
 
 
 def reenlazar_barra_escala(layout_comp, map_item, log, unidades_por_segmento=None) -> None:
+    # Sin valor explícito, se calcula un segmento acorde a la escala real del
+    # mapa (~2 cm de papel por segmento); el segmento fijo de la plantilla
+    # solo es válido para la escala con la que se diseñó el QPT.
+    if not unidades_por_segmento:
+        unidades_por_segmento = segmento_barra_escala(map_item.scale())
     n = 0
     for item in layout_comp.items():
         if isinstance(item, QgsLayoutItemScaleBar):
             item.setLinkedMap(map_item)
             item.setUnits(QgsUnitTypes.DistanceMeters)
             item.setUnitLabel("m")
-            if unidades_por_segmento:
-                item.setUnitsPerSegment(unidades_por_segmento)
+            item.setUnitsPerSegment(unidades_por_segmento)
             item.refreshItemSize()
             item.refresh()
             n += 1
     if n:
-        log.info(f" ✓ Barra(s) de escala re-enlazada(s): {n}")
+        log.info(
+            f" ✓ Barra(s) de escala re-enlazada(s): {n} "
+            f"({unidades_por_segmento:,.0f} m/segmento)"
+        )
     else:
         log.warning(" → No se encontró barra de escala.")
 

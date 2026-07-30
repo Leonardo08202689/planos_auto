@@ -18,23 +18,26 @@ Planos_auto/
 ├── instalar_plugin.sh             ← Enlaza el plugin al perfil de QGIS
 ├── planos_auto_plugin/            ← Interfaz gráfica (plugin de QGIS)
 │   ├── plugin.py                  ← Botón de barra + menú
-│   └── dialogo.py                 ← Diálogo: proyecto, planos, DPI, log
+│   ├── dialogo.py                 ← Diálogo: proyecto, planos, DPI, log
+│   └── editor_proyecto.py         ← Formulario de metadata/defaults del proyecto
 ├── core/
-│   ├── utils.py                   ← Paleta, env, logger, sanitizar
-│   ├── configuracion.py           ← Ensamblaje del CONFIG (global+proyecto+env)
-│   ├── capas.py                   ← Carga PostGIS, extracción de vértices
-│   ├── simbologia.py              ← Renderers, etiquetas PAL, opacidad
-│   ├── composicion.py             ← Layouts, leyenda, grid, logo, labels
+│   ├── utils.py                   ← Paletas, env, logger, sanitizar
+│   ├── configuracion.py           ← Ensamblaje del CONFIG (global+proyecto+env) y validación
+│   ├── capas.py                   ← Carga PostGIS, recorte/reproyección, extracción de vértices
+│   ├── mapitas.py                 ← Insertos de localización (nacional/estatal/municipal)
+│   ├── simbologia.py              ← Renderers, patrones de relleno, etiquetas PAL, opacidad
+│   ├── composicion.py             ← Layouts, leyenda, grid, logo, labels, barra de escala
 │   ├── exportar.py                ← Exportación a PNG
 │   └── reportes.py                ← Índice HTML
 ├── config/
-│   ├── global.json                ← IDs de layout, DPI, CRS
-│   └── proyectos/
-│       ├── plantilla.json         ← Proyecto plantilla (lista base de planos)
-│       └── Magna.json             ← Proyecto real
+│   ├── global.json                ← IDs de layout, DPI, CRS, config de mapitas
+│   └── proyectos/                 ← Un .json por proyecto (nombre de archivo = identificador)
+│       ├── plantilla.json         ← Plantilla base (todos los planos/figuras disponibles)
+│       ├── Plantilla_LAI.json     ← Plantilla curada para trámites de Licencia Ambiental Integral
+│       └── *.json                 ← Proyectos reales, uno por trámite
 ├── plantillas/
-│   ├── Plantilla_Corporativa.qpt
-│   └── Plantilla_figuras.qpt
+│   ├── Plantilla_Corporativa.qpt  ← Layout de "Plano" (3 insertos: nacional/estatal/municipal)
+│   └── Plantilla_figuras.qpt      ← Layout de "Figura" (1 inserto de localización)
 ├── estilos/                       ← Archivos QML por capa
 ├── assets/
 │   └── logo_sinergia.jpg
@@ -42,6 +45,29 @@ Planos_auto/
 ├── .env                           ← Credenciales (en .gitignore)
 └── .env.example                   ← Plantilla de credenciales
 ```
+
+## Todas las capas viven en PostGIS
+
+Ninguna capa de un plano o figura debe apuntar a un archivo local (shapefile,
+GeoPackage suelto, etc.) — eso solo funciona en la máquina donde se creó. Si
+necesitas agregar una capa nueva a partir de un archivo:
+
+```bash
+ogr2ogr -f "PostgreSQL" PG:"host=localhost port=5432 dbname=gis_empresa user=qgis_user password=$PGPASS" \
+  "/ruta/al/archivo.shp" -nln nombre_tabla -lco SCHEMA=proyectos \
+  -lco GEOMETRY_NAME=geom -lco FID=gid -nlt MULTIPOLYGON
+```
+
+Esto sigue la misma convención que las tablas existentes (`aica_nacional`,
+`anp_estatales`, `uab_nacional`, …): PK `gid`, geometría en `geom`. Ojo:
+`ogr2ogr` convierte los nombres de campo a minúsculas por default — usa esos
+nombres (no los del archivo original) en `campo_categoria`/`campo_etiqueta`.
+Luego el plano se agrega al JSON con `"tabla_postgis": "nombre_tabla"` como
+cualquier otro.
+
+Las únicas excepciones (por diseño, no por atajo) son el ráster del plano de
+localización (`ruta_raster`) y los GeoPackage de referencia/topografía usados
+como `capas_extra` o en `rutas_acceso` — esos sí son intrínsecamente archivos.
 
 ## Uso con interfaz gráfica (plugin de QGIS)
 
@@ -168,11 +194,63 @@ Campos opcionales adicionales:
 
 | Campo | Valores | Efecto |
 |-------|---------|--------|
+| `titulo_capa` | texto | Nombre a mostrar en la leyenda (si no, se deriva de `nombre_capa`) |
 | `paleta` | `default`, `suelos`, `geologia`, `clima`, `vegetacion`, `agua`, `conservacion` | Paleta de colores temática del renderer categorizado |
+| `campo_etiqueta_expresion` | expresión QGIS (p. ej. `concat("uga", ', ', "clave")`) | Etiqueta sobre el mapa combinando varios campos, en vez de uno solo (`campo_etiqueta`) |
+| `campo_legenda_extra` | nombre de campo | Muestra "valor, valor_extra" en cada categoría de la leyenda (asume relación 1:1 con `campo_categoria`) |
+| `leyenda_solo_ubicacion` | `true` | En capas de zonificación regional (`campo_categoria`), la leyenda solo nombra la categoría donde cae el centroide del proyecto, no todas las visibles en el extent (p. ej. UAB: el mapa muestra las regiones vecinas de contexto, pero la leyenda solo dice en cuál está el proyecto) |
 | `estilo_qml` | nombre de archivo en `estilos/` | Aplica un QML en vez del renderer categorizado |
-| `sin_bbox_filter` | `true` | Carga la tabla completa sin filtro espacial |
-| `layout_nombre` | nombre de QPT en `plantillas/` | Usa una plantilla alternativa |
-| `marcador` | `"punto"` | Muestra la estrella del centroide en vez del polígono |
+| `sin_bbox_filter` | `true` | Carga la tabla completa sin filtro espacial (necesario para capas de cobertura nacional dispersa, p. ej. AICA/RHP) |
+| `layout_nombre` | nombre de QPT en `plantillas/` | Usa una plantilla alternativa (`Plantilla_Corporativa` = plano, `Plantilla_figuras` = figura) |
+| `marcador` | `"punto"` \| `"poligono"` | Punto (estrella) o contorno del polígono como referencia. Default: `"poligono"` en planos normales, `"punto"` en ráster/`capas_combinadas` |
+| `opacidad` | `0.0`–`1.0` | Transparencia de la capa (funciona también para el ráster de localización) |
+| `grid_intervalo` | metros | Separación de la cuadrícula del mapa |
+| `barra_escala_segmento` | metros | Unidades por segmento de la barra de escala (solo planos `raster`) |
+
+### Tipos especiales de plano (`"tipo"`)
+
+Además del flujo normal (una tabla PostGIS categorizada), hay flujos dedicados:
+
+| `tipo` | Uso | Claves relevantes |
+|--------|-----|--------------------|
+| `vertices` | Plano de vértices del polígono del proyecto | — |
+| `raster` | Plano de localización sobre un ráster (mapa topográfico) | `ruta_raster`, `capas_extra` (vías de referencia desde un GeoPackage), `barra_escala_segmento` |
+| `rutas_acceso` | Figura de rutas hacia el sitio, extent ajustado al conjunto de rutas | `ruta_gpkg` (generado aparte con `herramientas/rutas_cli.py`), `capas_rutas`, `capa_destino`, `capa_entrada` |
+| `capas_combinadas` | Varias tablas PostGIS superpuestas en un mismo plano (p. ej. "Áreas Naturales Protegidas" = ANP federal/estatal + AICA + RTP + RHP) | `capas_postgis` (lista de specs con `tabla_postgis`, `color`, `color_borde`, `patron`, `estilo_borde`, `campo_etiqueta`) |
+
+Los `patron` disponibles para `capas_combinadas` son `solid`, `cross`,
+`horizontal`, `vertical`, `f_diagonal`, `b_diagonal` — cada capa lleva un
+relleno sólido más un patrón de líneas superpuesto (no en vez del color), para
+que se distingan entre sí sin verse deslavadas.
+
+## Insertos de localización (mapitas)
+
+Cada composición trae hasta 3 mapas pequeños de contexto (nacional/estatal/
+municipal), configurados en `config/global.json → mapitas.mapitas_layout`,
+por plantilla:
+
+```json
+"mapitas_layout": {
+  "Plantilla_Corporativa": {
+    "Mapa 2": { "nivel": "nacional"  },
+    "Mapa 3": { "nivel": "estatal"   },
+    "Mapa 4": { "nivel": "municipal" }
+  },
+  "Plantilla_figuras": {
+    "Mapa 2": { "nivel": "estatal" }
+  }
+}
+```
+
+`Plantilla_figuras` solo tiene un inserto ("Mapa 2"), configurado en
+`"estatal"` (estado con el municipio del proyecto resaltado).
+
+## Panel de Capas en QGIS
+
+Cada plano/figura genera su propio subgrupo dentro de "Planos Generados" en
+el panel de Capas, nombrado igual que su `nombre_plano`. El fondo satelital y
+la estrella del centroide del proyecto (compartidos por todos los planos)
+quedan al nivel superior del grupo, fuera de los subgrupos.
 
 ## Formatos de salida
 

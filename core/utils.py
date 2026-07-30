@@ -5,6 +5,7 @@ Sin dependencias de QGIS para facilitar pruebas unitarias.
 
 import hashlib
 import logging
+import math
 import os
 import re
 import unicodedata
@@ -99,6 +100,28 @@ def leer_env(ruta: str) -> dict:
 def formato_escala(escala) -> str:
     """'Escala 1:5 000' con espacio como separador de miles."""
     return f"Escala 1:{escala:,}".replace(",", " ")
+
+
+# ---------------------------------------------------------------------------
+# Barra de escala
+# ---------------------------------------------------------------------------
+
+def segmento_barra_escala(escala: float, mm_por_segmento: float = 20.0) -> float:
+    """
+    Metros por segmento 'redondos' (1, 2, 2.5, 5 × 10^n) para que cada
+    segmento de la barra mida ~mm_por_segmento en papel a la escala 1:escala.
+    Evita que un segmento fijo de plantilla haga la barra gigante o diminuta
+    cuando la escala real del mapa difiere de la prevista en el QPT.
+    """
+    if not escala or escala <= 0:
+        return 100.0
+    metros_objetivo = escala * mm_por_segmento / 1000.0
+    exponente = math.floor(math.log10(metros_objetivo))
+    base      = metros_objetivo / 10 ** exponente
+    for redondo in (1, 2, 2.5, 5, 10):
+        if base <= redondo:
+            return redondo * 10 ** exponente
+    return 10.0 ** (exponente + 1)
 
 
 # ---------------------------------------------------------------------------

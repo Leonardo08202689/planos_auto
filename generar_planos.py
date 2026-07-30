@@ -53,6 +53,7 @@ from core.simbologia import (
     aplicar_etiquetas_poligonos_grandes,
     aplicar_opacidad_capa,
     aplicar_renderer_categorizado,
+    capa_legend_ubicacion_actual,
     construir_simbolo_patron,
 )
 from core.utils      import (
@@ -141,6 +142,15 @@ def generar_composiciones(cfg: dict) -> None:
 
     aplicar_estilo_poligono(poly_layer)
     log.info(" ✓ Estilo del polígono de trabajo aplicado.")
+
+    # ── Limpiar composiciones de corridas anteriores ──────────────────────────
+    # Cada corrida borra las capas de la corrida previa, así que cualquier
+    # 'Comp_*' que no se regenere queda apuntando a capas muertas: QGIS
+    # renderiza el mapa principal vacío y rellena los mapitas con TODAS las
+    # capas visibles del proyecto (fallback cuando el layer set queda vacío).
+    for layout_previo in list(project.layoutManager().layouts()):
+        if layout_previo.name().startswith("Comp_"):
+            project.layoutManager().removeLayout(layout_previo)
 
     # ── Grupo de capas en el panel ────────────────────────────────────────────
     root_tree = project.layerTreeRoot()
@@ -531,7 +541,10 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(nueva_comp, map_item, log)
+            reenlazar_barra_escala(
+                nueva_comp, map_item, log,
+                unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
+            )
             configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 50000), log)
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_obj)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
@@ -615,7 +628,10 @@ def generar_composiciones(cfg: dict) -> None:
                 grupo_plano.insertLayer(0, c)
 
             map_item.setCrs(capas_cargadas[0].crs())
-            map_item.setExtent(extent_total)
+            # zoomToExtent (y no setExtent) para conservar el tamaño del marco:
+            # setExtent redimensiona el ítem a la proporción del extent y el
+            # mapa termina más grande que la hoja.
+            map_item.zoomToExtent(extent_total)
 
             # La leyenda/etiqueta de escala deben reflejar el zoom real resultante,
             # no la 'escala' nominal de la config (que aquí es solo un placeholder).
@@ -753,6 +769,19 @@ def generar_composiciones(cfg: dict) -> None:
 
         aplicar_opacidad_capa(capa_recortada, cfg_capa.get("opacidad", 0.6), log)
 
+        # ── h2. Leyenda: opcionalmente solo la categoría del proyecto ─────────
+        # Para capas de zonificación regional (p. ej. UAB) el mapa muestra las
+        # regiones vecinas como contexto, pero la leyenda solo debe nombrar la
+        # región donde realmente cae el proyecto, no todas las visibles.
+        capa_para_leyenda = capa_recortada
+        if campo_cat and cfg_capa.get("leyenda_solo_ubicacion"):
+            capa_filtrada = capa_legend_ubicacion_actual(
+                capa_recortada, campo_cat, centroid_geom, log,
+            )
+            if capa_filtrada:
+                project.addMapLayer(capa_filtrada, False)
+                capa_para_leyenda = capa_filtrada
+
         # ── i. Centroides y etiquetas ─────────────────────────────────────────
         log.info(" → Extrayendo centroides temáticos...")
         res_cent       = processing.run("native:centroids", {
@@ -821,7 +850,7 @@ def generar_composiciones(cfg: dict) -> None:
 
         reenlazar_barra_escala(nueva_comp, map_item, log)
         configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 500), log)
-        actualizar_leyenda(nueva_comp, ids, poly_layer, capa_recortada, *capas_extra_obj)
+        actualizar_leyenda(nueva_comp, ids, poly_layer, capa_para_leyenda, *capas_extra_obj)
         _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
         nueva_comp.refresh()
 
