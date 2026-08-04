@@ -197,39 +197,42 @@ OUTPUT_BASE=/ruta/a/planos_salida
 LOGO_RUTA=/ruta/al/logo.jpg   # opcional, usa assets/logo_sinergia.jpg por defecto
 ```
 
-## Acceso remoto a la base de datos (otras computadoras)
+## Acceso a la base de datos (otras computadoras)
 
-La base de datos (PostgreSQL/PostGIS) vive en la máquina de Leonardo. Para que otra
-computadora (en otra oficina, no en la misma red) se conecte, se usa
-[Tailscale](https://tailscale.com) (VPN gratuita, cifrada, no requiere abrir puertos
-al internet público) en vez de exponer el puerto 5432 directamente.
+La base de datos (PostgreSQL/PostGIS) vive en un contenedor Docker en el
+**NAS Synology de la oficina** (`scianas`, DS224+), no en la máquina de
+Leonardo — así el servidor está disponible sin depender de que una compu de
+trabajo se quede encendida.
 
-**Configuración del lado del servidor** (ya hecha, documentado para referencia):
+**Configuración actual (2026-08-04):**
 
-- Tailscale instalado en la máquina con la base de datos; su IP de Tailscale se
-  obtiene con `tailscale ip -4`.
-- `postgresql.conf` → `listen_addresses` incluye esa IP de Tailscale (además de
-  `localhost`), no `'*'`.
-- `pg_hba.conf` → una regla `host gis_empresa <rol> 100.64.0.0/10 scram-sha-256`
-  por cada rol autorizado (100.64.0.0/10 es el rango interno de Tailscale).
-- Dos roles en la base:
+- Servidor: contenedor `postgis/postgis` en el NAS, puerto **`55432`**
+  (no el 5432 estándar — ya estaba ocupado por otro servicio del NAS).
+- Datos persistentes en una carpeta compartida del NAS (`postgis_data/data`),
+  sobreviven reinicios/actualizaciones del contenedor. Reinicio automático
+  del contenedor habilitado.
+- Por ahora **solo alcanzable dentro de la red de oficina** (LAN), sin VPN —
+  la migración a [Tailscale](https://tailscale.com) para acceso desde fuera
+  de la oficina quedó planeada pero pausada; se retomará si hace falta.
+- **Usar la IP, no el nombre `scianas.local`:** aunque el NAS resuelve por
+  mDNS y una terminal normal sí encuentra `scianas.local`, **QGIS (Flatpak
+  en Linux) no puede resolver nombres `.local`** — hay que usar la IP fija
+  del NAS en la red de oficina: `192.168.100.132`.
+- Dos roles en la base (mismos permisos que la base anterior, migrados tal
+  cual):
   - `qgis_user` — lectura y escritura (para administradores).
   - `planos_lector` — solo lectura (`GRANT SELECT`, sin permisos de escritura;
     incluye `ALTER DEFAULT PRIVILEGES` para que las tablas nuevas que se suban
     después también queden visibles automáticamente).
 
-**Para dar acceso a un colega nuevo:**
+**Para dar acceso a un colega nuevo (dentro de la red de oficina):**
 
-1. Compartir la máquina servidor desde el panel de Tailscale
-   (https://login.tailscale.com/admin/machines → menú de la máquina → **Share**)
-   con el correo del colega. Él necesita su propia cuenta de Tailscale (gratis).
-2. El colega instala Tailscale (instalador normal) en su computadora y acepta
-   la invitación.
-3. El colega instala QGIS + el plugin siguiendo "Instalación para un colega"
+1. El colega instala QGIS + el plugin siguiendo "Instalación para un colega"
    más arriba (descarga ZIP, doble clic en `Instalar.bat`/`instalar_plugin.sh`
    — sin terminal). La primera vez que abra el plugin le va a pedir estos
    datos en un formulario (botón **"Conexión…"**):
-   - **Dirección del servidor:** la IP de Tailscale, ej. `100.77.90.48`.
+   - **Dirección del servidor:** `192.168.100.132:55432` (IP del NAS y
+     puerto, separados por `:` — el campo acepta ambos juntos).
    - **¿Es administrador?**: solo si va a poder editar la base de datos.
    - **Contraseña:** la del rol que le corresponda (`qgis_user` si es
      administrador, `planos_lector` si no).
