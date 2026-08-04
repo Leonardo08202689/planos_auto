@@ -26,6 +26,7 @@ from qgis.core import (
 from datetime import datetime
 
 from core.capas      import (
+    cargar_capa_extra,
     cargar_capa_postgis,
     cargar_recortar_gpkg,
     cargar_recortar_shapefile,
@@ -421,12 +422,12 @@ def generar_composiciones(cfg: dict) -> None:
             extra_cfg = cfg_capa.get("capas_extra") or {}
             grupo_extra = extra_cfg.get("grupo_leyenda")
             for spec in extra_cfg.get("capas", []):
-                c = cargar_recortar_gpkg(
-                    extra_cfg["ruta_gpkg"], spec["capa"], crs_origen, extent_en_escala, log
+                c = cargar_capa_extra(
+                    spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt, log
                 )
                 if not c:
                     continue
-                c.setName(spec.get("nombre", spec["capa"]))
+                c.setName(spec.get("nombre") or spec.get("capa") or spec.get("tabla_postgis"))
                 color = spec.get("color", "70,130,220,220")
                 if spec.get("tipo_geom") == "area":
                     simbolo = QgsFillSymbol.createSimple({
@@ -837,12 +838,12 @@ def generar_composiciones(cfg: dict) -> None:
         extra_cfg = cfg_capa.get("capas_extra") or {}
         grupo_extra = extra_cfg.get("grupo_leyenda")
         for spec in extra_cfg.get("capas", []):
-            c = cargar_recortar_gpkg(
-                extra_cfg["ruta_gpkg"], spec["capa"], crs_origen, extent_en_escala, log
+            c = cargar_capa_extra(
+                spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt, log
             )
             if not c:
                 continue
-            c.setName(spec.get("nombre", spec["capa"]))
+            c.setName(spec.get("nombre") or spec.get("capa") or spec.get("tabla_postgis"))
             color = spec.get("color", "70,130,220,220")
             if spec.get("tipo_geom") == "area":
                 simbolo = QgsFillSymbol.createSimple({

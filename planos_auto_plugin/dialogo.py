@@ -308,8 +308,17 @@ class DialogoPlanos(QDialog):
             m for m in sys.modules
             if (m.startswith("core.") or m == "generar_planos") and m not in primero
         ):
-            if mod_name in sys.modules:
+            if mod_name not in sys.modules:
+                continue
+            try:
                 importlib.reload(sys.modules[mod_name])
+            except Exception:
+                # En Windows la instalación usa una junction (no symlink real);
+                # a veces eso hace que reload() no encuentre el spec del módulo
+                # ya importado. En vez de tronar, se descarta la entrada en
+                # caché: los "from ... import ..." de abajo lo vuelven a
+                # importar de cero, logrando el mismo efecto de "sin caché".
+                del sys.modules[mod_name]
 
         from qgis.core import QgsProject
 

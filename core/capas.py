@@ -98,6 +98,46 @@ def cargar_capa_postgis(cfg_capa: dict, pg: dict, bbox_wkt: str, log):
     return capa
 
 
+def cargar_capa_extra(spec: dict, extra_cfg: dict, pg: dict, crs_destino,
+                      extent_en_escala, bbox_wkt: str, log):
+    """
+    Carga una entrada de 'capas_extra' (referencia sobre un plano: caminos,
+    ríos, etc.), recortada y reproyectada al extent dado.
+
+    Soporta dos orígenes por entrada de 'spec':
+    - 'tabla_postgis': tabla en el esquema 'cartografia_base' (o el que
+      indique 'schema'), vía cargar_capa_postgis + recortar_y_reproyectar
+      (mismo camino que usan las figuras que combinan varias tablas).
+    - 'capa': nombre de capa dentro del GeoPackage de 'extra_cfg["ruta_gpkg"]'
+      (comportamiento original, para fuentes que sigan siendo archivo).
+    """
+    tabla = spec.get("tabla_postgis")
+    if tabla:
+        cfg_tabla = {
+            "tabla_postgis":   tabla,
+            "geom_col":        spec.get("geom_col", "geom"),
+            "tipo_geom":       "MultiPolygon" if spec.get("tipo_geom") == "area" else "MultiLineString",
+            "key":             spec.get("key", "gid"),
+            "nombre_capa":     spec.get("nombre", tabla),
+            "sin_bbox_filter": spec.get("sin_bbox_filter", False),
+        }
+        pg_extra = dict(pg, schema=spec.get("schema", "cartografia_base"))
+        capa_pg = cargar_capa_postgis(cfg_tabla, pg_extra, bbox_wkt, log)
+        if not capa_pg:
+            return None
+        return recortar_y_reproyectar(
+            capa_pg, crs_destino, extent_en_escala, log, nombre_log=tabla
+        )
+
+    nombre_layer = spec.get("capa")
+    if not nombre_layer:
+        log.warning(" → Entrada de capas_extra sin 'capa' ni 'tabla_postgis'; se omite.")
+        return None
+    return cargar_recortar_gpkg(
+        extra_cfg["ruta_gpkg"], nombre_layer, crs_destino, extent_en_escala, log
+    )
+
+
 def extraer_vertices_poligono(feature_poligono, crs, log):
     """
     Extrae los vértices exteriores del polígono seleccionado (todas sus
