@@ -97,7 +97,7 @@
     },
     {
       "tipo":           "raster",
-      "ruta_raster":    "/home/leonardo/QGIS/Mapa topografico Hermosillo/794551129623_t/26030.tif",
+      "tabla_postgis_raster": "raster_26030",
       "nombre_plano":   "PLANO. LOCALIZACIÓN",
       "nombre_capa":    "Localizacion",
       "escala":         50000,

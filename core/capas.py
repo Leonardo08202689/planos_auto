@@ -12,6 +12,7 @@ from qgis.core import (
     QgsField,
     QgsProcessingContext,
     QgsProject,
+    QgsRasterLayer,
     QgsVectorLayer,
     QgsWkbTypes,
 )
@@ -136,6 +137,29 @@ def cargar_capa_extra(spec: dict, extra_cfg: dict, pg: dict, crs_destino,
     return cargar_recortar_gpkg(
         extra_cfg["ruta_gpkg"], nombre_layer, crs_destino, extent_en_escala, log
     )
+
+
+def cargar_raster_postgis(tabla: str, pg: dict, log, columna: str = "rast"):
+    """
+    Carga una tabla ráster de PostGIS (subida con raster2pgsql, ej. el ráster
+    de Localización) como QgsRasterLayer vía el proveedor 'postgresraster'.
+
+    Retorna QgsRasterLayer o None si falla.
+    """
+    valida_id(tabla,          "tabla")
+    valida_id(pg["schema"],   "schema")
+    valida_id(columna,        "columna")
+
+    uri = QgsDataSourceUri()
+    uri.setConnection(pg["host"], str(pg["port"]), pg["dbname"],
+                      pg["user"], pg["password"], QgsDataSourceUri.SslDisable)
+    uri.setDataSource(pg["schema"], tabla, columna)
+
+    capa = QgsRasterLayer(uri.uri(False), tabla, "postgresraster")
+    if not capa.isValid():
+        log.warning(f" → Ráster PostGIS inválido: {pg['schema']}.{tabla}")
+        return None
+    return capa
 
 
 def extraer_vertices_poligono(feature_poligono, crs, log):

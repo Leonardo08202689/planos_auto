@@ -28,6 +28,7 @@ from datetime import datetime
 from core.capas      import (
     cargar_capa_extra,
     cargar_capa_postgis,
+    cargar_raster_postgis,
     cargar_recortar_gpkg,
     cargar_recortar_shapefile,
     extraer_vertices_poligono,
@@ -408,10 +409,19 @@ def generar_composiciones(cfg: dict) -> None:
 
         # ── Flujo especial: Plano con capa ráster (p. ej. localización) ────────
         if es_raster:
-            capa_raster = QgsRasterLayer(cfg_capa["ruta_raster"], titulo_capa(cfg_capa))
-            if not capa_raster.isValid():
-                log.warning(f" → Ráster no válido: {cfg_capa['ruta_raster']}")
-                return _fallo()
+            if cfg_capa.get("tabla_postgis_raster"):
+                capa_raster = cargar_raster_postgis(
+                    cfg_capa["tabla_postgis_raster"], cfg["pg"], log
+                )
+                if not capa_raster:
+                    return _fallo()
+                capa_raster.setName(titulo_capa(cfg_capa))
+            else:
+                ruta_raster = cfg_capa["ruta_raster"]
+                capa_raster = QgsRasterLayer(ruta_raster, titulo_capa(cfg_capa))
+                if not capa_raster.isValid():
+                    log.warning(f" → Ráster no válido: {ruta_raster}")
+                    return _fallo()
 
             project.addMapLayer(capa_raster, False)
             grupo_plano.insertLayer(0, capa_raster)
