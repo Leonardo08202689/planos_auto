@@ -20,6 +20,35 @@ from qgis.PyQt.QtCore import QVariant
 from .utils import valida_id
 
 
+def resolver_capa_poligono(project: QgsProject, nombre: str, log=None):
+    """
+    Busca la capa de polígono de trabajo por nombre. Si hay más de una capa
+    con ese nombre en el proyecto (p. ej. una capa auxiliar del propio plugin
+    que por error comparta el nombre) se queda con la que sea de geometría
+    de polígono, en vez de tomar ciegamente la primera coincidencia.
+    """
+    candidatas = project.mapLayersByName(nombre)
+    if not candidatas:
+        return None
+    poligonos = [
+        c for c in candidatas
+        if hasattr(c, "geometryType") and c.geometryType() == QgsWkbTypes.PolygonGeometry
+    ]
+    if poligonos:
+        if len(poligonos) > 1 and log:
+            log.warning(
+                f" → Hay {len(poligonos)} capas de polígono llamadas "
+                f"'{nombre}'; se usará la primera."
+            )
+        return poligonos[0]
+    if log:
+        log.warning(
+            f" → Ninguna de las capas llamadas '{nombre}' es de polígono; "
+            f"se usará la primera de todos modos."
+        )
+    return candidatas[0]
+
+
 def cargar_capa_postgis(cfg_capa: dict, pg: dict, bbox_wkt: str, log):
     """
     Carga una capa vectorial desde PostGIS, filtrando opcionalmente

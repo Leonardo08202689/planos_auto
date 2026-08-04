@@ -5,6 +5,8 @@ core/composicion.py — Gestión de layouts QGIS: carga de plantillas,
 
 import os
 
+from qgis.PyQt.QtGui import QFont
+
 from qgis.core import (
     QgsLayoutItem,
     QgsLayoutItemLegend,
@@ -12,6 +14,7 @@ from qgis.core import (
     QgsLayoutItemMapGrid,
     QgsLayoutItemPicture,
     QgsLayoutItemScaleBar,
+    QgsLegendStyle,
     QgsUnitTypes,
 )
 
@@ -109,22 +112,98 @@ def validar_extent(extent, nombre_capa: str, log, escala: float = 0) -> None:
 # Actualizar elementos del layout
 # ---------------------------------------------------------------------------
 
-def actualizar_leyenda(layout_comp, ids: dict, *capas) -> None:
+_ESTILOS_LEYENDA = (
+    QgsLegendStyle.Title,
+    QgsLegendStyle.Group,
+    QgsLegendStyle.Subgroup,
+    QgsLegendStyle.Symbol,
+    QgsLegendStyle.SymbolLabel,
+)
+_LEYENDA_MARGEN_PAGINA_MM = 1.5
+_LEYENDA_ESCALA_MINIMA    = 0.5
+_LEYENDA_PASO_ESCALA      = 0.92
+_LEYENDA_FUENTE_MIN_PT    = 6.0
+_LEYENDA_SIMBOLO_MIN_MM   = 3.0
+
+
+def _ajustar_leyenda_a_pagina(leyenda, layout_comp, log=None) -> None:
+    """Si la leyenda (por muchas categorías o nombres largos) crece más allá
+    del borde de la página, reduce progresivamente fuentes y símbolos hasta
+    que quepa, para que la simbología nunca se salga del plano impreso."""
+    pages = layout_comp.pageCollection()
+    if pages.pageCount() == 0:
+        return
+    pagina_idx = leyenda.page() if 0 <= leyenda.page() < pages.pageCount() else 0
+    page_rect  = pages.page(pagina_idx).rect()
+    pos        = leyenda.pagePos()
+
+    max_w = page_rect.width()  - pos.x() - _LEYENDA_MARGEN_PAGINA_MM
+    max_h = page_rect.height() - pos.y() - _LEYENDA_MARGEN_PAGINA_MM
+    if max_w <= 0 or max_h <= 0:
+        return
+
+    tam = leyenda.sizeWithUnits()
+    if tam.width() <= max_w and tam.height() <= max_h:
+        return  # ya cabe, no se toca nada
+
+    fuentes_orig    = {est: QFont(leyenda.styleFont(est)) for est in _ESTILOS_LEYENDA}
+    ancho_sim_orig  = leyenda.symbolWidth()
+    alto_sim_orig   = leyenda.symbolHeight()
+
+    escala = 1.0
+    while escala > _LEYENDA_ESCALA_MINIMA:
+        escala *= _LEYENDA_PASO_ESCALA
+        for estilo, fuente_orig in fuentes_orig.items():
+            fuente = QFont(fuente_orig)
+            pt_orig = fuente_orig.pointSizeF() if fuente_orig.pointSizeF() > 0 else 9.0
+            fuente.setPointSizeF(max(_LEYENDA_FUENTE_MIN_PT, pt_orig * escala))
+            leyenda.setStyleFont(estilo, fuente)
+        leyenda.setSymbolWidth(max(_LEYENDA_SIMBOLO_MIN_MM, ancho_sim_orig * escala))
+        leyenda.setSymbolHeight(max(_LEYENDA_SIMBOLO_MIN_MM, alto_sim_orig * escala))
+
+        leyenda.adjustBoxSize()
+        tam = leyenda.sizeWithUnits()
+        if tam.width() <= max_w and tam.height() <= max_h:
+            return
+
+    if log:
+        log.warning(
+            " ⚠ La leyenda tiene demasiadas categorías/nombres largos y no "
+            "cabe en la página aun al tamaño mínimo de letra. Revísala manualmente."
+        )
+
+
+def actualizar_leyenda(layout_comp, ids: dict, *capas, log=None) -> None:
     """Reconstruye la leyenda con las capas dadas, en el orden recibido.
-    Las capas None se ignoran (permite pasar un slot opcional sin filtrar antes)."""
+    Las capas None se ignoran (permite pasar un slot opcional sin filtrar antes).
+
+    Una capa con la propiedad personalizada 'grupo_leyenda' se anida dentro
+    de un grupo con ese nombre (creado la primera vez que se usa) en vez de
+    ir directo a la raíz; 'nombre_leyenda' sigue renombrando el nodo de la
+    capa misma dentro de ese grupo."""
     leyenda = layout_comp.itemById(ids["leyenda"])
     if not (leyenda and isinstance(leyenda, QgsLayoutItemLegend)):
         return
     leyenda.setAutoUpdateModel(False)
     root = leyenda.model().rootGroup()
     root.removeAllChildren()
+    grupos = {}
     for capa in capas:
-        if capa:
-            nodo = root.addLayer(capa)
-            nombre_custom = capa.customProperty("nombre_leyenda")
-            if nombre_custom:
-                nodo.setName(nombre_custom)
+        if not capa:
+            continue
+        contenedor = root
+        nombre_grupo = capa.customProperty("grupo_leyenda")
+        if nombre_grupo:
+            contenedor = grupos.get(nombre_grupo)
+            if contenedor is None:
+                contenedor = root.addGroup(nombre_grupo)
+                grupos[nombre_grupo] = contenedor
+        nodo = contenedor.addLayer(capa)
+        nombre_custom = capa.customProperty("nombre_leyenda")
+        if nombre_custom:
+            nodo.setName(nombre_custom)
     leyenda.adjustBoxSize()
+    _ajustar_leyenda_a_pagina(leyenda, layout_comp, log)
     leyenda.refresh()
 
 

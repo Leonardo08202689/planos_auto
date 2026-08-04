@@ -314,6 +314,7 @@ class DialogoPlanos(QDialog):
         from qgis.core import QgsProject
 
         from core import utils
+        from core.capas import resolver_capa_poligono
         from core.configuracion import cargar_config
         from generar_planos import generar_composiciones
 
@@ -321,15 +322,15 @@ class DialogoPlanos(QDialog):
 
         # Pre-verificación con mensaje claro (el generador también valida,
         # pero su error quedaría solo como una línea en el log)
-        capas_poly = QgsProject.instance().mapLayersByName(cfg["capa_poligono"])
-        if not capas_poly:
+        capa_poly = resolver_capa_poligono(QgsProject.instance(), cfg["capa_poligono"])
+        if not capa_poly:
             QMessageBox.warning(
                 self, "Planos Auto",
                 f"La capa '{cfg['capa_poligono']}' no está cargada "
                 f"en el proyecto de QGIS."
             )
             return
-        if not capas_poly[0].selectedFeatures():
+        if not capa_poly.selectedFeatures():
             QMessageBox.warning(
                 self, "Planos Auto",
                 f"Selecciona el polígono de trabajo en la capa "

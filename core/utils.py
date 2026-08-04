@@ -115,6 +115,8 @@ def segmento_barra_escala(escala: float, mm_por_segmento: float = 20.0) -> float
     """
     if not escala or escala <= 0:
         return 100.0
+    if round(escala) == 5000:
+        return 150.0
     metros_objetivo = escala * mm_por_segmento / 1000.0
     exponente = math.floor(math.log10(metros_objetivo))
     base      = metros_objetivo / 10 ** exponente

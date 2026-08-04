@@ -3,6 +3,8 @@ core/simbologia.py — Renderers categorizados, etiquetas PAL y estilos
                      para polígonos y puntos de vértice.
 """
 
+import textwrap
+
 from qgis.core import (
     QgsCategorizedSymbolRenderer,
     QgsFillSymbol,
@@ -28,6 +30,10 @@ _ANGULOS_PATRON = {
     "f_diagonal":  45,
     "b_diagonal":  135,
 }
+
+# Ancho aproximado (en caracteres) antes de partir una etiqueta de categoría
+# en varias líneas; calibrado para el panel más angosto (Plantilla_figuras).
+_LEYENDA_ANCHO_CATEGORIA_CHARS = 28
 
 
 def construir_simbolo_patron(
@@ -168,6 +174,11 @@ def aplicar_renderer_categorizado(
             if hasattr(sl, "setStrokeWidth"):
                 sl.setStrokeWidth(0.2)
         etiqueta = f"{valor}, {mapa_extra[valor]}" if valor in mapa_extra else str(valor)
+        # Los nombres largos (p. ej. POET: "unidad, clave") no caben en una
+        # sola línea en el panel angosto de las figuras; se parten en varias
+        # líneas (la leyenda sí tiene margen vertical de sobra) en vez de
+        # dejar que la caja se ensanche y se salga de la página.
+        etiqueta = "\n".join(textwrap.wrap(etiqueta, _LEYENDA_ANCHO_CATEGORIA_CHARS)) or etiqueta
         categorias.append(QgsRendererCategory(valor, simbolo, etiqueta))
 
     capa.setRenderer(QgsCategorizedSymbolRenderer(campo, categorias))
