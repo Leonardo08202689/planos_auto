@@ -23,7 +23,7 @@ from qgis.PyQt.QtWidgets import (
 from core.utils import leer_env
 
 # Valores fijos de la empresa: no cambian de una computadora a otra.
-_PG_PORT   = "5432"
+_PG_PORT_DEFAULT = "5432"
 _PG_DBNAME = "gis_empresa"
 _PG_SCHEMA = "proyectos"
 
@@ -47,7 +47,7 @@ class DialogoConexion(QDialog):
         form = QFormLayout()
 
         self.edit_direccion = QLineEdit()
-        self.edit_direccion.setPlaceholderText("Ej. 100.77.90.48")
+        self.edit_direccion.setPlaceholderText("Ej. 100.77.90.48 (o scianas.local:55432 si el administrador te dio un puerto)")
         form.addRow("Dirección del servidor:", self.edit_direccion)
 
         self.chk_admin = QCheckBox("Puedo editar la base de datos (soy administrador)")
@@ -83,7 +83,11 @@ class DialogoConexion(QDialog):
 
     def _cargar_valores_actuales(self):
         env = leer_env(os.path.join(self.base, ".env"))
-        self.edit_direccion.setText(env.get("PG_HOST", ""))
+        host = env.get("PG_HOST", "")
+        puerto = env.get("PG_PORT", _PG_PORT_DEFAULT)
+        if host and puerto and puerto != _PG_PORT_DEFAULT:
+            host = f"{host}:{puerto}"
+        self.edit_direccion.setText(host)
         self.chk_admin.setChecked(env.get("PG_USER") == "qgis_user")
         self.edit_password.setText(env.get("PG_PASSWORD", ""))
         self.edit_carpeta.setText(
@@ -105,11 +109,15 @@ class DialogoConexion(QDialog):
 
         os.makedirs(carpeta, exist_ok=True)
 
+        host, _, puerto = direccion.partition(":")
+        host = host.strip()
+        puerto = puerto.strip() or _PG_PORT_DEFAULT
+
         usuario = "qgis_user" if self.chk_admin.isChecked() else "planos_lector"
         ruta_env = os.path.join(self.base, ".env")
         contenido = (
-            f"PG_HOST={direccion}\n"
-            f"PG_PORT={_PG_PORT}\n"
+            f"PG_HOST={host}\n"
+            f"PG_PORT={puerto}\n"
             f"PG_DBNAME={_PG_DBNAME}\n"
             f"PG_SCHEMA={_PG_SCHEMA}\n"
             f"PG_USER={usuario}\n"
