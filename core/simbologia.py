@@ -6,6 +6,7 @@ core/simbologia.py — Renderers categorizados, etiquetas PAL y estilos
 import textwrap
 
 from qgis.core import (
+    Qgis,
     QgsCategorizedSymbolRenderer,
     QgsFillSymbol,
     QgsLinePatternFillSymbolLayer,
@@ -23,6 +24,17 @@ from qgis.core import (
 from qgis.PyQt.QtGui import QColor, QFont
 
 from .utils import color_para_categoria, paletas_disponibles
+
+
+def _placement_over_point():
+    """Valor de enum "colocar la etiqueta justo sobre el punto", compatible
+    con QGIS 3.28 (QgsPalLayerSettings.OverPoint plano) y QGIS 3.34+ (donde
+    ese nombre quedó ambiguo entre dos enums distintos —LabelPlacement y
+    LabelPredefinedPointPosition— y hay que usar la ruta con ámbito)."""
+    try:
+        return Qgis.LabelPlacement.OverPoint
+    except AttributeError:
+        return QgsPalLayerSettings.OverPoint
 
 _ANGULOS_PATRON = {
     "horizontal":  0,
@@ -98,7 +110,7 @@ def aplicar_estilo_vertices(capa_vertices, log) -> None:
     pal           = QgsPalLayerSettings()
     pal.fieldName = "num_vertice"
     pal.enabled   = True
-    pal.placement = QgsPalLayerSettings.OverPoint
+    pal.placement = _placement_over_point()
 
     fmt = QgsTextFormat()
     fmt.setFont(QFont("Arial", 8, QFont.Bold))
@@ -258,7 +270,7 @@ def aplicar_etiquetas_pal(
     pal.fieldName    = campo
     pal.isExpression = es_expresion
     pal.enabled      = True
-    pal.placement    = QgsPalLayerSettings.OverPoint
+    pal.placement    = _placement_over_point()
 
     fmt = QgsTextFormat()
     fmt.setFont(QFont("Arial", 7, QFont.Bold))
