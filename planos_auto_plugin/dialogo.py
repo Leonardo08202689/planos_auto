@@ -109,6 +109,9 @@ class DialogoPlanos(QDialog):
         btn_conexion = QPushButton("Conexión…")
         btn_conexion.clicked.connect(self._configurar_conexion)
         fila_opts.addWidget(btn_conexion)
+        btn_actualizar = QPushButton("Buscar actualizaciones…")
+        btn_actualizar.clicked.connect(self._buscar_actualizacion)
+        fila_opts.addWidget(btn_actualizar)
         fila_opts.addWidget(QLabel("DPI:"))
         self.spin_dpi = QSpinBox()
         self.spin_dpi.setRange(72, 600)
@@ -155,6 +158,30 @@ class DialogoPlanos(QDialog):
 
         DialogoConexion(self.base, parent=self).exec_()
         self._verificar_conexion()
+
+    def _buscar_actualizacion(self):
+        respuesta = QMessageBox.question(
+            self, "Buscar actualizaciones",
+            "Esto descarga la última versión del programa desde GitHub y "
+            "reemplaza sus archivos (tu conexión, tus proyectos y tus planos "
+            "generados no se tocan). Vas a necesitar cerrar y volver a abrir "
+            "QGIS después para que se apliquen los cambios.\n\n¿Continuar?",
+        )
+        if respuesta != QMessageBox.Yes:
+            return
+        self.setCursor(Qt.WaitCursor)
+        try:
+            from .actualizar import buscar_actualizacion
+            buscar_actualizacion(self.base)
+        except Exception as e:
+            self.unsetCursor()
+            QMessageBox.critical(self, "Buscar actualizaciones", str(e))
+            return
+        self.unsetCursor()
+        QMessageBox.information(
+            self, "Buscar actualizaciones",
+            "Listo. Cierra y vuelve a abrir QGIS para que se apliquen los cambios."
+        )
 
     def _verificar_conexion(self):
         from core.utils import leer_env
