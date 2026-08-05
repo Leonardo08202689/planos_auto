@@ -65,9 +65,23 @@ nombres (no los del archivo original) en `campo_categoria`/`campo_etiqueta`.
 Luego el plano se agrega al JSON con `"tabla_postgis": "nombre_tabla"` como
 cualquier otro.
 
-Las únicas excepciones (por diseño, no por atajo) son el ráster del plano de
-localización (`ruta_raster`) y los GeoPackage de referencia/topografía usados
-como `capas_extra` o en `rutas_acceso` — esos sí son intrínsecamente archivos.
+Las capas de referencia (vías, ríos, canales) que usa `capas_extra` viven en
+el esquema `cartografia_base` (no `proyectos`, que es para las capas
+temáticas de cada trámite), siguiendo el mismo patrón: se agregan con
+`"tabla_postgis"` dentro de cada entrada de `capas_extra.capas`. El ráster
+del plano de Localización también vive en PostGIS (esquema
+`cartografia_base`, subido con `raster2pgsql`), referenciado con
+`"tabla_postgis_raster"` en vez de `"ruta_raster"`:
+
+```bash
+raster2pgsql -s <SRID> -I -C -M -t 256x256 "/ruta/al/archivo.tif" \
+  cartografia_base.nombre_tabla | psql -h <host> -p <puerto> -U qgis_user -d gis_empresa
+```
+
+La única excepción real que sigue siendo un archivo por diseño es el
+GeoPackage de `FIGURA. VÍAS DE ACCESO AL SITIO` (`rutas_acceso`): se genera
+por proyecto con `herramientas/rutas_cli.py`, no es un dato de referencia
+fijo compartible entre proyectos.
 
 ## Uso con interfaz gráfica (plugin de QGIS)
 
@@ -89,8 +103,14 @@ como `capas_extra` o en `rutas_acceso` — esos sí son intrínsecamente archivo
    al servidor: dirección, si eres administrador, contraseña y carpeta
    donde guardar los planos — todo con un formulario, sin editar ningún
    archivo. Esos datos te los da quien administra el servidor (ver
-   "Acceso remoto a la base de datos" más abajo). Si necesitas cambiarlos
+   "Acceso a la base de datos" más abajo). Si necesitas cambiarlos
    después, hay un botón **"Conexión…"** dentro del plugin.
+
+Cuando haya una actualización del programa, no hace falta repetir todo
+esto: el botón **"Buscar actualizaciones…"** dentro del plugin descarga
+la versión más reciente de GitHub y la aplica solo (sin tocar tu conexión,
+tus proyectos ni tus planos ya generados) — solo hay que cerrar y volver a
+abrir QGIS después para que tome el código nuevo.
 
 (Instalación técnica equivalente por terminal, para quien prefiera `git
 clone` + `./instalar_plugin.sh` / `powershell -ExecutionPolicy Bypass -File
@@ -204,57 +224,64 @@ La base de datos (PostgreSQL/PostGIS) vive en un contenedor Docker en el
 Leonardo — así el servidor está disponible sin depender de que una compu de
 trabajo se quede encendida.
 
-**Configuración actual (2026-08-04):**
+**Configuración actual (2026-08-05):**
 
 - Servidor: contenedor `postgis/postgis` en el NAS, puerto **`55432`**
   (no el 5432 estándar — ya estaba ocupado por otro servicio del NAS).
 - Datos persistentes en una carpeta compartida del NAS (`postgis_data/data`),
   sobreviven reinicios/actualizaciones del contenedor. Reinicio automático
   del contenedor habilitado.
-- Por ahora **solo alcanzable dentro de la red de oficina** (LAN), sin VPN —
-  la migración a [Tailscale](https://tailscale.com) para acceso desde fuera
-  de la oficina quedó planeada pero pausada; se retomará si hace falta.
+- **Tailscale activo en el NAS** (paquete oficial de Synology): el servidor
+  es alcanzable tanto dentro de la red de oficina como desde cualquier
+  otro lugar (ej. desde casa), sin abrir puertos al internet público.
+  IP de Tailscale del NAS: **`100.105.239.92`**. Cada colega que necesite
+  conectarse desde fuera de la oficina instala Tailscale en su compu
+  ([tailscale.com/download](https://tailscale.com/download)) y se
+  autentica con la cuenta del equipo — sin eso, solo funciona la IP de
+  LAN (`192.168.100.132`), útil estando en la oficina.
 - **Usar la IP, no el nombre `scianas.local`:** aunque el NAS resuelve por
   mDNS y una terminal normal sí encuentra `scianas.local`, **QGIS (Flatpak
-  en Linux) no puede resolver nombres `.local`** — hay que usar la IP fija
-  del NAS en la red de oficina: `192.168.100.132`.
+  en Linux) no puede resolver nombres `.local`** — hay que usar siempre
+  una IP (de LAN o de Tailscale, según el caso).
 - Dos roles en la base (mismos permisos que la base anterior, migrados tal
   cual):
   - `qgis_user` — lectura y escritura (para administradores).
   - `planos_lector` — solo lectura (`GRANT SELECT`, sin permisos de escritura;
     incluye `ALTER DEFAULT PRIVILEGES` para que las tablas nuevas que se suban
     después también queden visibles automáticamente).
+- Todas las capas de referencia que antes eran archivos locales (vías,
+  ríos, canales, y el ráster topográfico de Localización) ya viven en
+  PostGIS (esquema `cartografia_base`, el ráster como PostGIS raster) —
+  cualquier compu configurada con la conexión correcta ya las ve, sin
+  copiar ningún archivo aparte.
 
-**Para dar acceso a un colega nuevo (dentro de la red de oficina):**
+**Para dar acceso a un colega nuevo:**
 
 1. El colega instala QGIS + el plugin siguiendo "Instalación para un colega"
    más arriba (descarga ZIP, doble clic en `Instalar.bat`/`instalar_plugin.sh`
    — sin terminal). La primera vez que abra el plugin le va a pedir estos
    datos en un formulario (botón **"Conexión…"**):
-   - **Dirección del servidor:** `192.168.100.132:55432` (IP del NAS y
-     puerto, separados por `:` — el campo acepta ambos juntos).
+   - **Dirección del servidor:** `192.168.100.132:55432` si va a trabajar
+     desde la oficina, o `100.105.239.92:55432` (IP de Tailscale) si
+     necesita conectarse desde otro lado — puerto y dirección van juntos
+     separados por `:`.
    - **¿Es administrador?**: solo si va a poder editar la base de datos.
    - **Contraseña:** la del rol que le corresponda (`qgis_user` si es
      administrador, `planos_lector` si no).
    - **Carpeta de salida:** donde se guardarán sus PNG, la elige con el
      explorador de archivos.
+2. Si va a conectarse desde fuera de la oficina, también instala Tailscale
+   en su compu y se autentica con la cuenta del equipo (paso aparte, no lo
+   hace el plugin).
 
 Esos datos (sobre todo la contraseña) se le pasan por un canal aparte —
 WhatsApp, correo, etc. — nunca por este repo.
 
-⚠️ **Pendiente:** dos planos siguen dependiendo de archivos locales que solo
-existen en la máquina de Leonardo, y por diseño (ver sección "Todas las capas
-viven en PostGIS") no se migran a PostGIS porque no son datos temáticos fijos:
-
-- `PLANO. LOCALIZACIÓN` — el ráster topográfico (`ruta_raster`).
-- `PLANO. HIDROLOGÍA SUPERFICIAL` / `PLANO. LOCALIZACIÓN` — el GeoPackage
-  `cnit50k.gpkg` de vías/ríos/canales usado como `capas_extra`.
-- `FIGURA. RUTAS DE ACCESO` — su GeoPackage se genera por proyecto con
-  `herramientas/rutas_cli.py`, no es un dato de referencia fijo.
-
-Esos planos no van a funcionar todavía en otra computadora sin copiar esos
-archivos ahí. (El shapefile de ANP Federal ya se migró a PostGIS —
-`proyectos.anp_federales` — y funciona igual que sus tablas hermanas.)
+⚠️ **Pendiente:** `FIGURA. VÍAS DE ACCESO AL SITIO` sigue dependiendo de un
+GeoPackage generado por proyecto con `herramientas/rutas_cli.py` (no es un
+dato de referencia fijo, así que no se migra a PostGIS). En una compu sin
+ese archivo, el plano ya no falla — se genera igual con el mapa base y el
+punto del proyecto, solo sin las rutas trazadas.
 
 ## Agregar una nueva capa a un proyecto
 
