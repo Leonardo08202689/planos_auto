@@ -410,8 +410,11 @@ def generar_composiciones(cfg: dict) -> None:
         # ── Flujo especial: Plano con capa ráster (p. ej. localización) ────────
         if es_raster:
             if cfg_capa.get("tabla_postgis_raster"):
+                pg_raster = dict(
+                    cfg["pg"], schema=cfg_capa.get("schema_postgis_raster", "cartografia_base")
+                )
                 capa_raster = cargar_raster_postgis(
-                    cfg_capa["tabla_postgis_raster"], cfg["pg"], log
+                    cfg_capa["tabla_postgis_raster"], pg_raster, log
                 )
                 if not capa_raster:
                     return _fallo()
@@ -640,8 +643,14 @@ def generar_composiciones(cfg: dict) -> None:
 
             capas_cargadas = capas_ruta + [c for c in (capa_destino, capa_entrada) if c]
             if not capas_cargadas:
-                log.error(" ✗ No se pudo cargar ninguna capa de rutas de acceso.")
-                return _fallo()
+                # Sin GeoPackage de rutas (p. ej. en la compu de un colega,
+                # donde ese archivo por proyecto no existe): en vez de fallar
+                # el plano completo, se genera igual solo con el mapa base y
+                # el punto del proyecto, para no dejar un hueco en el índice.
+                log.warning(
+                    " ⚠ No se encontró ningún GeoPackage de rutas de acceso; "
+                    "se genera el plano solo con el mapa base y el punto del proyecto."
+                )
 
             for c in capas_cargadas:
                 project.addMapLayer(c, False)
@@ -665,6 +674,8 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.attemptMove(frame_pos)
 
             capas_visibles = [c for c in (capa_destino, capa_entrada) if c] + capas_ruta
+            if not capas_cargadas:
+                capas_visibles = [punto_layer]
             capas_visibles = [_ref(c) for c in capas_visibles if _ref(c)]
             if basemap_id:
                 r = project.mapLayer(basemap_id)
