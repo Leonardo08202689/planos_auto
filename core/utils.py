@@ -135,7 +135,10 @@ def intervalo_para_escala(
     """
     if not escala or escala <= 0:
         return metros_referencia
-    return _redondeo_cartografico(metros_referencia * escala / escala_referencia)
+    factor = escala / escala_referencia
+    if abs(factor - 1) < 1e-6:
+        return metros_referencia
+    return _redondeo_cartografico(metros_referencia * factor)
 
 
 # ---------------------------------------------------------------------------

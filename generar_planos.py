@@ -295,33 +295,6 @@ def generar_composiciones(cfg: dict) -> None:
         ids          = resolver_ids(cfg, cfg_capa)
         layout_actual = cfg_capa.get("layout_nombre", cfg["layout_nombre"])
 
-        # ── a. Cargar datos ───────────────────────────────────────────────────
-        if not es_vertices and not es_raster and not es_rutas and not es_combinada:
-            if cfg_capa.get("origen") == "proyecto":
-                capas_proy = project.mapLayersByName(cfg_capa["nombre_capa"])
-                if not capas_proy:
-                    log.warning(
-                        f" → Capa '{cfg_capa['nombre_capa']}' no encontrada en el proyecto, se omite."
-                    )
-                    return _fallo()
-                capa_pg = capas_proy[0]
-            else:
-                capa_pg = cargar_capa_postgis(cfg_capa, cfg["pg"], bbox_wkt, log)
-                if not capa_pg:
-                    return _fallo()
-                count = capa_pg.featureCount()
-                if count == 0:
-                    log.warning(
-                        f" → Sin datos para '{cfg_capa['nombre_capa']}' (featureCount=0), se omite."
-                    )
-                    return _fallo()
-                elif count == -1:
-                    log.debug(
-                        f" → featureCount no disponible para '{cfg_capa['nombre_capa']}' (PostGIS), continuando..."
-                    )
-                else:
-                    log.debug(f" → {count} feature(s) en '{cfg_capa['nombre_capa']}'.")
-
         # ── b. Clonar composición ─────────────────────────────────────────────
         comp_existente = project.layoutManager().layoutByName(nombre_comp)
         if comp_existente:
@@ -388,6 +361,54 @@ def generar_composiciones(cfg: dict) -> None:
         extent_en_escala = map_item.extent()
         validar_extent(extent_en_escala, cfg_capa["nombre_capa"], log, escala_capa)
 
+        # BBox de la vista real para filtrar PostGIS: con escala automática la
+        # vista puede ser mucho mayor que el polígono, y filtrar solo por el
+        # bbox del polígono dejaría zonas vacías en el resto del mapa.
+        bbox_wkt_visible = transf_4326.transformBoundingBox(
+            extent_en_escala
+        ).asWktPolygon()
+
+        # Grid y barra de escala: los valores configurados se asumen tuneados
+        # para la escala configurada; si la escala final difiere, se reescalan
+        # proporcionalmente (redondeados a valores cartográficos).
+        escala_ref_cfg = (
+            escala_cfg if isinstance(escala_cfg, (int, float)) and escala_cfg else 5000.0
+        )
+
+        def _intervalo_auto(metros_cfg, metros_default=None, escala_ref_default=5000.0):
+            if metros_cfg:
+                return intervalo_para_escala(escala_capa, metros_cfg, escala_ref_cfg)
+            if metros_default is None:
+                return None  # la barra se deriva sola de la escala real del mapa
+            return intervalo_para_escala(escala_capa, metros_default, escala_ref_default)
+
+        # ── a. Cargar datos ───────────────────────────────────────────────────
+        if not es_vertices and not es_raster and not es_rutas and not es_combinada:
+            if cfg_capa.get("origen") == "proyecto":
+                capas_proy = project.mapLayersByName(cfg_capa["nombre_capa"])
+                if not capas_proy:
+                    log.warning(
+                        f" → Capa '{cfg_capa['nombre_capa']}' no encontrada en el proyecto, se omite."
+                    )
+                    return _fallo()
+                capa_pg = capas_proy[0]
+            else:
+                capa_pg = cargar_capa_postgis(cfg_capa, cfg["pg"], bbox_wkt_visible, log)
+                if not capa_pg:
+                    return _fallo()
+                count = capa_pg.featureCount()
+                if count == 0:
+                    log.warning(
+                        f" → Sin datos para '{cfg_capa['nombre_capa']}' (featureCount=0), se omite."
+                    )
+                    return _fallo()
+                elif count == -1:
+                    log.debug(
+                        f" → featureCount no disponible para '{cfg_capa['nombre_capa']}' (PostGIS), continuando..."
+                    )
+                else:
+                    log.debug(f" → {count} feature(s) en '{cfg_capa['nombre_capa']}'.")
+
         # ── Flujo especial: Plano de Vértices ─────────────────────────────────
         if es_vertices:
             capa_vertices = extraer_vertices_poligono(feature_poligono, crs_origen, log)
@@ -409,12 +430,13 @@ def generar_composiciones(cfg: dict) -> None:
 
             reenlazar_barra_escala(
                 nueva_comp, map_item, log,
-                unidades_por_segmento=cfg_capa.get("barra_escala_segmento")
-                or intervalo_para_escala(escala_capa, 50),
+                unidades_por_segmento=_intervalo_auto(
+                    cfg_capa.get("barra_escala_segmento"), 50
+                ),
             )
             configurar_grid_mapa(
                 map_item,
-                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 100),
+                _intervalo_auto(cfg_capa.get("grid_intervalo"), 100),
                 log,
             )
             actualizar_leyenda(nueva_comp, ids, poly_layer, capa_vertices, log=log)
@@ -460,7 +482,7 @@ def generar_composiciones(cfg: dict) -> None:
             grupo_extra = extra_cfg.get("grupo_leyenda")
             for spec in extra_cfg.get("capas", []):
                 c = cargar_capa_extra(
-                    spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt, log
+                    spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt_visible, log
                 )
                 if not c:
                     continue
@@ -505,11 +527,11 @@ def generar_composiciones(cfg: dict) -> None:
 
             reenlazar_barra_escala(
                 nueva_comp, map_item, log,
-                unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
+                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
             )
             configurar_grid_mapa(
                 map_item,
-                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 1000),
+                _intervalo_auto(cfg_capa.get("grid_intervalo"), 1000),
                 log,
             )
             # La estrella del proyecto y las capas extra en la leyenda; el ráster no lleva simbología.
@@ -539,7 +561,7 @@ def generar_composiciones(cfg: dict) -> None:
                 cfg_tabla = dict(cfg.get("defaults_capa", {}))
                 cfg_tabla.update(spec)
                 cfg_tabla.setdefault("nombre_capa", spec["tabla_postgis"])
-                capa_pg_i = cargar_capa_postgis(cfg_tabla, cfg["pg"], bbox_wkt, log)
+                capa_pg_i = cargar_capa_postgis(cfg_tabla, cfg["pg"], bbox_wkt_visible, log)
                 if not capa_pg_i:
                     continue
                 capa_r = recortar_y_reproyectar(
@@ -600,11 +622,11 @@ def generar_composiciones(cfg: dict) -> None:
 
             reenlazar_barra_escala(
                 nueva_comp, map_item, log,
-                unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
+                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
             )
             configurar_grid_mapa(
                 map_item,
-                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 50000),
+                _intervalo_auto(cfg_capa.get("grid_intervalo"), 50000),
                 log,
             )
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_obj, log=log)
@@ -721,7 +743,7 @@ def generar_composiciones(cfg: dict) -> None:
 
             reenlazar_barra_escala(
                 nueva_comp, map_item, log,
-                unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
+                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
             )
             configurar_grid_mapa(
                 map_item,
@@ -897,7 +919,7 @@ def generar_composiciones(cfg: dict) -> None:
         grupo_extra = extra_cfg.get("grupo_leyenda")
         for spec in extra_cfg.get("capas", []):
             c = cargar_capa_extra(
-                spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt, log
+                spec, extra_cfg, cfg["pg"], crs_origen, extent_en_escala, bbox_wkt_visible, log
             )
             if not c:
                 continue
@@ -941,7 +963,7 @@ def generar_composiciones(cfg: dict) -> None:
         reenlazar_barra_escala(nueva_comp, map_item, log)
         configurar_grid_mapa(
             map_item,
-            cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 500),
+            _intervalo_auto(cfg_capa.get("grid_intervalo"), 500),
             log,
         )
         actualizar_leyenda(nueva_comp, ids, capa_referencia, capa_para_leyenda, *capas_extra_obj, log=log)
