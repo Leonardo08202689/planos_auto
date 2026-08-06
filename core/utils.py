@@ -102,6 +102,42 @@ def formato_escala(escala) -> str:
     return f"Escala 1:{escala:,}".replace(",", " ")
 
 
+def _redondeo_cartografico(valor: float) -> float:
+    """Menor valor 'bonito' (1, 2, 2.5, 5 × 10^n) >= valor."""
+    if valor <= 0:
+        return 0.0
+    exponente = math.floor(math.log10(valor))
+    base      = valor / 10 ** exponente
+    for redondo in (1, 2, 2.5, 5, 10):
+        if base <= redondo * (1 + 1e-9):
+            return redondo * 10 ** exponente
+    return 10.0 ** (exponente + 1)
+
+
+def escala_redonda_arriba(escala: float) -> int:
+    """
+    Menor escala cartográfica estándar (1:1 000, 1:2 000, 1:2 500, 1:5 000,
+    1:10 000, …) que sea >= la escala dada. Se usa para redondear la escala
+    mínima a la que el polígono cabe en el marco del layout.
+    """
+    redonda = _redondeo_cartografico(escala)
+    return int(round(redonda)) if redonda else 5000
+
+
+def intervalo_para_escala(
+    escala: float, metros_referencia: float, escala_referencia: float = 5000.0
+) -> float:
+    """
+    Escala un intervalo en metros (grid, segmento de barra) tuneado para una
+    escala de referencia hacia la escala real del mapa, redondeado a un valor
+    cartográfico. Así los defaults pensados para 1:5 000 siguen viéndose bien
+    cuando la escala crece con polígonos grandes.
+    """
+    if not escala or escala <= 0:
+        return metros_referencia
+    return _redondeo_cartografico(metros_referencia * escala / escala_referencia)
+
+
 # ---------------------------------------------------------------------------
 # Barra de escala
 # ---------------------------------------------------------------------------
@@ -115,8 +151,6 @@ def segmento_barra_escala(escala: float, mm_por_segmento: float = 20.0) -> float
     """
     if not escala or escala <= 0:
         return 100.0
-    if round(escala) == 5000:
-        return 150.0
     metros_objetivo = escala * mm_por_segmento / 1000.0
     exponente = math.floor(math.log10(metros_objetivo))
     base      = metros_objetivo / 10 ** exponente

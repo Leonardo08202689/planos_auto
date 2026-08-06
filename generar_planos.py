@@ -61,7 +61,9 @@ from core.simbologia import (
 from core.utils      import (
     color_para_categoria,
     crear_logger,
+    escala_redonda_arriba,
     formato_escala,
+    intervalo_para_escala,
     sanitizar_nombre,
     titulo_capa,
 )
@@ -352,16 +354,32 @@ def generar_composiciones(cfg: dict) -> None:
             )
             return _fallo()
 
-        escala_capa = cfg_capa.get("escala")
-        if not escala_capa:
-            escala_capa = 5000
-            log.warning(" → 'escala' no definida en la config; usando 1:5 000.")
-        # La etiqueta lbl_escala debe reflejar la escala realmente usada
-        cfg_capa["escala"] = escala_capa
-
         frame_size = map_item.sizeWithUnits()
         frame_pos  = map_item.positionWithUnits()
         map_item.setCrs(crs_origen)
+
+        # Escala mínima a la que el polígono (con un 10 % de aire) cabe
+        # completo en el marco, redondeada a escala cartográfica estándar.
+        # zoomToExtent conserva el tamaño del ítem y solo ajusta el extent.
+        margen = 0.05 * max(bbox_nativo.width(), bbox_nativo.height())
+        map_item.zoomToExtent(bbox_nativo.buffered(margen))
+        escala_minima = escala_redonda_arriba(map_item.scale())
+
+        escala_cfg = cfg_capa.get("escala")
+        if not escala_cfg or escala_cfg == "auto":
+            escala_capa = escala_minima
+            log.debug(f" → Escala automática: 1:{escala_capa:,}")
+        elif escala_cfg < escala_minima:
+            escala_capa = escala_minima
+            log.warning(
+                f" ⚠ La escala 1:{escala_cfg:,} de la config no alcanza para "
+                f"el polígono; se usa 1:{escala_capa:,}."
+            )
+        else:
+            escala_capa = escala_cfg
+        # La etiqueta lbl_escala debe reflejar la escala realmente usada
+        cfg_capa["escala"] = escala_capa
+
         map_item.setExtent(bbox_nativo)
         map_item.setScale(escala_capa)
         map_item.attemptResize(frame_size)
@@ -389,8 +407,16 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(nueva_comp, map_item, log, unidades_por_segmento=50)
-            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 100), log)
+            reenlazar_barra_escala(
+                nueva_comp, map_item, log,
+                unidades_por_segmento=cfg_capa.get("barra_escala_segmento")
+                or intervalo_para_escala(escala_capa, 50),
+            )
+            configurar_grid_mapa(
+                map_item,
+                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 100),
+                log,
+            )
             actualizar_leyenda(nueva_comp, ids, poly_layer, capa_vertices, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -481,7 +507,11 @@ def generar_composiciones(cfg: dict) -> None:
                 nueva_comp, map_item, log,
                 unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
             )
-            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 1000), log)
+            configurar_grid_mapa(
+                map_item,
+                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 1000),
+                log,
+            )
             # La estrella del proyecto y las capas extra en la leyenda; el ráster no lleva simbología.
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_extra_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
@@ -572,7 +602,11 @@ def generar_composiciones(cfg: dict) -> None:
                 nueva_comp, map_item, log,
                 unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
             )
-            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 50000), log)
+            configurar_grid_mapa(
+                map_item,
+                cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 50000),
+                log,
+            )
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -689,7 +723,12 @@ def generar_composiciones(cfg: dict) -> None:
                 nueva_comp, map_item, log,
                 unidades_por_segmento=cfg_capa.get("barra_escala_segmento"),
             )
-            configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 2500), log)
+            configurar_grid_mapa(
+                map_item,
+                cfg_capa.get("grid_intervalo")
+                or intervalo_para_escala(escala_capa, 2500, escala_referencia=50000),
+                log,
+            )
             actualizar_leyenda(nueva_comp, ids, *capas_ruta, capa_destino, capa_entrada, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -900,7 +939,11 @@ def generar_composiciones(cfg: dict) -> None:
         map_item.refresh()
 
         reenlazar_barra_escala(nueva_comp, map_item, log)
-        configurar_grid_mapa(map_item, cfg_capa.get("grid_intervalo", 500), log)
+        configurar_grid_mapa(
+            map_item,
+            cfg_capa.get("grid_intervalo") or intervalo_para_escala(escala_capa, 500),
+            log,
+        )
         actualizar_leyenda(nueva_comp, ids, capa_referencia, capa_para_leyenda, *capas_extra_obj, log=log)
         _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
         nueva_comp.refresh()
