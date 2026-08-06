@@ -65,7 +65,7 @@ def cargar_capa_postgis(cfg_capa: dict, pg: dict, bbox_wkt: str, log):
 
     if cfg_capa.get("sin_bbox_filter", False):
         filtro_sql = ""
-        log.info(
+        log.debug(
             f"   → Cargando '{cfg_capa['tabla_postgis']}' "
             f"SIN filtro bbox (cobertura amplia)."
         )
@@ -207,7 +207,7 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
 
     dp.addFeatures(features)
     capa_vertices.updateExtents()
-    log.info(f" ✓ {len(features)} vértices extraídos del polígono.")
+    log.debug(f" ✓ {len(features)} vértices extraídos del polígono.")
     return capa_vertices
 
 
@@ -247,7 +247,7 @@ def recortar_y_reproyectar(capa, crs_destino, extent_en_escala, log,
     }, context=context)
     candidatos = res_pre["OUTPUT"]
     if candidatos.featureCount() == 0:
-        log.info(f" → '{nombre_log}': sin features en el área de interés.")
+        log.debug(f" → '{nombre_log}': sin features en el área de interés.")
         return None
 
     res_fix = processing.run("native:fixgeometries", {
@@ -266,7 +266,7 @@ def recortar_y_reproyectar(capa, crs_destino, extent_en_escala, log,
         "INPUT": res_reproj["OUTPUT"], "OVERLAY": layer_extent, "OUTPUT": "memory:",
     })
     capa_recortada = res_clip["OUTPUT"]
-    log.info(f" → '{nombre_log}': {capa_recortada.featureCount()} feature(s) recortado(s).")
+    log.debug(f" → '{nombre_log}': {capa_recortada.featureCount()} feature(s) recortado(s).")
     return capa_recortada
 
 

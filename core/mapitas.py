@@ -130,7 +130,7 @@ def detectar_ubicacion(centroid_geom, crs_proyecto, pg: dict,
             f = next(c.getFeatures())
             res[out_id]  = str(f[key_id])
             res[out_nom] = str(f[key_nom])
-            log.info(f" ✓ {out_nom.replace('_',' ').title()}: {res[out_nom]}")
+            log.debug(f" ✓ {out_nom.replace('_',' ').title()}: {res[out_nom]}")
         else:
             log.warning(f" → No detectado: {tabla}")
 
@@ -261,4 +261,4 @@ def configurar_mapitas(layout_comp, id_principal: str,
         item.refresh()
         nom = capas_ref.get("nomgeo_municipio" if nivel != "nacional"
                              else "nomgeo_estado", "")
-        log.info(f" ✓ Mapita '{item.id()}' ({nivel}): {nom}")
+        log.debug(f" ✓ Mapita '{item.id()}' ({nivel}): {nom}")

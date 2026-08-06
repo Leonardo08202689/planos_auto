@@ -148,7 +148,7 @@ def generar_composiciones(cfg: dict) -> None:
     feature_poligono = seleccionados[0]
 
     aplicar_estilo_poligono(poly_layer)
-    log.info(" ✓ Estilo del polígono de trabajo aplicado.")
+    log.debug(" ✓ Estilo del polígono de trabajo aplicado.")
 
     # ── Limpiar composiciones de corridas anteriores ──────────────────────────
     # Cada corrida borra las capas de la corrida previa, así que cualquier
@@ -166,7 +166,7 @@ def generar_composiciones(cfg: dict) -> None:
         for nodo_capa in grupo_mia.findLayers():
             project.removeMapLayer(nodo_capa.layerId())
         grupo_mia.removeAllChildren()
-        log.info(" → Limpiando grupo 'Planos Generados' previo...")
+        log.debug(" → Limpiando grupo 'Planos Generados' previo...")
     else:
         grupo_mia = root_tree.addGroup("Planos Generados")
 
@@ -174,7 +174,7 @@ def generar_composiciones(cfg: dict) -> None:
     mapa_base = project.mapLayersByName("Google Satellite")
     if mapa_base:
         basemap_layer = mapa_base[0]
-        log.info(" → Reutilizando fondo satelital existente.")
+        log.debug(" → Reutilizando fondo satelital existente.")
     else:
         url_basemap = (
             "type=xyz"
@@ -185,7 +185,7 @@ def generar_composiciones(cfg: dict) -> None:
         if basemap_layer.isValid():
             project.addMapLayer(basemap_layer, False)
             grupo_mia.addLayer(basemap_layer)
-            log.info(" ✓ Fondo satelital añadido al grupo.")
+            log.debug(" ✓ Fondo satelital añadido al grupo.")
         else:
             basemap_layer = None
             log.warning(" → Fondo satelital no disponible.")
@@ -233,7 +233,7 @@ def generar_composiciones(cfg: dict) -> None:
     cfg_mapitas = cfg.get("mapitas", {})
     capas_ref: dict = {}
     if cfg_mapitas:
-        log.info(" → Preparando capas de referencia para mapitas...")
+        log.debug(" → Preparando capas de referencia para mapitas...")
         capas_ref = preparar_capas_referencia(
             centroid_geom, crs_origen, cfg["pg"], cfg_mapitas, project, log
         )
@@ -288,9 +288,7 @@ def generar_composiciones(cfg: dict) -> None:
         nombre_comp = f"Comp_{cfg_capa['nombre_capa']}"
         grupo_plano = grupo_mia.insertGroup(0, cfg_capa["nombre_plano"])
 
-        log.info(f"\n{'─' * 55}")
-        log.info(f" Procesando: {nombre_comp}")
-        log.info(f"{'─' * 55}")
+        log.debug(f" Procesando: {nombre_comp}")
 
         ids          = resolver_ids(cfg, cfg_capa)
         layout_actual = cfg_capa.get("layout_nombre", cfg["layout_nombre"])
@@ -316,11 +314,11 @@ def generar_composiciones(cfg: dict) -> None:
                     )
                     return _fallo()
                 elif count == -1:
-                    log.info(
+                    log.debug(
                         f" → featureCount no disponible para '{cfg_capa['nombre_capa']}' (PostGIS), continuando..."
                     )
                 else:
-                    log.info(f" → {count} feature(s) en '{cfg_capa['nombre_capa']}'.")
+                    log.debug(f" → {count} feature(s) en '{cfg_capa['nombre_capa']}'.")
 
         # ── b. Clonar composición ─────────────────────────────────────────────
         comp_existente = project.layoutManager().layoutByName(nombre_comp)
@@ -738,10 +736,10 @@ def generar_composiciones(cfg: dict) -> None:
             "OUTPUT": "memory:",
         })
         capa_candidatos = res_pre["OUTPUT"]
-        log.info(f" → Pre-filtro bbox: {capa_candidatos.featureCount()} candidato(s).")
+        log.debug(f" → Pre-filtro bbox: {capa_candidatos.featureCount()} candidato(s).")
 
         # ── e. Sanear geometrías (solo candidatos) ────────────────────────────
-        log.info(" → Saneando geometrías (fixgeometries)...")
+        log.debug(" → Saneando geometrías (fixgeometries)...")
         res_fix = processing.run("native:fixgeometries", {
             "INPUT": capa_candidatos, "OUTPUT": "memory:",
         })
@@ -755,7 +753,7 @@ def generar_composiciones(cfg: dict) -> None:
         # ── g. Recorte preciso al extent visible ──────────────────────────────
         crs_reproyectada = capa_reproyectada.crs()
         if crs_reproyectada.authid() != crs_origen.authid():
-            log.info(
+            log.debug(
                 f" → Reproyectando extent de clip: "
                 f"{crs_origen.authid()} → {crs_reproyectada.authid()}"
             )
@@ -789,7 +787,7 @@ def generar_composiciones(cfg: dict) -> None:
                 f"Revisa escala y CRS."
             )
         else:
-            log.info(f" → Clip: {n_clip} feature(s).")
+            log.debug(f" → Clip: {n_clip} feature(s).")
 
         # ── h. Simbología ─────────────────────────────────────────────────────
         campo_cat  = cfg_capa.get("campo_categoria", "")
@@ -798,7 +796,7 @@ def generar_composiciones(cfg: dict) -> None:
 
         if qml_ruta and os.path.exists(qml_ruta):
             capa_recortada.loadNamedStyle(qml_ruta)
-            log.info(f" ✓ Estilo QML aplicado: {estilo_qml}")
+            log.debug(f" ✓ Estilo QML aplicado: {estilo_qml}")
         elif campo_cat:
             aplicar_renderer_categorizado(
                 capa_recortada, campo_cat, log, cfg_capa.get("paleta", "default"),
@@ -833,7 +831,7 @@ def generar_composiciones(cfg: dict) -> None:
             capa_para_leyenda.setCustomProperty("nombre_leyenda", nombre_leyenda_cat)
 
         # ── i. Centroides y etiquetas ─────────────────────────────────────────
-        log.info(" → Extrayendo centroides temáticos...")
+        log.debug(" → Extrayendo centroides temáticos...")
         res_cent       = processing.run("native:centroids", {
             "INPUT": capa_recortada, "ALL_PARTS": True, "OUTPUT": "memory:",
         })
@@ -922,7 +920,12 @@ def generar_composiciones(cfg: dict) -> None:
     # =========================================================================
     # LOOP PRINCIPAL — un error en un plano no aborta los demás
     # =========================================================================
-    for cfg_capa_raw in cfg["capas"]:
+    total_planos = len(cfg["capas"])
+    for num_plano, cfg_capa_raw in enumerate(cfg["capas"], 1):
+        log.info(
+            f"[{num_plano}/{total_planos}] "
+            f"{cfg_capa_raw.get('nombre_plano', '(sin nombre)')}…"
+        )
         try:
             resultado = _procesar_plano(cfg_capa_raw)
         except Exception:

@@ -184,7 +184,9 @@ def crear_logger(output_dir: str) -> logging.Logger:
     os.makedirs(output_dir, exist_ok=True)
     ts     = datetime.now().strftime("%Y%m%d_%H%M%S")
     logger = logging.getLogger("Composiciones")
-    logger.setLevel(logging.INFO)
+    # DEBUG va solo al archivo de log (detalle para depurar); el panel del
+    # plugin y la consola muestran únicamente INFO+ (progreso y problemas).
+    logger.setLevel(logging.DEBUG)
     for h in list(logger.handlers):
         h.close()
     logger.handlers.clear()
@@ -194,10 +196,13 @@ def crear_logger(output_dir: str) -> logging.Logger:
         os.path.join(output_dir, f"log_{ts}.txt"), encoding="utf-8"
     )
     fh.setFormatter(fmt)
+    fh.setLevel(logging.DEBUG)
     sh = logging.StreamHandler()
     sh.setFormatter(fmt)
+    sh.setLevel(logging.INFO)
     logger.addHandler(fh)
     logger.addHandler(sh)
     for extra in EXTRA_HANDLERS:
+        extra.setLevel(logging.INFO)
         logger.addHandler(extra)
     return logger

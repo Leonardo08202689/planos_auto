@@ -56,7 +56,7 @@ def cargar_o_importar_layout(project, layout_nombre: str, plantillas_dir: str, l
     if layout_previo:
         project.layoutManager().removeLayout(layout_previo)
 
-    log.info(f" → Importando plantilla desde: {qpt_path}")
+    log.debug(f" → Importando plantilla desde: {qpt_path}")
     try:
         from qgis.core import QgsPrintLayout, QgsReadWriteContext
         from qgis.PyQt.QtXml import QDomDocument
@@ -105,7 +105,7 @@ def validar_extent(extent, nombre_capa: str, log, escala: float = 0) -> None:
             f"Verifica 'ids_override → mapa'."
         )
     else:
-        log.info(f" → extent_en_escala: {ancho:,.0f} × {alto:,.0f} u.")
+        log.debug(f" → extent_en_escala: {ancho:,.0f} × {alto:,.0f} u.")
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +224,7 @@ def reenlazar_barra_escala(layout_comp, map_item, log, unidades_por_segmento=Non
             item.refresh()
             n += 1
     if n:
-        log.info(
+        log.debug(
             f" ✓ Barra(s) de escala re-enlazada(s): {n} "
             f"({unidades_por_segmento:,.0f} m/segmento)"
         )
@@ -242,7 +242,7 @@ def configurar_grid_mapa(map_item, intervalo_m: float, log) -> None:
     grid.setUnits(QgsLayoutItemMapGrid.MapUnit)
     grid.setEnabled(True)
     map_item.refresh()
-    log.info(f" ✓ Grid: {intervalo_m:,.0f} m")
+    log.debug(f" ✓ Grid: {intervalo_m:,.0f} m")
 
 
 def fijar_logo(layout_comp, id_logo: str, logo_ruta: str, log) -> None:
@@ -256,7 +256,7 @@ def fijar_logo(layout_comp, id_logo: str, logo_ruta: str, log) -> None:
         item.setPicturePath(logo_ruta)
         item.refreshPicture()
         item.refresh()
-        log.info(f" ✓ Logo: {os.path.basename(logo_ruta)}")
+        log.debug(f" ✓ Logo: {os.path.basename(logo_ruta)}")
     else:
         log.warning(f" → Ítem de logo '{id_logo}' no encontrado o no es imagen.")
 

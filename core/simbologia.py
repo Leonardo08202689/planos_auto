@@ -130,7 +130,7 @@ def aplicar_estilo_vertices(capa_vertices, log) -> None:
     capa_vertices.setLabelsEnabled(True)
     capa_vertices.setLabeling(QgsVectorLayerSimpleLabeling(pal))
     capa_vertices.triggerRepaint()
-    log.info(" ✓ Estilo de vértices aplicado (círculos amarillos numerados).")
+    log.debug(" ✓ Estilo de vértices aplicado (círculos amarillos numerados).")
 
 
 def aplicar_renderer_categorizado(
@@ -194,7 +194,7 @@ def aplicar_renderer_categorizado(
         categorias.append(QgsRendererCategory(valor, simbolo, etiqueta))
 
     capa.setRenderer(QgsCategorizedSymbolRenderer(campo, categorias))
-    log.info(
+    log.debug(
         f" ✓ Renderer categorizado: {len(categorias)} categorías "
         f"en '{campo}' (paleta '{paleta}')"
     )
@@ -241,14 +241,14 @@ def capa_legend_ubicacion_actual(capa, campo: str, punto_geom, log):
     capa_leyenda.setRenderer(QgsCategorizedSymbolRenderer(
         campo, [QgsRendererCategory(categoria.value(), categoria.symbol().clone(), categoria.label())]
     ))
-    log.info(f" ✓ Leyenda filtrada a la ubicación actual: '{categoria.label()}'")
+    log.debug(f" ✓ Leyenda filtrada a la ubicación actual: '{categoria.label()}'")
     return capa_leyenda
 
 
 def aplicar_opacidad_capa(capa, opacidad: float, log) -> None:
     capa.setOpacity(opacidad)
     capa.triggerRepaint()
-    log.info(f" ✓ Opacidad de capa: {int(opacidad * 100)}%")
+    log.debug(f" ✓ Opacidad de capa: {int(opacidad * 100)}%")
 
 
 def aplicar_etiquetas_pal(
@@ -287,7 +287,7 @@ def aplicar_etiquetas_pal(
     capa_centroides.setLabelsEnabled(True)
     capa_centroides.setLabeling(QgsVectorLayerSimpleLabeling(pal))
     capa_centroides.triggerRepaint()
-    log.info(f" ✓ Etiquetas PAL configuradas en campo '{campo}'")
+    log.debug(f" ✓ Etiquetas PAL configuradas en campo '{campo}'")
 
 
 def aplicar_etiquetas_poligonos_grandes(
@@ -326,4 +326,4 @@ def aplicar_etiquetas_poligonos_grandes(
     capa.setLabelsEnabled(True)
     capa.setLabeling(QgsVectorLayerSimpleLabeling(pal))
     capa.triggerRepaint()
-    log.info(f" ✓ Etiquetas (solo polígonos grandes) en campo '{campo}'")
+    log.debug(f" ✓ Etiquetas (solo polígonos grandes) en campo '{campo}'")
