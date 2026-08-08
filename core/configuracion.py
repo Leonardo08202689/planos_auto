@@ -47,11 +47,9 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
         es_rutas     = capa.get("tipo") == "rutas_acceso"
         es_combinada = capa.get("tipo") == "capas_combinadas"
         de_proyecto  = capa.get("origen") == "proyecto"
-        if es_raster and not (capa.get("ruta_raster") or capa.get("tabla_postgis_raster")):
-            raise ValueError(
-                f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='raster' "
-                f"pero no define 'ruta_raster' ni 'tabla_postgis_raster'."
-            )
+        # 'ruta_raster'/'tabla_postgis_raster' son opcionales en tipo='raster':
+        # sin ninguno, el plano queda solo con basemap + capas_extra (p. ej. un
+        # plano de localización de detalle con vías, sin carta topográfica).
         if es_rutas and not capa.get("ruta_gpkg"):
             raise ValueError(
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='rutas_acceso' "

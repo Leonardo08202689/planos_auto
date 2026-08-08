@@ -8,6 +8,7 @@ import textwrap
 from qgis.core import (
     Qgis,
     QgsCategorizedSymbolRenderer,
+    QgsField,
     QgsFillSymbol,
     QgsLinePatternFillSymbolLayer,
     QgsMarkerSymbol,
@@ -21,6 +22,7 @@ from qgis.core import (
     QgsTextFormat,
     QgsVectorLayerSimpleLabeling,
 )
+from qgis.PyQt.QtCore import QVariant
 from qgis.PyQt.QtGui import QColor, QFont
 
 from .utils import color_para_categoria, paletas_disponibles
@@ -135,12 +137,21 @@ def aplicar_estilo_vertices(capa_vertices, log) -> None:
 
 def aplicar_renderer_categorizado(
     capa, campo: str, log, paleta: str = "default", campo_legenda_extra: str = "",
+    numerar_categorias: bool = False,
 ) -> bool:
     """
     Asigna un renderer categorizado por 'campo' con la paleta temática indicada.
     Si 'campo_legenda_extra' se indica, la etiqueta de cada categoría en la leyenda
     muestra "valor, valor_extra" (p. ej. "12, 508-0/01" para UGA + clave) en vez de
     solo el valor de 'campo'. Asume relación 1:1 entre 'campo' y 'campo_legenda_extra'.
+
+    'numerar_categorias=True' es para capas sin una clave numérica propia en la
+    BD (p. ej. AICA, que solo trae 'nombre'): asigna un número correlativo
+    1..N a cada categoría (mismo orden que la leyenda), lo escribe en un
+    campo nuevo 'clave_auto' de 'capa' (para poder etiquetarlo en el mapa
+    con solo el número) y arma la leyenda como "N, nombre" — igual que las
+    capas que sí traen clave oficial (RTP, RHP, ANP federal).
+
     Retorna True si tuvo éxito, False si el campo no existe o está vacío.
     """
     if paleta not in paletas_disponibles():
@@ -159,9 +170,22 @@ def aplicar_renderer_categorizado(
         )
         return False
 
+    def _orden_valor(v):
+        # Claves numéricas ordenadas como número (str daría "45" < "5")
+        try:
+            return (0, float(v), "")
+        except (TypeError, ValueError):
+            return (1, 0.0, str(v))
+
+    def _fmt_valor(v):
+        # Claves numéricas enteras sin el ".0" (13.0 → "13") en la leyenda
+        if isinstance(v, float) and v.is_integer():
+            return str(int(v))
+        return str(v)
+
     valores = sorted(
         [v for v in capa.dataProvider().uniqueValues(idx) if v is not None],
-        key=str,
+        key=_orden_valor,
     )
     if not valores:
         log.warning(f" → Sin valores únicos en '{campo}'.")
@@ -175,6 +199,17 @@ def aplicar_renderer_categorizado(
             if v not in mapa_extra:
                 mapa_extra[v] = f[idx_extra]
 
+    numero_por_valor = {valor: i + 1 for i, valor in enumerate(valores)}
+    if numerar_categorias:
+        capa.startEditing()
+        if capa.fields().lookupField("clave_auto") == -1:
+            capa.dataProvider().addAttributes([QgsField("clave_auto", QVariant.Int)])
+            capa.updateFields()
+        idx_auto = capa.fields().lookupField("clave_auto")
+        for f in capa.getFeatures():
+            capa.changeAttributeValue(f.id(), idx_auto, numero_por_valor[f[idx]])
+        capa.commitChanges()
+
     categorias = []
     for i, valor in enumerate(valores):
         simbolo = QgsSymbol.defaultSymbol(capa.geometryType())
@@ -185,7 +220,13 @@ def aplicar_renderer_categorizado(
                 sl.setStrokeColor(QColor(80, 80, 80, 180))
             if hasattr(sl, "setStrokeWidth"):
                 sl.setStrokeWidth(0.2)
-        etiqueta = f"{valor}, {mapa_extra[valor]}" if valor in mapa_extra else str(valor)
+        if numerar_categorias:
+            etiqueta = f"{numero_por_valor[valor]}, {_fmt_valor(valor)}"
+        else:
+            etiqueta = (
+                f"{_fmt_valor(valor)}, {mapa_extra[valor]}"
+                if valor in mapa_extra else _fmt_valor(valor)
+            )
         # Los nombres largos (p. ej. POET: "unidad, clave") no caben en una
         # sola línea en el panel angosto de las figuras; se parten en varias
         # líneas (la leyenda sí tiene margen vertical de sobra) en vez de
@@ -288,6 +329,36 @@ def aplicar_etiquetas_pal(
     capa_centroides.setLabeling(QgsVectorLayerSimpleLabeling(pal))
     capa_centroides.triggerRepaint()
     log.debug(f" ✓ Etiquetas PAL configuradas en campo '{campo}'")
+
+
+def aplicar_etiquetas_linea(capa, campo: str, log) -> None:
+    """Etiquetas PAL para capas de líneas (vías, ríos, etc.), colocadas
+    paralelas a la línea. 'OverPoint' (usado por aplicar_etiquetas_pal) no
+    aplica a geometrías de línea y QGIS simplemente no dibuja nada."""
+    if not campo:
+        return
+
+    pal           = QgsPalLayerSettings()
+    pal.fieldName = campo
+    pal.enabled   = True
+    pal.placement = QgsPalLayerSettings.Line
+
+    fmt = QgsTextFormat()
+    fmt.setFont(QFont("Arial", 7, QFont.Bold))
+    fmt.setSize(7)
+    fmt.setColor(QColor(30, 30, 30))
+
+    buf = QgsTextBufferSettings()
+    buf.setEnabled(True)
+    buf.setSize(1.0)
+    buf.setColor(QColor(255, 255, 255, 220))
+    fmt.setBuffer(buf)
+    pal.setFormat(fmt)
+
+    capa.setLabelsEnabled(True)
+    capa.setLabeling(QgsVectorLayerSimpleLabeling(pal))
+    capa.triggerRepaint()
+    log.debug(f" ✓ Etiquetas de línea configuradas en campo '{campo}'")
 
 
 def aplicar_etiquetas_poligonos_grandes(

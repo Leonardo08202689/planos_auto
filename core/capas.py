@@ -81,6 +81,13 @@ def cargar_capa_postgis(cfg_capa: dict, pg: dict, bbox_wkt: str, log):
             f"ST_SRID({cfg_capa['geom_col']})))"
         )
 
+    # Filtro adicional de la config (p. ej. recortar una tabla nacional a un
+    # solo estado: "filtro_extra": "cve_ent = '26'"), combinado con el
+    # filtro espacial si ambos están presentes.
+    filtro_extra = cfg_capa.get("filtro_extra")
+    if filtro_extra:
+        filtro_sql = f"({filtro_sql}) AND ({filtro_extra})" if filtro_sql else filtro_extra
+
     uri = QgsDataSourceUri()
     # sslmode va como argumento de setConnection: setSslMode() no existe
     # en los bindings de QGIS 3.28
@@ -121,6 +128,7 @@ def cargar_capa_extra(spec: dict, extra_cfg: dict, pg: dict, crs_destino,
             "key":             spec.get("key", "gid"),
             "nombre_capa":     spec.get("nombre", tabla),
             "sin_bbox_filter": spec.get("sin_bbox_filter", False),
+            "filtro_extra":    spec.get("filtro_extra"),
         }
         pg_extra = dict(pg, schema=spec.get("schema", "cartografia_base"))
         capa_pg = cargar_capa_postgis(cfg_tabla, pg_extra, bbox_wkt, log)
@@ -137,6 +145,79 @@ def cargar_capa_extra(spec: dict, extra_cfg: dict, pg: dict, crs_destino,
     return cargar_recortar_gpkg(
         extra_cfg["ruta_gpkg"], nombre_layer, crs_destino, extent_en_escala, log
     )
+
+
+def obtener_extent_mascara(cfg_mask: dict, pg: dict, crs_destino, log):
+    """
+    Bounding box (en 'crs_destino') de una tabla PostGIS usada como máscara,
+    p. ej. para centrar el mapa en el estado de Sonora en vez del polígono
+    del proyecto:
+      "centrar_en": {"schema": "cartografia_base",
+                     "tabla_postgis": "mexico_estados",
+                     "filtro_extra": "cve_ent = '26'"}
+    Retorna QgsRectangle o None si la máscara no puede cargarse.
+    """
+    cfg_tabla = {
+        "tabla_postgis":   cfg_mask["tabla_postgis"],
+        "geom_col":        cfg_mask.get("geom_col", "geom"),
+        "tipo_geom":       "MultiPolygon",
+        "key":             cfg_mask.get("key", "gid"),
+        "nombre_capa":     f"mascara_{cfg_mask['tabla_postgis']}",
+        "sin_bbox_filter": True,
+        "filtro_extra":    cfg_mask.get("filtro_extra"),
+    }
+    pg_mask = dict(pg, schema=cfg_mask.get("schema", "cartografia_base"))
+    mascara = cargar_capa_postgis(cfg_tabla, pg_mask, "", log)
+    if not mascara or mascara.featureCount() == 0:
+        log.warning(" → Máscara de centrado no disponible; se centra en el polígono del proyecto.")
+        return None
+
+    extent = mascara.extent()
+    if mascara.crs().authid() != crs_destino.authid():
+        transf = QgsCoordinateTransform(mascara.crs(), crs_destino, QgsProject.instance())
+        extent = transf.transformBoundingBox(extent)
+    return extent
+
+
+def recortar_a_mascara(capa, cfg_mask: dict, pg: dict, log):
+    """
+    Recorta 'capa' (ya reproyectada/recortada al extent) a la geometría de
+    una tabla PostGIS usada como máscara — p. ej. limitar una capa nacional
+    (RTP, ANP…) al estado de Sonora con:
+      "recortar_a": {"schema": "cartografia_base",
+                     "tabla_postgis": "mexico_estados",
+                     "filtro_extra": "cve_ent = '26'"}
+    Si la máscara no puede cargarse, devuelve la capa sin recortar.
+    """
+    import processing
+
+    cfg_tabla = {
+        "tabla_postgis":   cfg_mask["tabla_postgis"],
+        "geom_col":        cfg_mask.get("geom_col", "geom"),
+        "tipo_geom":       "MultiPolygon",
+        "key":             cfg_mask.get("key", "gid"),
+        "nombre_capa":     f"mascara_{cfg_mask['tabla_postgis']}",
+        "sin_bbox_filter": True,
+        "filtro_extra":    cfg_mask.get("filtro_extra"),
+    }
+    pg_mask = dict(pg, schema=cfg_mask.get("schema", "cartografia_base"))
+    mascara = cargar_capa_postgis(cfg_tabla, pg_mask, "", log)
+    if not mascara:
+        log.warning(" → Máscara de recorte no disponible; la capa queda sin recortar.")
+        return capa
+
+    res_reproj = processing.run("native:reprojectlayer", {
+        "INPUT": mascara, "TARGET_CRS": capa.crs(), "OUTPUT": "memory:",
+    })
+    res_clip = processing.run("native:clip", {
+        "INPUT": capa, "OVERLAY": res_reproj["OUTPUT"], "OUTPUT": "memory:",
+    })
+    recortada = res_clip["OUTPUT"]
+    log.debug(
+        f" → Recorte a máscara '{cfg_mask['tabla_postgis']}': "
+        f"{recortada.featureCount()} feature(s)."
+    )
+    return recortada
 
 
 def cargar_raster_postgis(tabla: str, pg: dict, log, columna: str = "rast"):

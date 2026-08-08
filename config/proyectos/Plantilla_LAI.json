@@ -87,6 +87,15 @@
       "fuente":          "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k)."
     },
     {
+      "tipo":           "vertices",
+      "nombre_plano":   "PLANO. VÉRTICES DEL PROYECTO",
+      "nombre_capa":    "Vertices_Proyecto",
+      "escala":         2000,
+      "opacidad":       1.0,
+      "grid_intervalo": 100,
+      "fuente":         "Vértices del polígono del proyecto."
+    },
+    {
       "tipo":           "raster",
       "tabla_postgis_raster": "raster_26030",
       "nombre_plano":   "PLANO. LOCALIZACIÓN",

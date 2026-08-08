@@ -32,11 +32,14 @@ from core.capas      import (
     cargar_recortar_gpkg,
     cargar_recortar_shapefile,
     extraer_vertices_poligono,
+    obtener_extent_mascara,
+    recortar_a_mascara,
     recortar_y_reproyectar,
     resolver_capa_poligono,
 )
 from core.composicion import (
     actualizar_leyenda,
+    asegurar_estrella_norte,
     cargar_o_importar_layout,
     configurar_grid_mapa,
     fijar_logo,
@@ -52,6 +55,7 @@ from core.simbologia import (
     aplicar_estilo_poligono,
     aplicar_estilo_vertices,
     aplicar_etiquetas_pal,
+    aplicar_etiquetas_linea,
     aplicar_etiquetas_poligonos_grandes,
     aplicar_opacidad_capa,
     aplicar_renderer_categorizado,
@@ -327,15 +331,28 @@ def generar_composiciones(cfg: dict) -> None:
             )
             return _fallo()
 
+        asegurar_estrella_norte(nueva_comp, map_item, log)
+
         frame_size = map_item.sizeWithUnits()
         frame_pos  = map_item.positionWithUnits()
         map_item.setCrs(crs_origen)
 
-        # Escala mínima a la que el polígono (con un 10 % de aire) cabe
+        # 'centrar_en': centra el mapa en otra geometría (p. ej. el estado de
+        # Sonora) en vez del polígono del proyecto — para figuras de contexto
+        # regional donde el proyecto es solo un punto de referencia y no debe
+        # dominar el encuadre.
+        bbox_centro = bbox_nativo
+        centrar_cfg = cfg_capa.get("centrar_en")
+        if centrar_cfg:
+            bbox_mascara = obtener_extent_mascara(centrar_cfg, cfg["pg"], crs_origen, log)
+            if bbox_mascara:
+                bbox_centro = bbox_mascara
+
+        # Escala mínima a la que el encuadre (con un 10 % de aire) cabe
         # completo en el marco, redondeada a escala cartográfica estándar.
         # zoomToExtent conserva el tamaño del ítem y solo ajusta el extent.
-        margen = 0.05 * max(bbox_nativo.width(), bbox_nativo.height())
-        map_item.zoomToExtent(bbox_nativo.buffered(margen))
+        margen = 0.05 * max(bbox_centro.width(), bbox_centro.height())
+        map_item.zoomToExtent(bbox_centro.buffered(margen))
         escala_minima = escala_redonda_arriba(map_item.scale())
 
         escala_cfg = cfg_capa.get("escala")
@@ -346,14 +363,14 @@ def generar_composiciones(cfg: dict) -> None:
             escala_capa = escala_minima
             log.warning(
                 f" ⚠ La escala 1:{escala_cfg:,} de la config no alcanza para "
-                f"el polígono; se usa 1:{escala_capa:,}."
+                f"el encuadre; se usa 1:{escala_capa:,}."
             )
         else:
             escala_capa = escala_cfg
         # La etiqueta lbl_escala debe reflejar la escala realmente usada
         cfg_capa["escala"] = escala_capa
 
-        map_item.setExtent(bbox_nativo)
+        map_item.setExtent(bbox_centro)
         map_item.setScale(escala_capa)
         map_item.attemptResize(frame_size)
         map_item.attemptMove(frame_pos)
@@ -418,7 +435,7 @@ def generar_composiciones(cfg: dict) -> None:
             grupo_plano.insertLayer(0, capa_vertices)
 
             capas_visibles = [r for r in [_ref(capa_vertices), _ref(poly_layer)] if r]
-            if basemap_id:
+            if basemap_id and not cfg_capa.get("sin_basemap"):
                 r = project.mapLayer(basemap_id)
                 if r:
                     capas_visibles.append(r)
@@ -454,7 +471,12 @@ def generar_composiciones(cfg: dict) -> None:
             }
 
         # ── Flujo especial: Plano con capa ráster (p. ej. localización) ────────
+        # El ráster es opcional: sin 'tabla_postgis_raster' ni 'ruta_raster' se
+        # omite y el plano queda solo con el basemap satelital + capas_extra
+        # (p. ej. un plano de localización de detalle con vías, sin la carta
+        # topográfica de fondo).
         if es_raster:
+            capa_raster = None
             if cfg_capa.get("tabla_postgis_raster"):
                 pg_raster = dict(
                     cfg["pg"], schema=cfg_capa.get("schema_postgis_raster", "cartografia_base")
@@ -465,16 +487,17 @@ def generar_composiciones(cfg: dict) -> None:
                 if not capa_raster:
                     return _fallo()
                 capa_raster.setName(titulo_capa(cfg_capa))
-            else:
+            elif cfg_capa.get("ruta_raster"):
                 ruta_raster = cfg_capa["ruta_raster"]
                 capa_raster = QgsRasterLayer(ruta_raster, titulo_capa(cfg_capa))
                 if not capa_raster.isValid():
                     log.warning(f" → Ráster no válido: {ruta_raster}")
                     return _fallo()
 
-            project.addMapLayer(capa_raster, False)
-            grupo_plano.insertLayer(0, capa_raster)
-            aplicar_opacidad_capa(capa_raster, cfg_capa.get("opacidad", 1.0), log)
+            if capa_raster:
+                project.addMapLayer(capa_raster, False)
+                grupo_plano.insertLayer(0, capa_raster)
+                aplicar_opacidad_capa(capa_raster, cfg_capa.get("opacidad", 1.0), log)
 
             # Capas extra de referencia (caminos, carreteras, calles, etc.) sobre el ráster
             capas_extra_obj = []
@@ -490,7 +513,9 @@ def generar_composiciones(cfg: dict) -> None:
                 color = spec.get("color", "70,130,220,220")
                 if spec.get("tipo_geom") == "area":
                     simbolo = QgsFillSymbol.createSimple({
-                        "color": color, "outline_color": "40,80,150,255", "outline_width": "0.3",
+                        "color": color,
+                        "outline_color": spec.get("color_borde", "40,80,150,255"),
+                        "outline_width": spec.get("ancho_borde", "0.3"),
                     })
                 else:
                     simbolo = QgsLineSymbol.createSimple({
@@ -498,7 +523,10 @@ def generar_composiciones(cfg: dict) -> None:
                     })
                 c.setRenderer(QgsSingleSymbolRenderer(simbolo))
                 if spec.get("campo_etiqueta"):
-                    aplicar_etiquetas_pal(c, spec["campo_etiqueta"], log)
+                    if spec.get("tipo_geom") == "linea":
+                        aplicar_etiquetas_linea(c, spec["campo_etiqueta"], log)
+                    else:
+                        aplicar_etiquetas_pal(c, spec["campo_etiqueta"], log)
                 if grupo_extra:
                     c.setCustomProperty("grupo_leyenda", grupo_extra)
                 project.addMapLayer(c, False)
@@ -515,7 +543,7 @@ def generar_composiciones(cfg: dict) -> None:
                     _ref(capa_raster),
                 ] if r
             ]
-            if basemap_id:
+            if basemap_id and not cfg_capa.get("sin_basemap"):
                 r = project.mapLayer(basemap_id)
                 if r:
                     capas_visibles.append(r)
@@ -610,7 +638,7 @@ def generar_composiciones(cfg: dict) -> None:
             capas_visibles = [
                 r for r in [_ref(capa_referencia), *[_ref(c) for c in capas_obj]] if r
             ]
-            if basemap_id:
+            if basemap_id and not cfg_capa.get("sin_basemap"):
                 r = project.mapLayer(basemap_id)
                 if r:
                     capas_visibles.append(r)
@@ -731,7 +759,7 @@ def generar_composiciones(cfg: dict) -> None:
             if not capas_cargadas:
                 capas_visibles = [punto_layer]
             capas_visibles = [_ref(c) for c in capas_visibles if _ref(c)]
-            if basemap_id:
+            if basemap_id and not cfg_capa.get("sin_basemap"):
                 r = project.mapLayer(basemap_id)
                 if r:
                     capas_visibles.append(r)
@@ -834,6 +862,13 @@ def generar_composiciones(cfg: dict) -> None:
             "INPUT": capa_reproyectada, "OVERLAY": layer_extent, "OUTPUT": "memory:",
         })
         capa_recortada = res_clip["OUTPUT"]
+
+        # Recorte opcional a una máscara PostGIS (p. ej. solo el estado de
+        # Sonora en figuras estatales sin basemap).
+        if cfg_capa.get("recortar_a"):
+            capa_recortada = recortar_a_mascara(
+                capa_recortada, cfg_capa["recortar_a"], cfg["pg"], log
+            )
         capa_recortada.setName(titulo_capa(cfg_capa))
 
         n_clip, n_orig = capa_recortada.featureCount(), capa_pg.featureCount()
@@ -855,6 +890,18 @@ def generar_composiciones(cfg: dict) -> None:
         estilo_qml = cfg_capa.get("estilo_qml")
         qml_ruta = os.path.join(cfg.get("estilos_dir", ""), estilo_qml) if estilo_qml else None
 
+        # "campo_etiqueta": "auto" → la capa no trae una clave numérica propia
+        # (p. ej. AICA solo tiene 'nombre'): se numera 1..N por categoría, el
+        # mapa muestra solo el número y la leyenda "N, nombre".
+        # "numerar_leyenda": true logra lo mismo en la leyenda ("N, nombre")
+        # pero sin forzar el número en el mapa — usar junto con un
+        # 'campo_etiqueta' explícito (p. ej. "nombre") para mostrar el
+        # nombre completo sobre el mapa y aun así numerar la leyenda.
+        numerar_categorias = (
+            cfg_capa.get("campo_etiqueta") == "auto"
+            or cfg_capa.get("numerar_leyenda", False)
+        )
+
         if qml_ruta and os.path.exists(qml_ruta):
             capa_recortada.loadNamedStyle(qml_ruta)
             log.debug(f" ✓ Estilo QML aplicado: {estilo_qml}")
@@ -862,6 +909,7 @@ def generar_composiciones(cfg: dict) -> None:
             aplicar_renderer_categorizado(
                 capa_recortada, campo_cat, log, cfg_capa.get("paleta", "default"),
                 cfg_capa.get("campo_legenda_extra", ""),
+                numerar_categorias=numerar_categorias,
             )
         elif capa_pg.renderer():
             capa_recortada.setRenderer(capa_pg.renderer().clone())
@@ -904,6 +952,8 @@ def generar_composiciones(cfg: dict) -> None:
             aplicar_etiquetas_pal(capa_centroides, expr_etq, log, ocultar_simbolo=True, es_expresion=True)
         else:
             campo_etq = cfg_capa.get("campo_etiqueta", campo_cat)
+            if campo_etq == "auto":
+                campo_etq = "clave_auto"
             aplicar_etiquetas_pal(capa_centroides, campo_etq, log, ocultar_simbolo=True)
 
         project.addMapLayer(capa_recortada,  False)
@@ -927,11 +977,20 @@ def generar_composiciones(cfg: dict) -> None:
             color = spec.get("color", "70,130,220,220")
             if spec.get("tipo_geom") == "area":
                 simbolo = QgsFillSymbol.createSimple({
-                    "color": color, "outline_color": "40,80,150,255", "outline_width": "0.3",
+                    "color": color,
+                    "outline_color": spec.get("color_borde", "40,80,150,255"),
+                    "outline_width": spec.get("ancho_borde", "0.3"),
                 })
             else:
-                simbolo = QgsLineSymbol.createSimple({"color": color, "line_width": "0.6"})
+                simbolo = QgsLineSymbol.createSimple({
+                    "color": color, "line_width": spec.get("ancho_linea", "0.6"),
+                })
             c.setRenderer(QgsSingleSymbolRenderer(simbolo))
+            if spec.get("campo_etiqueta"):
+                if spec.get("tipo_geom") == "linea":
+                    aplicar_etiquetas_linea(c, spec["campo_etiqueta"], log)
+                else:
+                    aplicar_etiquetas_pal(c, spec["campo_etiqueta"], log)
             if grupo_extra:
                 c.setCustomProperty("grupo_leyenda", grupo_extra)
             project.addMapLayer(c, False)
@@ -950,7 +1009,7 @@ def generar_composiciones(cfg: dict) -> None:
                 _ref(capa_recortada),
             ] if r
         ]
-        if basemap_id:
+        if basemap_id and not cfg_capa.get("sin_basemap"):
             r = project.mapLayer(basemap_id)
             if r:
                 capas_visibles.append(r)
@@ -966,7 +1025,10 @@ def generar_composiciones(cfg: dict) -> None:
             _intervalo_auto(cfg_capa.get("grid_intervalo"), 500),
             log,
         )
-        actualizar_leyenda(nueva_comp, ids, capa_referencia, capa_para_leyenda, *capas_extra_obj, log=log)
+        actualizar_leyenda(
+            nueva_comp, ids, capa_referencia, capa_para_leyenda, *capas_extra_obj, log=log,
+            centrar_horizontal=cfg_capa.get("leyenda_centrada", False),
+        )
         _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
         nueva_comp.refresh()
 
