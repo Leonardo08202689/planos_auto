@@ -17,6 +17,7 @@ from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -119,10 +120,20 @@ class DialogoPlanos(QDialog):
         fila_opts.addWidget(self.spin_dpi)
         lay.addLayout(fila_opts)
 
+        fila_generar = QHBoxLayout()
         self.btn_generar = QPushButton("Generar planos")
         self.btn_generar.setDefault(True)
         self.btn_generar.clicked.connect(self._generar)
-        lay.addWidget(self.btn_generar)
+        fila_generar.addWidget(self.btn_generar, 2)
+        self.btn_guardar_capas = QPushButton("Guardar capas generadas…")
+        self.btn_guardar_capas.setToolTip(
+            "Exporta a un GeoPackage las capas temporales que quedan en el "
+            "panel de QGIS tras generar los planos (polígonos recortados, "
+            "centroides, etiquetas…), para que no se pierdan al cerrar QGIS."
+        )
+        self.btn_guardar_capas.clicked.connect(self._guardar_capas_generadas)
+        fila_generar.addWidget(self.btn_guardar_capas, 1)
+        lay.addLayout(fila_generar)
 
         lay.addWidget(QLabel("Log:"))
         self.panel_log = QPlainTextEdit()
@@ -380,3 +391,95 @@ class DialogoPlanos(QDialog):
             generar_composiciones(cfg)
         finally:
             utils.EXTRA_HANDLERS.remove(handler)
+
+    # ── Guardar capas temporales ─────────────────────────────────────────────
+
+    def _guardar_capas_generadas(self):
+        """Exporta a un GeoPackage las capas 'memory' que generar_planos.py
+        deja bajo el grupo 'Planos Generados' (polígonos recortados,
+        centroides, capas extra…). Son temporales: viven solo en la sesión
+        de QGIS y se pierden al cerrar si no se guardan aparte."""
+        from qgis.core import QgsMapLayerType, QgsProject, QgsVectorFileWriter
+
+        from core.utils import sanitizar_nombre
+
+        project = QgsProject.instance()
+        grupo = project.layerTreeRoot().findGroup("Planos Generados")
+        if not grupo:
+            QMessageBox.information(
+                self, "Guardar capas",
+                "No hay capas generadas todavía. Genera planos primero."
+            )
+            return
+
+        capas = [
+            nodo.layer() for nodo in grupo.findLayers()
+            if nodo.layer() is not None
+            and nodo.layer().type() == QgsMapLayerType.VectorLayer
+            and nodo.layer().dataProvider().name() == "memory"
+        ]
+        if not capas:
+            QMessageBox.information(
+                self, "Guardar capas",
+                "No hay capas temporales para guardar (el fondo satelital y "
+                "las demás capas ya vienen de archivo/servidor, no hace "
+                "falta exportarlas)."
+            )
+            return
+
+        proyecto = self.combo_proyecto.currentText() or "capas"
+        sugerido = os.path.join(
+            os.path.expanduser("~"),
+            f"{sanitizar_nombre(proyecto)}_capas_generadas.gpkg",
+        )
+        ruta, _ = QFileDialog.getSaveFileName(
+            self, "Guardar capas generadas como GeoPackage",
+            sugerido, "GeoPackage (*.gpkg)",
+        )
+        if not ruta:
+            return
+        if not ruta.lower().endswith(".gpkg"):
+            ruta += ".gpkg"
+
+        usados: set = set()
+        errores = []
+        contexto = project.transformContext()
+        for i, capa in enumerate(capas):
+            nombre = sanitizar_nombre(capa.name()) or f"capa_{i + 1}"
+            base, n = nombre, 1
+            while nombre in usados:
+                n += 1
+                nombre = f"{base}_{n}"
+            usados.add(nombre)
+
+            opciones = QgsVectorFileWriter.SaveVectorOptions()
+            opciones.driverName = "GPKG"
+            opciones.layerName = nombre
+            opciones.actionOnExistingFile = (
+                QgsVectorFileWriter.CreateOrOverwriteFile if i == 0
+                else QgsVectorFileWriter.CreateOrOverwriteLayer
+            )
+            if hasattr(QgsVectorFileWriter, "writeAsVectorFormatV3"):
+                resultado = QgsVectorFileWriter.writeAsVectorFormatV3(
+                    capa, ruta, contexto, opciones
+                )
+            else:  # QGIS < 3.24, sin writeAsVectorFormatV3
+                resultado = QgsVectorFileWriter.writeAsVectorFormatV2(
+                    capa, ruta, contexto, opciones
+                )
+            error = resultado[0]
+            if error != QgsVectorFileWriter.NoError:
+                mensaje = resultado[1] if len(resultado) > 1 else str(error)
+                errores.append(f"{capa.name()}: {mensaje}")
+
+        if errores:
+            QMessageBox.warning(
+                self, "Guardar capas",
+                f"Se guardaron {len(capas) - len(errores)} de {len(capas)} "
+                f"capa(s) en:\n{ruta}\n\nErrores:\n" + "\n".join(errores),
+            )
+        else:
+            QMessageBox.information(
+                self, "Guardar capas",
+                f"Se guardaron {len(capas)} capa(s) en:\n{ruta}",
+            )

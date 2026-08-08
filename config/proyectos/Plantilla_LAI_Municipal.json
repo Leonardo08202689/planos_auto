@@ -1,0 +1,180 @@
+{
+  "_comentario": "Plantilla LAI Municipal: subconjunto reducido de planos y figuras para trámites municipales. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "nombre_proyecto": "NOMBRE DEL PROYECTO",
+  "tipo_tramite":    "LICENCIA AMBIENTAL INTEGRAL",
+  "capa_poligono":   "poligono_trabajo",
+
+  "defaults_capa": {
+    "geom_col":        "geom",
+    "tipo_geom":       "MultiPolygon",
+    "key":             "gid",
+    "opacidad":        0.6,
+    "grid_intervalo":  300,
+    "escala":          5000
+  },
+
+  "capas": [
+    {
+      "_grupo": "Planos (Plantilla_Corporativa)",
+      "tipo":           "raster",
+      "nombre_plano":   "PLANO. LOCALIZACIÓN",
+      "nombre_capa":    "Localizacion_Detalle",
+      "escala":         10000,
+      "grid_intervalo": 500,
+      "barra_escala_segmento": 250,
+      "marcador":       "poligono",
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "carretera_l", "tipo_geom": "linea", "nombre": "Carreteras", "color": "230,20,20,255", "ancho_linea": "1.2", "campo_etiqueta": "cod_carr"},
+          {"tabla_postgis": "camino_l",    "tipo_geom": "linea", "nombre": "Caminos",    "color": "255,140,0,255", "ancho_linea": "0.8", "campo_etiqueta": "tipo"},
+          {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "0,210,255,255", "ancho_linea": "0.6", "campo_etiqueta": "nom_geo"}
+        ]
+      },
+      "fuente":         "Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+    },
+    {
+      "tabla_postgis":   "Vegetacion",
+      "nombre_plano":    "PLANO. TIPO DE VEGETACIÓN",
+      "nombre_capa":     "Vegetacion",
+      "titulo_capa":     "TIPOS DE VEGETACIÓN",
+      "escala":          5000,
+      "campo_categoria": "descripcio",
+      "campo_etiqueta":  "descripcio",
+      "paleta":          "vegetacion",
+      "fuente":          "Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. Serie VII."
+    },
+    {
+      "tipo":           "raster",
+      "nombre_plano":   "PLANO. DISTRIBUCIÓN DE LOS POLÍGONOS EN LOS QUE SE REALIZARON DICTÁMENES DE NO REQUERIMIENTO DE AUTORIZACIÓN EN MATERIA DE CAMBIO DE USO DE SUELO",
+      "nombre_capa":    "Dictamenes_No_Requerimiento_CUS",
+      "escala":         "auto",
+      "marcador":       "poligono",
+      "_nota":          "Por ahora solo sale el polígono del proyecto (sin ráster ni capas_extra). El shapefile con los polígonos de los dictámenes lo agrega cada quien: impórtalo a PostGIS (esquema proyectos) y añádelo como 'capas_extra' de este plano en tu proyecto.",
+      "fuente":         "Polígono del predio del proyecto."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_Figurasv2) — una por tipo, sin basemap, recortadas al estado de Sonora",
+      "tabla_postgis":   "anp_federales",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS FEDERALES",
+      "nombre_capa":     "ANP_Federales",
+      "titulo_capa":     "ANP Federales en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "num_anp",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "num_anp",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONANP."
+    },
+    {
+      "tabla_postgis":   "anp_estatales",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS ESTATALES",
+      "nombre_capa":     "ANP_Estatales",
+      "titulo_capa":     "ANP Estatales en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "numerar_leyenda": true,
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CEDES Sonora."
+    },
+    {
+      "tabla_postgis":   "regiones_hidrologicas_prioritarias",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES HIDROLÓGICAS PRIORITARIAS",
+      "nombre_capa":     "RHP",
+      "titulo_capa":     "RHP en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "rhpri4mgw_",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "rhpri4mgw_",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONABIO."
+    },
+    {
+      "tabla_postgis":   "regiones_terrestres_prioritarias",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES TERRESTRES PRIORITARIAS",
+      "nombre_capa":     "RTP",
+      "titulo_capa":     "RTP en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "clave",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "clave",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONABIO."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_figuras)",
+      "tabla_postgis":   "poet_sonora",
+      "nombre_plano":    "FIGURA. PROGRAMA DE ORDENAMIENTO ECOLÓGICO TERRITORIAL DE SONORA",
+      "nombre_capa":     "POET",
+      "titulo_capa":     "Unidad de Gestión Ambiental",
+      "escala":          10000,
+      "campo_categoria": "uga",
+      "campo_legenda_extra": "clave",
+      "campo_etiqueta_expresion": "concat(\"uga\", ', ', \"clave\")",
+      "grid_intervalo":  400,
+      "layout_nombre":   "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override":    {"mapa": "mapa_principal"},
+      "fuente":          "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
+    },
+    {
+      "_comentario": "FIGURA. ACUÍFEROS — pendiente, de momento vacía (sin 'nombre_plano' el generador la ignora). Falta definir la tabla PostGIS de acuíferos y completar el resto de los campos (campo_categoria, escala, capas_extra, fuente, etc.) siguiendo el patrón de las figuras de arriba."
+    }
+  ]
+}

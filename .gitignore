@@ -5,6 +5,7 @@
 config/proyectos/*.json
 !config/proyectos/plantilla.json
 !config/proyectos/Plantilla_LAI.json
+!config/proyectos/Plantilla_LAI_Municipal.json
 
 # ── Salida generada ──
 salida/
@@ -16,6 +17,9 @@ log_*.txt
 __pycache__/
 *.py[cod]
 *.pyo
+
+# ── Documentación de terceros descargada (referencia local) ──
+docs/pyqgis_cookbook/
 
 # ── Sistema ──
 .DS_Store

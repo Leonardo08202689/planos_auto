@@ -1,5 +1,5 @@
 {
-  "_comentario": "Plantilla LAI: subconjunto curado de planos y figuras para trámites de Licencia Ambiental Integral. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "_comentario": "Plantilla LAI: subconjunto curado de planos y figuras para trámites de Licencia Ambiental Integral. El plano de localización va separado en dos — uno regional solo con carta topográfica y otro de detalle del sitio solo con vías (sin ráster), como en la LAI real del Centro de Acopio 'Las Riberas'. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
   "nombre_proyecto": "NOMBRE DEL PROYECTO",
   "tipo_tramite":    "LICENCIA AMBIENTAL INTEGRAL",
   "capa_poligono":   "poligono_trabajo",
@@ -98,21 +98,41 @@
     {
       "tipo":           "raster",
       "tabla_postgis_raster": "raster_26030",
-      "nombre_plano":   "PLANO. LOCALIZACIÓN",
+      "nombre_plano":   "PLANO. LOCALIZACIÓN REGIONAL",
       "nombre_capa":    "Localizacion",
       "escala":         50000,
       "opacidad":       0.7,
       "grid_intervalo": 2500,
       "barra_escala_segmento": 1250,
       "marcador":       "punto",
+      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III."
+    },
+    {
+      "tipo":           "raster",
+      "nombre_plano":   "PLANO. LOCALIZACIÓN",
+      "nombre_capa":    "Localizacion_Detalle",
+      "escala":         10000,
+      "grid_intervalo": 500,
+      "barra_escala_segmento": 250,
+      "marcador":       "poligono",
       "capas_extra": {
         "capas": [
-          {"tabla_postgis": "carretera_l", "tipo_geom": "linea", "nombre": "Carreteras", "color": "220,70,30,255", "ancho_linea": "1.0", "campo_etiqueta": "nom_carr"},
-          {"tabla_postgis": "camino_l",    "tipo_geom": "linea", "nombre": "Caminos",    "color": "150,50,180,220", "ancho_linea": "0.4"},
-          {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "90,90,90,180",  "ancho_linea": "0.3"}
+          {"tabla_postgis": "carretera_l", "tipo_geom": "linea", "nombre": "Carreteras", "color": "230,20,20,255", "ancho_linea": "1.2", "campo_etiqueta": "cod_carr"},
+          {"tabla_postgis": "camino_l",    "tipo_geom": "linea", "nombre": "Caminos",    "color": "255,140,0,255", "ancho_linea": "0.8", "campo_etiqueta": "tipo"},
+          {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "0,210,255,255", "ancho_linea": "0.6", "campo_etiqueta": "nom_geo"}
         ]
       },
-      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III. Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+      "fuente":         "Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+    },
+    {
+      "tipo":           "raster",
+      "nombre_plano":   "PLANO. USOS DE SUELO DEL PROYECTO",
+      "nombre_capa":    "Usos_de_Suelo_Proyecto",
+      "escala":         1500,
+      "grid_intervalo": 50,
+      "barra_escala_segmento": 25,
+      "marcador":       "poligono",
+      "fuente":         "Usos de suelo del proyecto (agregar manualmente sobre el plano exportado)."
     },
     {
       "tipo":           "capas_combinadas",
@@ -130,6 +150,136 @@
         {"tabla_postgis": "anp_federales", "nombre": "ANP Federal", "sin_bbox_filter": true, "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "nombre"}
       ],
       "fuente":         "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_Figurasv2) — una por tipo de ANP, sin basemap, recortadas al estado de Sonora",
+      "tabla_postgis":   "anp_federales",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS FEDERALES",
+      "nombre_capa":     "ANP_Federales",
+      "titulo_capa":     "ANP Federales en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "num_anp",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "num_anp",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONANP."
+    },
+    {
+      "tabla_postgis":   "anp_estatales",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS ESTATALES",
+      "nombre_capa":     "ANP_Estatales",
+      "titulo_capa":     "ANP Estatales en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "nombre",
+      "numerar_leyenda": true,
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CEDES Sonora."
+    },
+    {
+      "tabla_postgis":   "regiones_terrestres_prioritarias",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES TERRESTRES PRIORITARIAS",
+      "nombre_capa":     "RTP",
+      "titulo_capa":     "RTP en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "clave",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "clave",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONABIO."
+    },
+    {
+      "tabla_postgis":   "regiones_hidrologicas_prioritarias",
+      "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES HIDROLÓGICAS PRIORITARIAS",
+      "nombre_capa":     "RHP",
+      "titulo_capa":     "RHP en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "rhpri4mgw_",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta":  "rhpri4mgw_",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONABIO."
+    },
+    {
+      "tabla_postgis":   "aica_nacional",
+      "nombre_plano":    "FIGURA. UBICACIÓN DE LA AICA MÁS PRÓXIMA AL PROYECTO",
+      "nombre_capa":     "AICA",
+      "titulo_capa":     "AICA en Sonora",
+      "escala":          4000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta":  "auto",
+      "paleta":          "geologia",
+      "grid_intervalo":  200000,
+      "marcador":        "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap":     true,
+      "leyenda_centrada": true,
+      "recortar_a":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "centrar_en":      {"schema": "cartografia_base", "tabla_postgis": "mexico_estados", "filtro_extra": "cve_ent = '26'"},
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
+      "capas_extra": {
+        "capas": [
+          {"tabla_postgis": "mexico_estados", "tipo_geom": "area", "nombre": "Estado de Sonora", "color": "255,255,255,0", "color_borde": "60,60,60,255", "ancho_borde": "0.5", "sin_bbox_filter": true, "filtro_extra": "cve_ent = '26'"}
+        ]
+      },
+      "fuente":          "CONABIO."
     },
     {
       "_grupo": "Figuras (Plantilla_figuras)",
@@ -160,8 +310,9 @@
       "marcador":        "punto",
       "leyenda_solo_ubicacion": true,
       "sin_bbox_filter": true,
-      "layout_nombre":   "Plantilla_figuras",
-      "ids_override":    {"mapa": "mapa_principal"},
+      "leyenda_centrada": true,
+      "layout_nombre":   "Plantilla_Figurasv2",
+      "ids_override":    {"mapa": "Mapa 1"},
       "fuente":          "Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT."
     },
     {

@@ -128,75 +128,57 @@ _ESTILOS_LEYENDA = (
     QgsLegendStyle.Symbol,
     QgsLegendStyle.SymbolLabel,
 )
-_LEYENDA_MARGEN_PAGINA_MM = 1.5
 _LEYENDA_ESCALA_MINIMA    = 0.5
 _LEYENDA_PASO_ESCALA      = 0.92
 _LEYENDA_FUENTE_MIN_PT    = 6.0
 _LEYENDA_SIMBOLO_MIN_MM   = 3.0
 _LEYENDA_MAX_COLUMNAS     = 5
+_LEYENDA_MARGEN_TEXTO_PCT = 0.06  # colchón: minimumSize() subestima el ancho real del texto
+_LEYENDA_MARGEN_TEXTO_MM  = 1.0
 _MM_POR_PT                = 0.352778
 
 
-def _encoger_leyenda_a_contenido(leyenda) -> None:
-    """QgsLayoutItemLegend.adjustBoxSize() no siempre encoge la caja (se
-    observó que no hace nada en ciertos entornos/plantillas, dejando la
-    leyenda con el tamaño original del QPT sin importar cuánto contenido
-    tenga realmente). Se calcula el tamaño mínimo real con el motor interno
-    de renderizado de la leyenda (QgsLegendRenderer, lo mismo que usa
-    adjustBoxSize() por dentro) y se aplica directo con attemptResize(),
-    que si funciona de forma confiable."""
+def _medir_leyenda(leyenda):
+    """Tamaño (ancho, alto) que necesita el contenido actual de la leyenda,
+    con un colchón de seguridad: QgsRenderContext() por defecto no reproduce
+    el contexto real de exportación (DPI/escala) del layout, así que
+    QgsLegendRenderer.minimumSize() subestima el ancho real del texto
+    renderizado. Sin colchón, un contenido que en teoría "cabe" se saldría
+    un poco de la caja en el PNG final."""
     renderer = QgsLegendRenderer(leyenda.model(), leyenda.legendSettings())
     tam = renderer.minimumSize(QgsRenderContext())
-    if tam.width() > 0 and tam.height() > 0:
-        leyenda.attemptResize(
-            QgsLayoutSize(tam.width(), tam.height(), QgsUnitTypes.LayoutMillimeters)
-        )
+    ancho = tam.width()  * (1 + _LEYENDA_MARGEN_TEXTO_PCT) + _LEYENDA_MARGEN_TEXTO_MM
+    alto  = tam.height() * (1 + _LEYENDA_MARGEN_TEXTO_PCT * 0.3)
+    return ancho, alto
 
 
-def _ajustar_leyenda_a_pagina(leyenda, layout_comp, log=None) -> None:
-    """Si la leyenda (por muchas categorías o nombres largos) crece más allá
-    del borde de la página, reduce progresivamente fuentes y símbolos hasta
-    que quepa, para que la simbología nunca se salga del plano impreso."""
-    pages = layout_comp.pageCollection()
-    if pages.pageCount() == 0:
-        return
-    pagina_idx = leyenda.page() if 0 <= leyenda.page() < pages.pageCount() else 0
-    page_rect  = pages.page(pagina_idx).rect()
-    pos        = leyenda.pagePos()
-
-    max_w = page_rect.width()  - pos.x() - _LEYENDA_MARGEN_PAGINA_MM
-    max_h = page_rect.height() - pos.y() - _LEYENDA_MARGEN_PAGINA_MM
-
-    # Si hay otro elemento fijo debajo (p. ej. una franja de pie de página)
-    # que se solape horizontalmente con la leyenda, ese es el límite real,
-    # no el borde de la página — si no, la leyenda puede crecer y montarse
-    # encima de ese elemento antes de llegar al borde.
-    for item in layout_comp.items():
-        if item is leyenda or not isinstance(item, QgsLayoutItem):
-            continue
-        item_pos  = item.pagePos()
-        item_size = item.sizeWithUnits()
-        solapa_x = (item_pos.x() < pos.x() + max_w) and (item_pos.x() + item_size.width() > pos.x())
-        if solapa_x and item_pos.y() > pos.y():
-            max_h = min(max_h, item_pos.y() - pos.y() - _LEYENDA_MARGEN_PAGINA_MM)
-
+def _ajustar_fuente_a_tamano_reservado(leyenda, tam_reservado, log=None) -> None:
+    """El bloque de simbología SIEMPRE mide lo mismo que en la plantilla: los
+    QPT traen 'resizeToContents' desactivado a propósito porque el tamaño y
+    la posición del bloque son parte del diseño del plano, no algo que deba
+    variar con el contenido. Por eso esta función nunca llama a
+    attemptResize()/attemptMove() sobre la leyenda — solo ajusta letra y
+    símbolos, y únicamente cuando el contenido real (muchas categorías o
+    nombres largos) no cabría en ese tamaño fijo, para que la simbología
+    nunca se salga del marco. Con contenido normal no se toca nada: la
+    leyenda queda con la tipografía tal cual la definió la plantilla."""
+    max_w, max_h = tam_reservado.width(), tam_reservado.height()
     if max_w <= 0 or max_h <= 0:
         return
 
-    tam = leyenda.sizeWithUnits()
-    if tam.width() <= max_w and tam.height() <= max_h:
-        return  # ya cabe, no se toca nada
+    ancho, alto = _medir_leyenda(leyenda)
+    if ancho <= max_w and alto <= max_h:
+        return  # cabe con la tipografía de la plantilla, no se toca nada
 
     # 1) Antes de encoger letra: repartir en más columnas, aprovechando el
-    #    ancho disponible (leyendas tipo franja horizontal bajo el mapa).
+    #    ancho fijo de la caja (leyendas tipo franja horizontal bajo el mapa).
     cols = max(1, leyenda.columnCount())
-    while tam.height() > max_h and cols < _LEYENDA_MAX_COLUMNAS:
+    while alto > max_h and cols < _LEYENDA_MAX_COLUMNAS:
         cols += 1
         leyenda.setColumnCount(cols)
         leyenda.setSplitLayer(True)
-        _encoger_leyenda_a_contenido(leyenda)
-        tam = leyenda.sizeWithUnits()
-    if tam.width() <= max_w and tam.height() <= max_h:
+        ancho, alto = _medir_leyenda(leyenda)
+    if ancho <= max_w and alto <= max_h:
         return
 
     fuentes_orig    = {est: QFont(leyenda.styleFont(est)) for est in _ESTILOS_LEYENDA}
@@ -214,15 +196,15 @@ def _ajustar_leyenda_a_pagina(leyenda, layout_comp, log=None) -> None:
         leyenda.setSymbolWidth(max(_LEYENDA_SIMBOLO_MIN_MM, ancho_sim_orig * escala))
         leyenda.setSymbolHeight(max(_LEYENDA_SIMBOLO_MIN_MM, alto_sim_orig * escala))
 
-        _encoger_leyenda_a_contenido(leyenda)
-        tam = leyenda.sizeWithUnits()
-        if tam.width() <= max_w and tam.height() <= max_h:
+        ancho, alto = _medir_leyenda(leyenda)
+        if ancho <= max_w and alto <= max_h:
             return
 
     if log:
         log.warning(
             " ⚠ La leyenda tiene demasiadas categorías/nombres largos y no "
-            "cabe en la página aun al tamaño mínimo de letra. Revísala manualmente."
+            "cabe en el tamaño reservado por la plantilla aun al tamaño "
+            "mínimo de letra. Revísala manualmente."
         )
 
 
@@ -235,20 +217,25 @@ def actualizar_leyenda(layout_comp, ids: dict, *capas, log=None, centrar_horizon
     ir directo a la raíz; 'nombre_leyenda' sigue renombrando el nodo de la
     capa misma dentro de ese grupo.
 
-    'centrar_horizontal=True' recentra la caja (ya encogida a su contenido)
-    dentro del ancho de página — solo tiene sentido en plantillas donde la
+    El bloque de simbología conserva siempre el tamaño y la posición
+    definidos en la plantilla QPT (ver _ajustar_fuente_a_tamano_reservado).
+
+    'centrar_horizontal=True' reparte las columnas de forma pareja
+    (equalColumnWidth) cuando hay varias — pensado para plantillas donde la
     leyenda es una franja de ancho completo bajo el mapa (p. ej.
-    Plantilla_Figurasv2). En plantillas con la leyenda como cajita flotante
-    en una esquina del mapa (Plantilla_Corporativa, Plantilla_figuras),
-    recentrarla la monta encima del mapa — dejar en False ahí."""
+    Plantilla_Figurasv2)."""
     leyenda = layout_comp.itemById(ids["leyenda"])
     if not (leyenda and isinstance(leyenda, QgsLayoutItemLegend)):
         return
-    # Los ítems con "positionLock" en el QPT hacen que attemptResize()/
-    # attemptMove() (usados por adjustBoxSize() y el recentrado) no hagan
-    # nada — hay que destrabar antes de tocar tamaño/posición.
+    # Los ítems con "positionLock" en el QPT hacen que setStyleFont()/
+    # setColumnCount() no muevan la caja, pero por si acaso alguna versión
+    # de QGIS reacciona distinto, se destraba antes de tocar la leyenda.
     leyenda.setLocked(False)
     leyenda.setAutoUpdateModel(False)
+    # Tamaño y posición tal cual los definió la plantilla: se capturan aquí
+    # y se restauran al final, sin importar qué le pase al contenido.
+    tam_reservado = leyenda.sizeWithUnits()
+    pos_reservada = leyenda.positionWithUnits()
     # Título siempre centrado y en negritas, independiente de la plantilla
     leyenda.setTitleAlignment(Qt.AlignHCenter)
     f_titulo = QFont(leyenda.styleFont(QgsLegendStyle.Title))
@@ -271,52 +258,13 @@ def actualizar_leyenda(layout_comp, ids: dict, *capas, log=None, centrar_horizon
         nombre_custom = capa.customProperty("nombre_leyenda")
         if nombre_custom:
             nodo.setName(nombre_custom)
-    _encoger_leyenda_a_contenido(leyenda)
-    _ajustar_leyenda_a_pagina(leyenda, layout_comp, log)
-    if centrar_horizontal:
-        _centrar_leyenda_horizontal(leyenda, layout_comp)
-    leyenda.refresh()
-
-
-def _centrar_leyenda_horizontal(leyenda, layout_comp) -> None:
-    """Sin esto, la caja queda con el ancho real del contenido pero en la
-    posición X original (normalmente el margen izquierdo de una franja
-    pensada para ancho completo), así que el bloque de símbolos queda pegado
-    a la izquierda con toda la franja vacía a la derecha.
-
-    Con varias columnas (suficientes categorías para repartirse en 2+, p.
-    ej. RTP/ANP con muchas entradas) se estira la caja a todo el ancho
-    disponible y se activa 'equalColumnWidth' para que las columnas se
-    repartan parejo de borde a borde, como en la referencia de Sinergia.
-
-    Con una sola columna (pocas entradas, p. ej. UAB) estirar a todo el
-    ancho dejaría el símbolo pegado a la izquierda de una caja enorme y
-    vacía a la derecha — ahí en cambio se deja la caja a su tamaño natural
-    y solo se centra."""
-    pages = layout_comp.pageCollection()
-    if pages.pageCount() == 0:
-        return
-    pagina_idx = leyenda.page() if 0 <= leyenda.page() < pages.pageCount() else 0
-    page_rect  = pages.page(pagina_idx).rect()
-    pos        = leyenda.pagePos()
-    tam        = leyenda.sizeWithUnits()
-
-    ancho_objetivo = tam.width()
-    if leyenda.columnCount() > 1:
+    _ajustar_fuente_a_tamano_reservado(leyenda, tam_reservado, log)
+    if centrar_horizontal and leyenda.columnCount() > 1:
         leyenda.setEqualColumnWidth(True)
-        ancho_objetivo = page_rect.width() - 2 * _LEYENDA_MARGEN_PAGINA_MM
-        if abs(ancho_objetivo - tam.width()) > 0.1:
-            leyenda.attemptResize(
-                QgsLayoutSize(ancho_objetivo, tam.height(), QgsUnitTypes.LayoutMillimeters)
-            )
-
-    nuevo_x = max(0.0, (page_rect.width() - ancho_objetivo) / 2)
-    if abs(nuevo_x - pos.x()) < 0.1:
-        return
-    leyenda.attemptMove(
-        QgsLayoutPoint(nuevo_x, pos.y(), QgsUnitTypes.LayoutMillimeters),
-        useReferencePoint=False, page=pagina_idx,
-    )
+    # Restaurar tamaño y posición del QPT por si algo los movió de lado.
+    leyenda.attemptResize(tam_reservado)
+    leyenda.attemptMove(pos_reservada)
+    leyenda.refresh()
 
 
 def reenlazar_barra_escala(layout_comp, map_item, log, unidades_por_segmento=None) -> None:
@@ -448,34 +396,51 @@ def fijar_logo(layout_comp, id_logo: str, logo_ruta: str, log) -> None:
         log.warning(f" → Ítem de logo '{id_logo}' no encontrado o no es imagen.")
 
 
-def _altura_texto_envuelto_mm(texto: str, fuente, ancho_mm: float) -> float:
-    """Altura (mm) que ocupará 'texto' envuelto por palabras al ancho dado,
-    aproximada con métricas de la fuente (1 pt ≈ 0.3528 mm)."""
+_LABEL_MARGEN_PCT     = 0.06  # colchón: la caja del ítem QGIS suele traer un
+                              # pequeño padding interno que QFontMetricsF no ve
+_LABEL_PASO_CRECER    = 1.06
+_LABEL_ESCALA_MAX     = 1.8   # tope relativo al tamaño de la plantilla, para
+                              # no deformar el diseño del recuadro de datos
+_LABEL_FUENTE_MIN_PT  = 5.0
+
+
+def _medir_texto_envuelto_mm(texto: str, fuente, ancho_max_mm: float):
+    """(ancho_usado_mm, alto_mm) que ocupará 'texto' envuelto por palabras a
+    lo sumo al ancho dado, con métricas de la fuente (1 pt ≈ 0.3528 mm)."""
     from qgis.PyQt.QtGui import QFontMetricsF
     fm = QFontMetricsF(fuente)
-    max_w_pt = ancho_mm / _MM_POR_PT
-    lineas = 0
+    max_w_pt = ancho_max_mm / _MM_POR_PT
+    lineas = []
     for parrafo in (texto or "").splitlines() or [""]:
         palabras = parrafo.split()
         if not palabras:
-            lineas += 1
+            lineas.append("")
             continue
-        actual, n = palabras[0], 1
+        actual = palabras[0]
         for p in palabras[1:]:
             candidata = f"{actual} {p}"
             if fm.horizontalAdvance(candidata) > max_w_pt:
-                n += 1
+                lineas.append(actual)
                 actual = p
             else:
                 actual = candidata
-        lineas += n
-    return lineas * fm.lineSpacing() * _MM_POR_PT
+        lineas.append(actual)
+    ancho_pt = max((fm.horizontalAdvance(linea) for linea in lineas), default=0.0)
+    alto_mm  = len(lineas) * fm.lineSpacing() * _MM_POR_PT
+    return ancho_pt * _MM_POR_PT, alto_mm
 
 
-def _encoger_fuente_si_desborda(item) -> None:
-    """Si el texto (envuelto al ancho del label) necesita más altura de la que
-    tiene la caja fija del label, reduce la fuente hasta que quepa — evita que
-    un título largo se derrame sobre el label vecino (p. ej. la fecha)."""
+def _ajustar_fuente_al_cuadro(item) -> None:
+    """Ajusta la letra del label a la caja fija que le dio la plantilla:
+
+    - Si el texto (envuelto al ancho del label) se desborda de la caja,
+      reduce la fuente hasta que quepa — evita que un título largo se
+      derrame sobre el label vecino (p. ej. la fecha).
+    - Si el texto cabe con espacio de sobra (caso típico: nombres cortos
+      del proyecto/plano en una caja del tamaño de la plantilla, pensada
+      para textos más largos), agranda la fuente hasta llenar mejor la
+      caja, sin pasar de un tope relativo al tamaño original para no
+      deformar el diseño del recuadro de datos."""
     if not isinstance(item, QgsLayoutItemLabel):
         return
     try:
@@ -483,16 +448,35 @@ def _encoger_fuente_si_desborda(item) -> None:
     except AttributeError:  # QGIS viejo sin textFormat()
         return
     box = item.sizeWithUnits()
-    if box.width() <= 0 or box.height() <= 0:
+    texto = item.currentText()
+    if box.width() <= 0 or box.height() <= 0 or not texto:
         return
-    for _ in range(15):
-        if _altura_texto_envuelto_mm(item.currentText(), fmt.toQFont(), box.width()) \
-                <= box.height() + 0.2:
-            return
-        nuevo = fmt.size() * 0.9
-        if nuevo < 5:
-            return
-        fmt.setSize(nuevo)
+
+    tam_orig = fmt.size() if fmt.size() > 0 else 9.0
+    max_w = box.width()  * (1 - _LABEL_MARGEN_PCT)
+    max_h = box.height() * (1 - _LABEL_MARGEN_PCT * 0.5)
+
+    def cabe(tam: float) -> bool:
+        fuente = fmt.toQFont()
+        fuente.setPointSizeF(tam)
+        ancho, alto = _medir_texto_envuelto_mm(texto, fuente, box.width())
+        return ancho <= max_w and alto <= max_h
+
+    tam = tam_orig
+    if cabe(tam):
+        # Espacio de sobra: crecer hasta llenar la caja o llegar al tope.
+        tope = tam_orig * _LABEL_ESCALA_MAX
+        while tam < tope and cabe(tam * _LABEL_PASO_CRECER):
+            tam *= _LABEL_PASO_CRECER
+        tam = min(tam, tope)
+    else:
+        # Se desborda al tamaño de la plantilla: encoger hasta que quepa.
+        while tam > _LABEL_FUENTE_MIN_PT and not cabe(tam):
+            tam /= _LABEL_PASO_CRECER
+        tam = max(tam, _LABEL_FUENTE_MIN_PT)
+
+    if abs(tam - fmt.size()) > 0.05:
+        fmt.setSize(tam)
         item.setTextFormat(fmt)
 
 
@@ -508,6 +492,6 @@ def set_label_text(layout_comp, item_id: str, texto: str, log=None) -> None:
     if items:
         for item in items:
             item.setText(texto)
-            _encoger_fuente_si_desborda(item)
+            _ajustar_fuente_al_cuadro(item)
     elif log:
         log.debug(f" → Ítem '{item_id}' no encontrado.")
