@@ -47,7 +47,7 @@ class DialogoConexion(QDialog):
         form = QFormLayout()
 
         self.edit_direccion = QLineEdit()
-        self.edit_direccion.setPlaceholderText("Ej. 100.77.90.48 (o scianas.local:55432 si el administrador te dio un puerto)")
+        self.edit_direccion.setPlaceholderText("Ej. 100.67.21.105 (agrega :puerto solo si el administrador te dio uno distinto al estándar)")
         form.addRow("Dirección del servidor:", self.edit_direccion)
 
         self.chk_admin = QCheckBox("Puedo editar la base de datos (soy administrador)")

@@ -219,30 +219,25 @@ LOGO_RUTA=/ruta/al/logo.jpg   # opcional, usa assets/logo_sinergia.jpg por defec
 
 ## Acceso a la base de datos (otras computadoras)
 
-La base de datos (PostgreSQL/PostGIS) vive en un contenedor Docker en el
-**NAS Synology de la oficina** (`scianas`, DS224+), no en la máquina de
-Leonardo — así el servidor está disponible sin depender de que una compu de
-trabajo se quede encendida.
+La base de datos (PostgreSQL/PostGIS) vive en un **servidor dedicado**, no
+en la máquina de Leonardo — así el servidor está disponible sin depender
+de que una compu de trabajo se quede encendida.
 
-**Configuración actual (2026-08-05):**
+**Configuración actual (2026-09-15):** migrada desde el NAS Synology de la
+oficina (`scianas`, DS224+, puerto 55432) a un servidor dedicado, puerto
+estándar.
 
-- Servidor: contenedor `postgis/postgis` en el NAS, puerto **`55432`**
-  (no el 5432 estándar — ya estaba ocupado por otro servicio del NAS).
-- Datos persistentes en una carpeta compartida del NAS (`postgis_data/data`),
-  sobreviven reinicios/actualizaciones del contenedor. Reinicio automático
-  del contenedor habilitado.
-- **Tailscale activo en el NAS** (paquete oficial de Synology): el servidor
-  es alcanzable tanto dentro de la red de oficina como desde cualquier
-  otro lugar (ej. desde casa), sin abrir puertos al internet público.
-  IP de Tailscale del NAS: **`100.105.239.92`**. Cada colega que necesite
-  conectarse desde fuera de la oficina instala Tailscale en su compu
-  ([tailscale.com/download](https://tailscale.com/download)) y se
-  autentica con la cuenta del equipo — sin eso, solo funciona la IP de
-  LAN (`192.168.100.132`), útil estando en la oficina.
-- **Usar la IP, no el nombre `scianas.local`:** aunque el NAS resuelve por
-  mDNS y una terminal normal sí encuentra `scianas.local`, **QGIS (Flatpak
-  en Linux) no puede resolver nombres `.local`** — hay que usar siempre
-  una IP (de LAN o de Tailscale, según el caso).
+- Servidor dedicado, puerto **`5432`** (estándar, ya no comparte NAS con
+  otros servicios).
+- **Tailscale activo en el servidor**: es alcanzable tanto dentro de la red
+  de oficina como desde cualquier otro lugar (ej. desde casa), sin abrir
+  puertos al internet público. IP de Tailscale del servidor:
+  **`100.67.21.105`** (hostname MagicDNS: `servidorsin`).
+- **Recomendado: usar la IP, no el hostname `servidorsin`, en QGIS.** Con el
+  NAS anterior, QGIS (Flatpak en Linux) no podía resolver nombres `.local`
+  y había que usar siempre una IP; no está confirmado si ese mismo problema
+  aplica al hostname MagicDNS (`servidorsin`) de Tailscale, así que por
+  ahora se sigue recomendando la IP (`100.67.21.105`) hasta probarlo.
 - Dos roles en la base (mismos permisos que la base anterior, migrados tal
   cual):
   - `qgis_user` — lectura y escritura (para administradores).
@@ -261,18 +256,16 @@ trabajo se quede encendida.
    más arriba (descarga ZIP, doble clic en `Instalar.bat`/`instalar_plugin.sh`
    — sin terminal). La primera vez que abra el plugin le va a pedir estos
    datos en un formulario (botón **"Conexión…"**):
-   - **Dirección del servidor:** `192.168.100.132:55432` si va a trabajar
-     desde la oficina, o `100.105.239.92:55432` (IP de Tailscale) si
-     necesita conectarse desde otro lado — puerto y dirección van juntos
-     separados por `:`.
+   - **Dirección del servidor:** `100.67.21.105` (IP de Tailscale; puerto
+     `5432`, el estándar, así que no hace falta especificarlo).
    - **¿Es administrador?**: solo si va a poder editar la base de datos.
    - **Contraseña:** la del rol que le corresponda (`qgis_user` si es
      administrador, `planos_lector` si no).
    - **Carpeta de salida:** donde se guardarán sus PNG, la elige con el
      explorador de archivos.
-2. Si va a conectarse desde fuera de la oficina, también instala Tailscale
-   en su compu y se autentica con la cuenta del equipo (paso aparte, no lo
-   hace el plugin).
+2. También instala Tailscale en su compu y se autentica con la cuenta del
+   equipo (paso aparte, no lo hace el plugin) — el servidor solo es
+   alcanzable por Tailscale, ya no hay una IP de LAN de respaldo.
 
 Esos datos (sobre todo la contraseña) se le pasan por un canal aparte —
 WhatsApp, correo, etc. — nunca por este repo.
