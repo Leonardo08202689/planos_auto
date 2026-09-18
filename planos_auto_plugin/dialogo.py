@@ -399,7 +399,13 @@ class DialogoPlanos(QDialog):
         deja bajo el grupo 'Planos Generados' (polígonos recortados,
         centroides, capas extra…). Son temporales: viven solo en la sesión
         de QGIS y se pierden al cerrar si no se guardan aparte."""
-        from qgis.core import QgsMapLayerType, QgsProject, QgsVectorFileWriter
+        from qgis.core import (
+            QgsDataProvider,
+            QgsMapLayerType,
+            QgsProject,
+            QgsVectorFileWriter,
+        )
+        from qgis.PyQt.QtXml import QDomDocument
 
         from core.utils import sanitizar_nombre
 
@@ -443,6 +449,7 @@ class DialogoPlanos(QDialog):
 
         usados: set = set()
         errores = []
+        reapuntadas = []
         contexto = project.transformContext()
         for i, capa in enumerate(capas):
             nombre = sanitizar_nombre(capa.name()) or f"capa_{i + 1}"
@@ -471,6 +478,26 @@ class DialogoPlanos(QDialog):
             if error != QgsVectorFileWriter.NoError:
                 mensaje = resultado[1] if len(resultado) > 1 else str(error)
                 errores.append(f"{capa.name()}: {mensaje}")
+                continue
+
+            # Reapuntar la capa del proyecto al GeoPackage: si se queda en
+            # 'memory' se pierde al cerrar QGIS aunque el archivo exista.
+            estilo = QDomDocument()
+            capa.exportNamedStyle(estilo)
+            nombre_visible = capa.name()
+            uri = f"{ruta}|layername={nombre}"
+            try:
+                capa.setDataSource(
+                    uri, nombre_visible, "ogr", QgsDataProvider.ProviderOptions()
+                )
+            except TypeError:  # firmas antiguas sin ProviderOptions
+                capa.setDataSource(uri, nombre_visible, "ogr")
+            try:
+                capa.importNamedStyle(estilo)
+            except TypeError:  # bindings antiguos: el mensaje es parámetro
+                capa.importNamedStyle(estilo, "")
+            capa.triggerRepaint()
+            reapuntadas.append(capa)
 
         if errores:
             QMessageBox.warning(
@@ -478,8 +505,47 @@ class DialogoPlanos(QDialog):
                 f"Se guardaron {len(capas) - len(errores)} de {len(capas)} "
                 f"capa(s) en:\n{ruta}\n\nErrores:\n" + "\n".join(errores),
             )
-        else:
+        elif not reapuntadas:
+            return
+
+        self._ofrecer_guardar_proyecto(ruta, len(reapuntadas))
+
+    def _ofrecer_guardar_proyecto(self, ruta_gpkg, n_capas):
+        """Las capas ya apuntan al GeoPackage, pero el proyecto de QGIS debe
+        guardarse para que la próxima sesión las vuelva a cargar desde ahí."""
+        from qgis.core import QgsProject
+
+        project = QgsProject.instance()
+        respuesta = QMessageBox.question(
+            self, "Guardar capas",
+            f"Se guardaron {n_capas} capa(s) en:\n{ruta_gpkg}\n\n"
+            "Las capas del proyecto ya apuntan a ese archivo (dejaron de ser "
+            "temporales).\n\n¿Guardar también el proyecto de QGIS ahora? "
+            "Si no lo guardas, al reabrir QGIS no aparecerán.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes,
+        )
+        if respuesta != QMessageBox.Yes:
+            return
+
+        destino = project.fileName()
+        if not destino:
+            destino, _ = QFileDialog.getSaveFileName(
+                self, "Guardar proyecto de QGIS",
+                os.path.splitext(ruta_gpkg)[0] + ".qgz",
+                "Proyecto QGIS (*.qgz)",
+            )
+            if not destino:
+                return
+            if not destino.lower().endswith((".qgz", ".qgs")):
+                destino += ".qgz"
+
+        if project.write(destino):
             QMessageBox.information(
                 self, "Guardar capas",
-                f"Se guardaron {len(capas)} capa(s) en:\n{ruta}",
+                f"Proyecto guardado en:\n{destino}",
+            )
+        else:
+            QMessageBox.warning(
+                self, "Guardar capas",
+                f"No se pudo guardar el proyecto en:\n{destino}",
             )
