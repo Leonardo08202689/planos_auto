@@ -1,0 +1,465 @@
+<title>Fuentes de Datos SIG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f4ef;
+    --surface:#ffffff;
+    --surface-2:#eeece3;
+    --ink:#2a271f;
+    --ink-muted:#6c6558;
+    --border:#e0dccf;
+    --border-strong:#cdc7b6;
+    --accent:#2f6a8f;
+    --accent-ink:#f5f9fb;
+    --accent-soft:#e4eef3;
+
+    --tierra:#a1673c;
+    --atmosfera:#c1852b;
+    --biota:#4c7a4f;
+    --agua:#2f6a8f;
+    --infra:#5a5248;
+    --ordenamiento:#7c5a70;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1c1e19;
+      --surface:#242621;
+      --surface-2:#2c2e27;
+      --ink:#eae6da;
+      --ink-muted:#a6a08f;
+      --border:#3a3c33;
+      --border-strong:#4c4e42;
+      --accent:#75aed0;
+      --accent-ink:#12232c;
+      --accent-soft:#243a44;
+
+      --tierra:#c48a5c;
+      --atmosfera:#dba24c;
+      --biota:#79a679;
+      --agua:#75aed0;
+      --infra:#a39a86;
+      --ordenamiento:#b586a5;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1c1e19;
+    --surface:#242621;
+    --surface-2:#2c2e27;
+    --ink:#eae6da;
+    --ink-muted:#a6a08f;
+    --border:#3a3c33;
+    --border-strong:#4c4e42;
+    --accent:#75aed0;
+    --accent-ink:#12232c;
+    --accent-soft:#243a44;
+
+    --tierra:#c48a5c;
+    --atmosfera:#dba24c;
+    --biota:#79a679;
+    --agua:#75aed0;
+    --infra:#a39a86;
+    --ordenamiento:#b586a5;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:15.5px;
+    line-height:1.55;
+  }
+  ::selection{ background:var(--accent-soft); }
+
+  .page{
+    max-width:920px;
+    margin:0 auto;
+    padding:56px 28px 96px;
+  }
+
+  .runhead{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    border-bottom:1px solid var(--border);
+    padding-bottom:14px;
+    margin-bottom:40px;
+    gap:16px;
+  }
+  .runhead span:last-child{ white-space:nowrap; }
+
+  header.hero{
+    margin-bottom:44px;
+  }
+  .eyebrow{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    letter-spacing:0.09em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 14px;
+  }
+  h1{
+    font-family:"Source Serif 4", Georgia, serif;
+    font-weight:700;
+    font-size:clamp(2rem, 4.4vw, 2.9rem);
+    line-height:1.08;
+    letter-spacing:-0.01em;
+    margin:0 0 18px;
+    text-wrap:balance;
+    max-width:14ch;
+  }
+  .dek{
+    font-size:1.05rem;
+    color:var(--ink-muted);
+    max-width:62ch;
+    margin:0;
+  }
+  .dek strong{ color:var(--ink); font-weight:600; }
+
+  .note{
+    margin-top:26px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-left:3px solid var(--accent);
+    border-radius:4px;
+    padding:14px 18px;
+    font-size:0.92rem;
+    color:var(--ink-muted);
+    max-width:68ch;
+  }
+  .note code{
+    font-family:"IBM Plex Mono", monospace;
+    background:var(--surface-2);
+    padding:0.1em 0.4em;
+    border-radius:3px;
+    color:var(--ink);
+    font-size:0.88em;
+  }
+
+  section.block{
+    margin-top:56px;
+  }
+  .block-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    border-bottom:1px solid var(--border-strong);
+    padding-bottom:10px;
+    margin-bottom:8px;
+  }
+  h2{
+    font-family:"Source Serif 4", Georgia, serif;
+    font-weight:600;
+    font-size:1.5rem;
+    margin:0;
+  }
+  .block-count{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    color:var(--ink-muted);
+    white-space:nowrap;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 18px;
+    margin:16px 0 22px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11.5px;
+    letter-spacing:0.02em;
+    color:var(--ink-muted);
+  }
+  .dot{
+    width:9px; height:9px;
+    border-radius:50%;
+    flex:none;
+  }
+
+  .tablewrap{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:var(--surface);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:640px;
+  }
+  thead th{
+    text-align:left;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:11px;
+    letter-spacing:0.07em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    font-weight:500;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border-strong);
+    background:var(--surface-2);
+  }
+  thead th:first-child{ border-top-left-radius:7px; }
+  thead th:last-child{ border-top-right-radius:7px; }
+
+  tbody td{
+    padding:13px 16px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+
+  .capa{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    font-weight:500;
+    min-width:15ch;
+  }
+  .capa .dot{ margin-top:6px; }
+
+  td.tabla, td.escala{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12.5px;
+    color:var(--ink-muted);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+  }
+  td.tabla{ color:var(--accent); }
+  td.escala .dash{ color:var(--border-strong); }
+
+  td.fuente{
+    color:var(--ink-muted);
+    font-size:0.93rem;
+    max-width:34ch;
+  }
+
+  footer.notes{
+    margin-top:60px;
+    padding-top:28px;
+    border-top:1px solid var(--border-strong);
+  }
+  footer.notes h3{
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-muted);
+    margin:0 0 16px;
+  }
+  footer.notes ol{
+    margin:0;
+    padding-left:1.3em;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    max-width:68ch;
+  }
+  footer.notes li{
+    font-size:0.93rem;
+    color:var(--ink-muted);
+  }
+  footer.notes li strong{ color:var(--ink); font-weight:600; }
+  footer.notes code{
+    font-family:"IBM Plex Mono", monospace;
+    background:var(--surface-2);
+    padding:0.1em 0.4em;
+    border-radius:3px;
+    color:var(--ink);
+    font-size:0.88em;
+  }
+
+  .scaletip{
+    margin-top:20px;
+    display:flex;
+    gap:14px;
+    align-items:center;
+    font-family:"IBM Plex Mono", monospace;
+    font-size:12px;
+    color:var(--ink-muted);
+    flex-wrap:wrap;
+  }
+  .scaletip .pair{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .scaletip .arrow{ color:var(--border-strong); }
+</style>
+
+<div class="page">
+
+  <div class="runhead">
+    <span>Planos Auto · Referencia de fuentes</span>
+    <span id="lastcheck">Sonora, MX</span>
+  </div>
+
+  <header class="hero">
+    <p class="eyebrow">Sistema de Información Geográfica</p>
+    <h1>Fuentes de Datos SIG</h1>
+    <p class="dek">De dónde viene cada capa que <strong>Planos Auto</strong> dibuja. Ante cualquier duda —propia, de un colega o de una autoridad— sobre qué dataset oficial respalda un plano, esta es la referencia.</p>
+    <div class="note">
+      Cada capa vive en PostGIS (esquema <code>proyectos</code> u otros) y se referencia en <code>config/proyectos/*.json</code> mediante el campo <code>"fuente"</code>. Si se actualiza un dataset —por ejemplo, INEGI publica una nueva serie— hay que actualizar el JSON <strong style="color:inherit">y</strong> esta página juntos.
+    </div>
+  </header>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Planos corporativos</h2>
+      <span class="block-count">Base de todo proyecto · 8 capas</span>
+    </div>
+    <div class="legend">
+      <span class="legend-item"><span class="dot" style="background:var(--tierra)"></span>Tierra</span>
+      <span class="legend-item"><span class="dot" style="background:var(--atmosfera)"></span>Atmósfera</span>
+      <span class="legend-item"><span class="dot" style="background:var(--biota)"></span>Biota</span>
+      <span class="legend-item"><span class="dot" style="background:var(--agua)"></span>Agua</span>
+      <span class="legend-item"><span class="dot" style="background:var(--infra)"></span>Infraestructura</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Capa</th><th>Tabla en la BD</th><th>Escala</th><th>Fuente</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--tierra)"></span>Tipo de Suelo</span></td>
+            <td class="tabla">suelos_edafologia_serie2</td>
+            <td class="escala">1:250 000</td>
+            <td class="fuente">Conjunto de Datos Vectorial Edafológico, Serie II. INEGI.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--tierra)"></span>Tipos de Roca</span></td>
+            <td class="tabla">Geologia</td>
+            <td class="escala">1:250 000</td>
+            <td class="fuente">Continuo Nacional de Geología de la República Mexicana.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--atmosfera)"></span>Tipo de Clima</span></td>
+            <td class="tabla">Clima</td>
+            <td class="escala">1:1 000 000</td>
+            <td class="fuente">Conjunto de Datos Nacionales de Unidades Climáticas. INEGI.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--biota)"></span>Tipos de Vegetación</span></td>
+            <td class="tabla">Vegetacion</td>
+            <td class="escala">1:250 000</td>
+            <td class="fuente">Uso del suelo y vegetación, Serie VII. INEGI.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--agua)"></span>Hidrología Superficial</span></td>
+            <td class="tabla">hidrologia_superficial</td>
+            <td class="escala">1:50 000</td>
+            <td class="fuente">Red hidrográfica y subcuencas de México. Ríos y canales: Carta Topográfica INEGI (cnit50k).</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--infra)"></span>Vértices del Proyecto</span></td>
+            <td class="tabla">(generado)</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Calculado a partir del polígono cargado por el usuario. No es un dataset externo.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--infra)"></span>Localización</span></td>
+            <td class="tabla">raster + cnit50k.gpkg</td>
+            <td class="escala">1:50 000</td>
+            <td class="fuente">Mapa Topográfico municipal, Hermosillo, Son., Serie III. Vialidades: Carta Topográfica INEGI (cnit50k).</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--infra)"></span>Rutas de Acceso</span></td>
+            <td class="tabla">Rutas_Acceso</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Generadas a partir de la red vial de OpenStreetMap.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <h2>Figuras</h2>
+      <span class="block-count">Contexto regional · 7 capas</span>
+    </div>
+    <div class="legend">
+      <span class="legend-item"><span class="dot" style="background:var(--ordenamiento)"></span>Ordenamiento</span>
+      <span class="legend-item"><span class="dot" style="background:var(--biota)"></span>Biota</span>
+      <span class="legend-item"><span class="dot" style="background:var(--agua)"></span>Agua</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Capa</th><th>Tabla en la BD</th><th>Escala</th><th>Fuente</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--ordenamiento)"></span>POET Sonora</span></td>
+            <td class="tabla">poet_sonora</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Programa de Ordenamiento Ecológico Territorial del Estado de Sonora.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--ordenamiento)"></span>Áreas Naturales Protegidas</span></td>
+            <td class="tabla">ANP_Conjunto</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Federal: CONANP. Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--biota)"></span>AICA</span></td>
+            <td class="tabla">aica_nacional</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Áreas de Importancia para la Conservación de Aves. CONABIO.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--ordenamiento)"></span>ANP Estatales</span></td>
+            <td class="tabla">anp_estatales</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Comisión de Ecología y Desarrollo Sustentable del Estado de Sonora (CEDES).</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--agua)"></span>Regiones Hidrológicas Prioritarias</span></td>
+            <td class="tabla">regiones_hidrologicas_prioritarias</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">CONABIO.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--biota)"></span>Regiones Terrestres Prioritarias</span></td>
+            <td class="tabla">regiones_terrestres_prioritarias</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">CONABIO.</td>
+          </tr>
+          <tr>
+            <td><span class="capa"><span class="dot" style="background:var(--ordenamiento)"></span>UAB Nacional</span></td>
+            <td class="tabla">uab_nacional</td>
+            <td class="escala"><span class="dash">—</span></td>
+            <td class="fuente">Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="scaletip">
+      <span>Cómo leer la escala:</span>
+      <span class="pair">1:50 000 <span class="arrow">→</span> mayor detalle</span>
+      <span class="pair">1:1 000 000 <span class="arrow">→</span> menor detalle</span>
+    </div>
+  </section>
+
+  <footer class="notes">
+    <h3>Notas</h3>
+    <ol>
+      <li>El campo <code>"fuente"</code> de cada capa en <code>config/proyectos/*.json</code> es la referencia oficial: si un dataset se actualiza, el JSON y esta página se actualizan juntos para no desincronizarse.</li>
+      <li>La escala indica la resolución del levantamiento oficial: a mayor número en el denominador, menor detalle; a menor número, mayor detalle.</li>
+      <li>Ante cualquier duda sobre vigencia, verificar directamente en INEGI, CONABIO, CONANP o SEMARNAT según corresponda.</li>
+    </ol>
+  </footer>
+
+</div>
