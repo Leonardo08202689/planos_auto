@@ -3,6 +3,7 @@ core/composicion.py — Gestión de layouts QGIS: carga de plantillas,
                        leyenda, barra de escala, grid, logo y etiquetas.
 """
 
+import math
 import os
 
 from qgis.PyQt.QtCore import Qt
@@ -10,6 +11,8 @@ from qgis.PyQt.QtGui import QColor, QFont
 
 from qgis.core import (
     QgsApplication,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
     QgsLayoutItem,
     QgsLayoutItemLabel,
     QgsLayoutItemLegend,
@@ -19,16 +22,15 @@ from qgis.core import (
     QgsLayoutItemScaleBar,
     QgsLayoutPoint,
     QgsLayoutSize,
+    QgsLayoutUtils,
     QgsLegendRenderer,
     QgsLegendStyle,
     QgsLineSymbol,
     QgsRenderContext,
+    QgsScaleBarSettings,
     QgsTextFormat,
     QgsUnitTypes,
 )
-
-from .utils import segmento_barra_escala
-
 
 # ---------------------------------------------------------------------------
 # Carga de plantillas QPT
@@ -135,7 +137,6 @@ _LEYENDA_SIMBOLO_MIN_MM   = 3.0
 _LEYENDA_MAX_COLUMNAS     = 5
 _LEYENDA_MARGEN_TEXTO_PCT = 0.06  # colchón: minimumSize() subestima el ancho real del texto
 _LEYENDA_MARGEN_TEXTO_MM  = 1.0
-_MM_POR_PT                = 0.352778
 
 
 def _medir_leyenda(leyenda):
@@ -267,38 +268,124 @@ def actualizar_leyenda(layout_comp, ids: dict, *capas, log=None, centrar_horizon
     leyenda.refresh()
 
 
-def reenlazar_barra_escala(layout_comp, map_item, log, unidades_por_segmento=None) -> None:
-    # Sin valor explícito, se calcula un segmento acorde a la escala real del
-    # mapa (~2 cm de papel por segmento); el segmento fijo de la plantilla
-    # solo es válido para la escala con la que se diseñó el QPT.
-    if not unidades_por_segmento:
-        unidades_por_segmento = segmento_barra_escala(map_item.scale())
+def reenlazar_barra_escala(layout_comp, map_item, log) -> None:
+    """Ajusta barra y ambos ejes del grid a la misma distancia que cabe."""
+    grid = map_item.grids().grid(0)
+    if grid is None or grid.intervalX() <= 0:
+        return
+    extent = QgsCoordinateTransform(
+        map_item.crs(), grid.crs(), map_item.layout().project(),
+    ).transformBoundingBox(map_item.extent())
+    magnitud = 10 ** math.floor(math.log10(max(extent.width(), extent.height()) / 10))
+    # Contar también los cuadros parciales de ambos bordes.
+    candidatos = sorted({
+        n / 2 * magnitud * factor
+        for factor in (0.1, 1, 10)
+        for n in range(2, 21)
+        if all(
+            math.ceil(fin / (n / 2 * magnitud * factor))
+            - math.floor(inicio / (n / 2 * magnitud * factor)) <= 10
+            for inicio, fin in (
+                (extent.xMinimum(), extent.xMaximum()),
+                (extent.yMinimum(), extent.yMaximum()),
+            )
+        )
+    })
+    distancia_grid = min(candidatos, key=lambda paso: abs(paso - grid.intervalX()))
+    paneles = [i for i in layout_comp.items() if isinstance(i, QgsLayoutItemLegend)]
+    barras = []
     n = 0
     for item in layout_comp.items():
         if isinstance(item, QgsLayoutItemScaleBar):
+            centro = item.sceneBoundingRect().center().x()
+            ancho_disponible = item.rect().width()
+            if paneles:
+                panel = min(paneles, key=lambda p: abs(p.sceneBoundingRect().center().x() - centro))
+                centro = panel.sceneBoundingRect().center().x()
+                ancho_disponible = panel.rect().width()
+            ancho_disponible = max(1.0, ancho_disponible - 6.0)
+            unidades_por_segmento = distancia_grid / 2
+            y = item.pos().y()
             item.setLinkedMap(map_item)
             item.setUnits(QgsUnitTypes.DistanceMeters)
             item.setUnitLabel("m")
+            item.setSegmentSizeMode(QgsScaleBarSettings.SegmentSizeFixed)
+            item.setNumberOfSegments(2)
+            item.setNumberOfSegmentsLeft(0)
             item.setUnitsPerSegment(unidades_por_segmento)
             item.refreshItemSize()
-            item.refresh()
+            item.resizeToMinimumWidth()
+            # Reducir solo a distancias redondas que no excedan 10 cuadros.
+            for paso in reversed([p for p in candidatos if p <= distancia_grid]):
+                unidades_por_segmento = paso / 2
+                item.setUnitsPerSegment(unidades_por_segmento)
+                item.refreshItemSize()
+                item.resizeToMinimumWidth()
+                if item.rect().width() <= ancho_disponible:
+                    break
+            else:
+                log.warning(" → El panel es demasiado estrecho para las etiquetas de la barra de escala.")
+            distancia_grid = min(distancia_grid, unidades_por_segmento * 2)
+            barras.append((item, centro, y))
             n += 1
     if n:
+        grid.setIntervalX(distancia_grid)
+        grid.setIntervalY(distancia_grid)
+        map_item.refresh()
+        for item, centro, y in barras:
+            item.setUnitsPerSegment(distancia_grid / 2)
+            item.refreshItemSize()
+            item.resizeToMinimumWidth()
+            item.attemptMove(QgsLayoutPoint(
+                centro - item.rect().width() / 2, y,
+                QgsUnitTypes.LayoutMillimeters,
+            ), useReferencePoint=False)
+            item.refresh()
         log.debug(
             f" ✓ Barra(s) de escala re-enlazada(s): {n} "
-            f"({unidades_por_segmento:,.0f} m/segmento)"
+            f"(barra y cuadro del grid: {distancia_grid:g} m)"
         )
     else:
         log.warning(" → No se encontró barra de escala.")
 
 
-def configurar_grid_mapa(map_item, intervalo_m: float, log) -> None:
+def configurar_grid_mapa(map_item, log) -> None:
+    """Conserva coordenadas métricas y muestra unas cinco líneas por eje."""
     grids = map_item.grids()
-    grid  = grids.grid(0) if grids.size() > 0 else QgsLayoutItemMapGrid("Grid", map_item)
+    grid = grids.grid(0) if grids.size() > 0 else QgsLayoutItemMapGrid("Grid", map_item)
     if grids.size() == 0:
         grids.addGrid(grid)
-    grid.setIntervalX(intervalo_m)
-    grid.setIntervalY(intervalo_m)
+    crs = grid.crs()
+    if not crs.isValid() or crs.mapUnits() != QgsUnitTypes.DistanceMeters:
+        crs = map_item.crs()
+    if crs.mapUnits() != QgsUnitTypes.DistanceMeters:
+        # Sin CRS métrico en la plantilla, usar la zona UTM del encuadre.
+        centro = QgsCoordinateTransform(
+            map_item.crs(), QgsCoordinateReferenceSystem("EPSG:4326"),
+            map_item.layout().project(),
+        ).transform(map_item.extent().center())
+        zona = min(60, max(1, int((centro.x() + 180) / 6) + 1))
+        crs = QgsCoordinateReferenceSystem(f"EPSG:{(32600 if centro.y() >= 0 else 32700) + zona}")
+    extent = map_item.extent()
+    if crs != map_item.crs():
+        extent = QgsCoordinateTransform(
+            map_item.crs(), crs, map_item.layout().project(),
+        ).transformBoundingBox(extent)
+    if extent.width() <= 0 or extent.height() <= 0:
+        return
+    # Elegir distancias redondas cercanas a cinco divisiones (100, 150, 200…).
+    intervalos = []
+    for lado in (extent.width(), extent.height()):
+        magnitud = 10 ** math.floor(math.log10(lado / 5))
+        candidatos = [n * magnitud for n in (1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10)]
+        intervalos.append(min(candidatos, key=lambda paso: abs(lado / paso - 5)))
+    grid.setCrs(crs)
+    grid.setAnnotationFormat(QgsLayoutItemMapGrid.Decimal)
+    grid.setAnnotationPrecision(0)
+    grid.setIntervalX(intervalos[0])
+    grid.setIntervalY(intervalos[1])
+    grid.setOffsetX(0)
+    grid.setOffsetY(0)
     grid.setUnits(QgsLayoutItemMapGrid.MapUnit)
     grid.setEnabled(True)
 
@@ -330,7 +417,7 @@ def configurar_grid_mapa(map_item, intervalo_m: float, log) -> None:
         log.debug(" → Grid sin estilo en la plantilla: gris claro + coordenadas.")
 
     map_item.refresh()
-    log.debug(f" ✓ Grid: {intervalo_m:,.0f} m")
+    log.debug(f" ✓ Grid automático (~5 líneas/eje): X={intervalos[0]:g}, Y={intervalos[1]:g}")
 
 
 _PISTAS_FLECHA_NORTE = ("north", "norte", "arrow", "brujula", "brújula", "compass", "rosa")
@@ -396,20 +483,14 @@ def fijar_logo(layout_comp, id_logo: str, logo_ruta: str, log) -> None:
         log.warning(f" → Ítem de logo '{id_logo}' no encontrado o no es imagen.")
 
 
-_LABEL_MARGEN_PCT     = 0.06  # colchón: la caja del ítem QGIS suele traer un
-                              # pequeño padding interno que QFontMetricsF no ve
-_LABEL_PASO_CRECER    = 1.06
-_LABEL_ESCALA_MAX     = 1.8   # tope relativo al tamaño de la plantilla, para
-                              # no deformar el diseño del recuadro de datos
-_LABEL_FUENTE_MIN_PT  = 5.0
+_LABEL_MARGEN_PCT     = 0.06  # colchón adicional dentro de la caja
+_LABEL_FUENTE_PT      = 9.0
+_LABEL_PASO_REDUCIR   = 1.06
 
 
 def _medir_texto_envuelto_mm(texto: str, fuente, ancho_max_mm: float):
     """(ancho_usado_mm, alto_mm) que ocupará 'texto' envuelto por palabras a
-    lo sumo al ancho dado, con métricas de la fuente (1 pt ≈ 0.3528 mm)."""
-    from qgis.PyQt.QtGui import QFontMetricsF
-    fm = QFontMetricsF(fuente)
-    max_w_pt = ancho_max_mm / _MM_POR_PT
+    lo sumo al ancho dado, con métricas QGIS en milímetros."""
     lineas = []
     for parrafo in (texto or "").splitlines() or [""]:
         palabras = parrafo.split()
@@ -419,68 +500,71 @@ def _medir_texto_envuelto_mm(texto: str, fuente, ancho_max_mm: float):
         actual = palabras[0]
         for p in palabras[1:]:
             candidata = f"{actual} {p}"
-            if fm.horizontalAdvance(candidata) > max_w_pt:
+            if QgsLayoutUtils.textWidthMM(fuente, candidata) > ancho_max_mm:
                 lineas.append(actual)
                 actual = p
             else:
                 actual = candidata
         lineas.append(actual)
-    ancho_pt = max((fm.horizontalAdvance(linea) for linea in lineas), default=0.0)
-    alto_mm  = len(lineas) * fm.lineSpacing() * _MM_POR_PT
-    return ancho_pt * _MM_POR_PT, alto_mm
+    ancho_mm = max((QgsLayoutUtils.textWidthMM(fuente, linea) for linea in lineas), default=0.0)
+    alto_mm = len(lineas) * QgsLayoutUtils.fontHeightMM(fuente)
+    return ancho_mm, alto_mm
 
 
-def _ajustar_fuente_al_cuadro(item) -> None:
-    """Ajusta la letra del label a la caja fija que le dio la plantilla:
-
-    - Si el texto (envuelto al ancho del label) se desborda de la caja,
-      reduce la fuente hasta que quepa — evita que un título largo se
-      derrame sobre el label vecino (p. ej. la fecha).
-    - Si el texto cabe con espacio de sobra (caso típico: nombres cortos
-      del proyecto/plano en una caja del tamaño de la plantilla, pensada
-      para textos más largos), agranda la fuente hasta llenar mejor la
-      caja, sin pasar de un tope relativo al tamaño original para no
-      deformar el diseño del recuadro de datos."""
+def _ajustar_fuente_al_cuadro(item, tam_base: float = _LABEL_FUENTE_PT) -> None:
+    """Usa el tamaño indicado y reduce solo si no cabe en su caja."""
     if not isinstance(item, QgsLayoutItemLabel):
         return
     try:
         fmt = item.textFormat()
     except AttributeError:  # QGIS viejo sin textFormat()
         return
-    box = item.sizeWithUnits()
+    box = item.rect()
     texto = item.currentText()
     if box.width() <= 0 or box.height() <= 0 or not texto:
         return
 
-    tam_orig = fmt.size() if fmt.size() > 0 else 9.0
-    max_w = box.width()  * (1 - _LABEL_MARGEN_PCT)
-    max_h = box.height() * (1 - _LABEL_MARGEN_PCT * 0.5)
+    max_w = (box.width() - 2 * item.marginX()) * (1 - _LABEL_MARGEN_PCT)
+    max_h = (box.height() - 2 * item.marginY()) * (1 - _LABEL_MARGEN_PCT * 0.5)
+    if max_w <= 0 or max_h <= 0:
+        return
 
     def cabe(tam: float) -> bool:
         fuente = fmt.toQFont()
         fuente.setPointSizeF(tam)
-        ancho, alto = _medir_texto_envuelto_mm(texto, fuente, box.width())
+        ancho, alto = _medir_texto_envuelto_mm(texto, fuente, max_w)
         return ancho <= max_w and alto <= max_h
 
-    tam = tam_orig
-    if cabe(tam):
-        # Espacio de sobra: crecer hasta llenar la caja o llegar al tope.
-        tope = tam_orig * _LABEL_ESCALA_MAX
-        while tam < tope and cabe(tam * _LABEL_PASO_CRECER):
-            tam *= _LABEL_PASO_CRECER
-        tam = min(tam, tope)
-    else:
-        # Se desborda al tamaño de la plantilla: encoger hasta que quepa.
-        while tam > _LABEL_FUENTE_MIN_PT and not cabe(tam):
-            tam /= _LABEL_PASO_CRECER
-        tam = max(tam, _LABEL_FUENTE_MIN_PT)
+    tam = tam_base
+    while not cabe(tam):
+        tam /= _LABEL_PASO_REDUCIR
 
-    if abs(tam - fmt.size()) > 0.05:
+    fmt.setSizeUnit(QgsUnitTypes.RenderPoints)
+    fmt.setSize(tam)
+    item.setTextFormat(fmt)
+
+
+def unificar_etiquetas_mapitas(layout_comp, ids: dict) -> None:
+    """Usa el mismo tamaño para estado, municipio y país en los insertos."""
+    etiquetas = [
+        item for item in layout_comp.items()
+        if isinstance(item, QgsLayoutItemLabel)
+        and (
+            item.id() in {ids.get("lbl_estado", "lbl_estado"), ids.get("lbl_municipio", "lbl_municipio")}
+            or item.text().strip().casefold() in {"republica mexicana", "república mexicana"}
+        )
+    ]
+    for item in etiquetas:
+        _ajustar_fuente_al_cuadro(item)
+    tam = min((item.textFormat().size() for item in etiquetas), default=_LABEL_FUENTE_PT)
+    for item in etiquetas:
+        fmt = item.textFormat()
         fmt.setSize(tam)
         item.setTextFormat(fmt)
 
 
-def set_label_text(layout_comp, item_id: str, texto: str, log=None) -> None:
+def set_label_text(layout_comp, item_id: str, texto: str, log=None,
+                   tam_fuente: float = _LABEL_FUENTE_PT) -> None:
     """Asigna 'texto' a TODOS los ítems con id == item_id (puede haber más de uno,
     p. ej. la misma etiqueta de municipio repetida en varios insertos)."""
     if not item_id:
@@ -492,6 +576,6 @@ def set_label_text(layout_comp, item_id: str, texto: str, log=None) -> None:
     if items:
         for item in items:
             item.setText(texto)
-            _ajustar_fuente_al_cuadro(item)
+            _ajustar_fuente_al_cuadro(item, tam_fuente)
     elif log:
         log.debug(f" → Ítem '{item_id}' no encontrado.")

@@ -253,10 +253,16 @@ se especifique se hereda de `"defaults_capa"`.
   polígono cabe completo en el marco, con ~5 % de aire.
 - Si la escala configurada **no alcanza** para el encuadre, se sube
   automáticamente a la mínima que sí cabe y se avisa en el log.
-- `grid_intervalo` y `barra_escala_segmento` se asumen tuneados para la escala
-  configurada: si la escala final difiere, se reescalan proporcionalmente
-  (redondeados a valores cartográficos). `barra_escala_segmento` sin valor se
-  deriva sola de la escala real del mapa.
+- La cuadrícula calcula su separación según el encuadre final para mostrar
+  unas cinco líneas por eje con intervalos redondos (100, 150, 200 metros…).
+  `grid_intervalo` ya no se usa al generar.
+- La cuadrícula conserva coordenadas métricas (UTM en las plantillas).
+  La barra queda centrada en el panel de simbología y su longitud total
+  representa un cuadro del grid. Si la barra resulta demasiado larga, se
+  reduce su distancia y la separación de ambos ejes del grid al mismo valor,
+  usando distancias redondas y un máximo de diez cuadros por eje, incluidos
+  los parciales de los bordes, con margen dentro del panel.
+  `barra_escala_segmento` ya no se usa al generar.
 - El filtro espacial contra PostGIS usa el **bbox de la vista final**, no el
   del polígono: con escala automática grande el mapa no queda con zonas vacías.
 
@@ -285,8 +291,8 @@ se especifique se hereda de `"defaults_capa"`.
 | `ids_override` | `{clave: id}` | Sustituye IDs de ítems del layout para esa composición |
 | `marcador` | `"punto"` \| `"poligono"` | Estrella o contorno del polígono como referencia. Default: `"poligono"` en planos normales, `"punto"` en ráster/`capas_combinadas` |
 | `opacidad` | `0.0`–`1.0` | Transparencia de la capa (también aplica al ráster de localización) |
-| `grid_intervalo` | metros | Separación de la cuadrícula |
-| `barra_escala_segmento` | metros | Unidades por segmento de la barra de escala |
+| `grid_intervalo` | metros | Campo antiguo; la separación ahora se calcula automáticamente (~5 líneas por eje) |
+| `barra_escala_segmento` | metros | Campo antiguo; la barra se calcula a partir del grid y se limita al ancho del panel |
 | `fuente` | texto | Texto del label de fuente del plano |
 
 La leyenda y los labels se **autoajustan a la plantilla**: el bloque de
@@ -300,7 +306,7 @@ Además del flujo normal (una tabla PostGIS categorizada), hay flujos dedicados:
 | `tipo` | Uso | Claves relevantes |
 |--------|-----|--------------------|
 | `vertices` | Plano de vértices del polígono del proyecto | — |
-| `raster` | Plano de localización sobre un ráster (carta topográfica) | `tabla_postgis_raster` (+ `schema_postgis_raster`, default `cartografia_base`) o `ruta_raster`; `capas_extra`, `barra_escala_segmento`. El ráster es opcional: sin él queda el basemap satelital + `capas_extra` |
+| `raster` | Plano de localización sobre un ráster (carta topográfica) | `tabla_postgis_raster` (+ `schema_postgis_raster`, default `cartografia_base`) o `ruta_raster`; `capas_extra`. El ráster es opcional: sin él queda el basemap satelital + `capas_extra` |
 | `rutas_acceso` | Figura de rutas hacia el sitio, extent ajustado al conjunto de rutas | `ruta_gpkg` (generado con `herramientas/rutas_cli.py`), `capas_rutas`, `capa_destino`, `capa_entrada` |
 | `capas_combinadas` | Varias capas superpuestas en un mismo plano (p. ej. "Áreas Naturales Protegidas" = ANP federal/estatal + AICA + RTP + RHP) | `capas_postgis` y/o `capas_shapefile` |
 

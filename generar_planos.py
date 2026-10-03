@@ -46,6 +46,7 @@ from core.composicion import (
     reenlazar_barra_escala,
     resolver_ids,
     set_label_text,
+    unificar_etiquetas_mapitas,
     validar_extent,
 )
 from core.exportar   import exportar_plano
@@ -90,7 +91,8 @@ def _mayus(texto: str) -> str:
 
 
 def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log, capas_ref=None):
-    set_label_text(comp, ids.get("lbl_proyecto", ""), _mayus(cfg.get("nombre_proyecto", "")), log)
+    nombre = _mayus(cfg.get("nombre_proyecto", ""))
+    set_label_text(comp, ids.get("lbl_proyecto", ""), f'PROYECTO "{nombre}"' if nombre else "", log)
     set_label_text(comp, ids.get("lbl_licencia", ""), _mayus(cfg.get("tipo_tramite", "")),    log)
     set_label_text(comp, ids.get("lbl_plano", ""),    _mayus(cfg_capa.get("nombre_plano", "")), log)
 
@@ -106,9 +108,10 @@ def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log, capas_ref=None):
     fecha = cfg.get("fecha_plano") or f"{_MESES_ES[ahora.month - 1]} {ahora.year}"
     set_label_text(comp, ids.get("lbl_fecha", ""), f"Fecha: {fecha}", log)
 
-    set_label_text(comp, ids.get("lbl_fuente", ""), cfg_capa.get("fuente", ""), log)
+    set_label_text(comp, ids.get("lbl_fuente", ""), cfg_capa.get("fuente", ""), log, tam_fuente=6)
     set_label_text(comp, ids.get("lbl_coordsys", ""), cfg.get("coordenadas", ""), log)
     fijar_logo(comp, ids.get("logo", ""), cfg.get("logo_ruta", ""), log)
+    unificar_etiquetas_mapitas(comp, ids)
 
 
 def generar_composiciones(cfg: dict) -> None:
@@ -445,17 +448,8 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(
-                nueva_comp, map_item, log,
-                unidades_por_segmento=_intervalo_auto(
-                    cfg_capa.get("barra_escala_segmento"), 50
-                ),
-            )
-            configurar_grid_mapa(
-                map_item,
-                _intervalo_auto(cfg_capa.get("grid_intervalo"), 100),
-                log,
-            )
+            configurar_grid_mapa(map_item, log)
+            reenlazar_barra_escala(nueva_comp, map_item, log)
             actualizar_leyenda(nueva_comp, ids, poly_layer, capa_vertices, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -553,15 +547,8 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(
-                nueva_comp, map_item, log,
-                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
-            )
-            configurar_grid_mapa(
-                map_item,
-                _intervalo_auto(cfg_capa.get("grid_intervalo"), 1000),
-                log,
-            )
+            configurar_grid_mapa(map_item, log)
+            reenlazar_barra_escala(nueva_comp, map_item, log)
             # La estrella del proyecto y las capas extra en la leyenda; el ráster no lleva simbología.
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_extra_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
@@ -648,15 +635,8 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(
-                nueva_comp, map_item, log,
-                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
-            )
-            configurar_grid_mapa(
-                map_item,
-                _intervalo_auto(cfg_capa.get("grid_intervalo"), 50000),
-                log,
-            )
+            configurar_grid_mapa(map_item, log)
+            reenlazar_barra_escala(nueva_comp, map_item, log)
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -769,16 +749,8 @@ def generar_composiciones(cfg: dict) -> None:
             map_item.invalidateCache()
             map_item.refresh()
 
-            reenlazar_barra_escala(
-                nueva_comp, map_item, log,
-                unidades_por_segmento=_intervalo_auto(cfg_capa.get("barra_escala_segmento")),
-            )
-            configurar_grid_mapa(
-                map_item,
-                cfg_capa.get("grid_intervalo")
-                or intervalo_para_escala(escala_capa, 2500, escala_referencia=50000),
-                log,
-            )
+            configurar_grid_mapa(map_item, log)
+            reenlazar_barra_escala(nueva_comp, map_item, log)
             actualizar_leyenda(nueva_comp, ids, *capas_ruta, capa_destino, capa_entrada, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
@@ -1019,12 +991,8 @@ def generar_composiciones(cfg: dict) -> None:
         map_item.invalidateCache()
         map_item.refresh()
 
+        configurar_grid_mapa(map_item, log)
         reenlazar_barra_escala(nueva_comp, map_item, log)
-        configurar_grid_mapa(
-            map_item,
-            _intervalo_auto(cfg_capa.get("grid_intervalo"), 500),
-            log,
-        )
         actualizar_leyenda(
             nueva_comp, ids, capa_referencia, capa_para_leyenda, *capas_extra_obj, log=log,
             centrar_horizontal=cfg_capa.get("leyenda_centrada", False),

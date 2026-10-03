@@ -4,7 +4,7 @@ core/mapitas.py — Insertos de localización automáticos.
 Genera tres niveles cartográficos según dónde caiga el polígono:
   - Nacional  : México + estado resaltado
   - Estatal   : Municipios del estado + municipio resaltado
-  - Municipal : Municipio zoom + punto del proyecto
+  - Municipal : Municipio completo + municipios vecinos + punto del proyecto
 """
 
 from qgis.core import (
@@ -194,12 +194,12 @@ def preparar_capas_referencia(centroid_geom, crs_proyecto, pg: dict,
     # Extents
     ext_nac  = _extent_margen(c_estados,   0.05) if c_estados   else None
     ext_est  = _extent_margen(c_munis,     0.12) if c_munis     else None
-    ext_mun  = _extent_margen(c_muni_hl,   0.30) if c_muni_hl  else None
+    ext_mun  = _extent_margen(c_muni_hl,   0.08) if c_muni_hl  else None
 
     return {
         "capas_nacional":    [c for c in [c_estado_hl, c_estados]            if c],
         "capas_estatal":     [c for c in [c_muni_hl,   c_munis]                if c],
-        "capas_municipal":   [c for c in [c_punto,     c_muni_hl]            if c],
+        "capas_municipal":   [c for c in [c_punto, c_muni_hl, c_munis]       if c],
         "ext_nacional":      ext_nac,
         "ext_estatal":       ext_est,
         "ext_municipal":     ext_mun,
@@ -251,10 +251,11 @@ def configurar_mapitas(layout_comp, id_principal: str,
         frame_pos  = item.positionWithUnits()
 
         item.setCrs(crs_ref)
-        item.setExtent(ext)
         item.setLayers(capas)
         item.attemptResize(frame_size)
         item.attemptMove(frame_pos)
+        # Encajar toda la extensión en el marco fijo, sin recortar por su aspecto.
+        item.zoomToExtent(ext)
         item.setKeepLayerSet(True)
         item.setKeepLayerStyles(True)
         item.invalidateCache()
