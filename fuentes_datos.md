@@ -34,3 +34,7 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 - El campo **`"fuente"`** de cada capa en los archivos `config/proyectos/*.json` es la fuente oficial de esta tabla — si se actualiza un dataset (ej. INEGI publica una nueva serie), hay que actualizar el JSON del proyecto **y** esta tabla juntos, para que no queden desincronizados.
 - Escalas y series indican la resolución/año del levantamiento oficial: a mayor escala numérica (ej. 1:1 000 000), menor detalle; a menor escala numérica (ej. 1:50 000), mayor detalle.
 - Ante cualquier duda sobre si un dato está actualizado o corresponde a la fuente vigente, verificar directamente con el sitio de INEGI/CONABIO/CONANP/SEMARNAT según corresponda.
+
+## Referencias documentales
+
+- Diccionario de datos del continuo nacional geológico. INEGI-SGM. Escala 1:250 000. Edición 2021 (cobertura temporal 2012). https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=889463842651
