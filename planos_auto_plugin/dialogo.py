@@ -418,11 +418,13 @@ class DialogoPlanos(QDialog):
             )
             return
 
+        # Todas las capas 'memory' del proyecto, no solo las del grupo: los
+        # mapitas (ref_punto) y las leyendas filtradas viven fuera del árbol
+        # y, si se quedan en 'memory', reaparecen vacías al reabrir.
         capas = [
-            nodo.layer() for nodo in grupo.findLayers()
-            if nodo.layer() is not None
-            and nodo.layer().type() == QgsMapLayerType.VectorLayer
-            and nodo.layer().dataProvider().name() == "memory"
+            c for c in project.mapLayers().values()
+            if c.type() == QgsMapLayerType.VectorLayer
+            and c.dataProvider().name() == "memory"
         ]
         if not capas:
             QMessageBox.information(
@@ -496,13 +498,18 @@ class DialogoPlanos(QDialog):
                 capa.importNamedStyle(estilo)
             except TypeError:  # bindings antiguos: el mensaje es parámetro
                 capa.importNamedStyle(estilo, "")
+            # Guardar el estilo dentro del GeoPackage (tabla layer_styles)
+            # como predeterminado: así al cargar la capa a mano sale con formato.
+            err_estilo = capa.saveStyleToDatabase(nombre, "", True, "")
+            if err_estilo:
+                errores.append(f"{capa.name()} (estilo): {err_estilo}")
             capa.triggerRepaint()
             reapuntadas.append(capa)
 
         if errores:
             QMessageBox.warning(
                 self, "Guardar capas",
-                f"Se guardaron {len(capas) - len(errores)} de {len(capas)} "
+                f"Se guardaron {len(reapuntadas)} de {len(capas)} "
                 f"capa(s) en:\n{ruta}\n\nErrores:\n" + "\n".join(errores),
             )
         elif not reapuntadas:
