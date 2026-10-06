@@ -6,6 +6,7 @@ core/capas.py — Carga y procesamiento de capas vectoriales PostGIS y de
 from qgis.core import (
     QgsCoordinateTransform,
     QgsDataSourceUri,
+    QgsCoordinateReferenceSystem,
     QgsFeature,
     QgsFeatureRequest,
     QgsGeometry,
@@ -264,8 +265,28 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
         f"Point?crs={crs.authid()}", "Vertices_Proyecto", "memory"
     )
     dp = capa_vertices.dataProvider()
-    dp.addAttributes([QgsField("num_vertice", QVariant.Int)])
+    dp.addAttributes([
+        QgsField("num_vertice", QVariant.Int),
+        QgsField("x", QVariant.Double, len=15, prec=4),
+        QgsField("y", QVariant.Double, len=15, prec=4),
+        QgsField("superficie_ha", QVariant.Double, len=15, prec=4),
+    ])
     capa_vertices.updateFields()
+
+    # x/y y superficie siempre en UTM (zona según el centroide), aunque el
+    # polígono venga en geográficas: así salen en metros y hectáreas.
+    centro = QgsCoordinateTransform(
+        crs, QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance()
+    ).transform(geom.centroid().asPoint())
+    zona = int((centro.x() + 180) // 6) + 1
+    epsg_utm = (32600 if centro.y() >= 0 else 32700) + zona
+    a_utm = QgsCoordinateTransform(
+        crs, QgsCoordinateReferenceSystem(f"EPSG:{epsg_utm}"), QgsProject.instance()
+    )
+    geom_utm = QgsGeometry(geom)
+    geom_utm.transform(a_utm)
+    area_m2 = geom_utm.area()
+    superficie_ha = round(area_m2 / 10000, 4)
 
     features = []
     num = 0
@@ -281,6 +302,10 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
             feat = QgsFeature(capa_vertices.fields())
             feat.setGeometry(QgsGeometry.fromPointXY(punto))
             feat.setAttribute("num_vertice", num)
+            punto_utm = a_utm.transform(punto)
+            feat.setAttribute("x", round(punto_utm.x(), 4))
+            feat.setAttribute("y", round(punto_utm.y(), 4))
+            feat.setAttribute("superficie_ha", superficie_ha)
             features.append(feat)
 
     if not features:
@@ -288,7 +313,10 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
 
     dp.addFeatures(features)
     capa_vertices.updateExtents()
-    log.debug(f" ✓ {len(features)} vértices extraídos del polígono.")
+    log.debug(
+        f" ✓ {len(features)} vértices extraídos del polígono "
+        f"(coordenadas en EPSG:{epsg_utm}, {superficie_ha} ha)."
+    )
     return capa_vertices
 
 
