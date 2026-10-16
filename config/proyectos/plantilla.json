@@ -112,7 +112,7 @@
           {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "90,90,90,180",  "ancho_linea": "0.3"}
         ]
       },
-      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III. Vialidades: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
+      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora. Escala 1:245 000, elaborado con información topográfica 1:50 000 serie III. INEGI, 2024. Vialidades: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
     },
 
     {

@@ -105,7 +105,7 @@
       "grid_intervalo": 2500,
       "barra_escala_segmento": 1250,
       "marcador":       "punto",
-      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora 1:50 000 serie III."
+      "fuente":         "Mapa Topográfico municipal, Hermosillo, Sonora. Escala 1:245 000, elaborado con información topográfica 1:50 000 serie III. INEGI, 2024."
     },
     {
       "tipo":           "raster",
