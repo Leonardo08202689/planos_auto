@@ -41,7 +41,7 @@
       "campo_categoria": "descripcio",
       "campo_etiqueta":  "descripcio",
       "paleta":          "vegetacion",
-      "fuente":          "Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. Serie VII."
+      "fuente":          "Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. Serie VII. Conjunto Nacional. INEGI, 2018."
     },
     {
       "tipo":           "raster",
