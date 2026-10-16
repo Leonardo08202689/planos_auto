@@ -10,7 +10,7 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 |------|-----------------|--------|
 | Tipo de Suelo | `suelos_edafologia_serie3` | [Conjunto nacional de información edafológica. Escala 1:250 000 **Serie III**](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551118313). INEGI, 2024. |
 | Tipos de Roca | `Geologia` | Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000. [Consultar recurso en datos.gob.mx](https://www.datos.gob.mx/dataset/cartografia_geologica_republica_mexicana_escala_1-250-000/resource/2038cfc3-6e11-41c3-b6ee-27a013122409) |
-| Tipo de Clima | `Clima` | Conjunto de Datos Nacionales de Unidades Climáticas, escala 1:1 000 000. INEGI. |
+| Tipo de Clima | `Clima` | [Conjunto de datos vectoriales escala 1:1 000 000. Unidades climáticas](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=702825267568). INEGI, 2008. |
 | Tipos de Vegetación | `Vegetacion` | Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. **Serie VII**. INEGI. |
 | Hidrología Superficial | `hidrologia_superficial` | Red hidrográfica, Subcuencas hidrográficas de México, escala 1:50 000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k). |
 | Vértices del Proyecto | *(generado)* | Vértices del polígono del proyecto (no es un dataset externo, se calcula de la geometría cargada por el usuario). |

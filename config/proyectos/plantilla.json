@@ -50,7 +50,7 @@
       "campo_categoria": "etiqueta_clima",
       "campo_etiqueta":  "etiqueta_clima",
       "paleta":          "clima",
-      "fuente":          "Conjunto de Datos Nacionales de Unidades Climáticas, Escala 1:1 000 000, INEGI."
+      "fuente":          "Conjunto de datos vectoriales escala 1:1 000 000. Unidades climáticas. INEGI, 2008."
     },
     {
       "tabla_postgis":   "Vegetacion",
