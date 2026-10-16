@@ -16,17 +16,17 @@
   "capas": [
     {
       "_grupo": "Planos Corporativos (Plantilla_Corporativa)",
-      "tabla_postgis":   "suelos_edafologia_serie2",
+      "tabla_postgis":   "suelos_edafologia_serie3",
       "nombre_plano":    "PLANO. TIPOS DE SUELOS",
       "nombre_capa":     "Tipo_de_Suelo",
       "titulo_capa":     "TIPO DE SUELO",
       "escala":          5000,
       "tipo_geom":       "MultiPolygon",
-      "key":             "ogc_fid",
-      "campo_categoria": "Grupo1",
-      "campo_etiqueta":  "Grupo1",
+      "key":             "id",
+      "campo_categoria": "nombre_grupo1",
+      "campo_etiqueta":  "nombre_grupo1",
       "paleta":          "suelos",
-      "fuente":          "Conjunto de Datos Vectorial Edafológico. Escala 1:250 000 Serie II. INEGI."
+      "fuente":          "Conjunto nacional de información edafológica. Escala 1:250 000 Serie III. INEGI, 2024."
     },
     {
       "tabla_postgis":   "Geologia",

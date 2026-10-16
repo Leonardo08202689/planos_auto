@@ -8,7 +8,7 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 
 | Capa | Tabla en la BD | Fuente |
 |------|-----------------|--------|
-| Tipo de Suelo | `suelos_edafologia_serie2` | Conjunto de Datos Vectorial Edafológico. Escala 1:250 000 Serie II. INEGI. |
+| Tipo de Suelo | `suelos_edafologia_serie3` | [Conjunto nacional de información edafológica. Escala 1:250 000 **Serie III**](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551118313). INEGI, 2024. |
 | Tipos de Roca | `Geologia` | Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000. [Consultar recurso en datos.gob.mx](https://www.datos.gob.mx/dataset/cartografia_geologica_republica_mexicana_escala_1-250-000/resource/2038cfc3-6e11-41c3-b6ee-27a013122409) |
 | Tipo de Clima | `Clima` | Conjunto de Datos Nacionales de Unidades Climáticas, escala 1:1 000 000. INEGI. |
 | Tipos de Vegetación | `Vegetacion` | Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. **Serie VII**. INEGI. |
@@ -37,4 +37,5 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 
 ## Referencias documentales
 
+- Diccionario de Datos Edafológicos. INEGI. Escala 1:250 000 (Versión 3). Edición 2021 (Serie III, WRB 2014). https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=889463842644
 - Diccionario de datos del continuo nacional geológico. INEGI-SGM. Escala 1:250 000. Edición 2021 (cobertura temporal 2012). https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=889463842651
