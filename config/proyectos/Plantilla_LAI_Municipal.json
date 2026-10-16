@@ -30,7 +30,7 @@
           {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "0,210,255,255", "ancho_linea": "0.6", "campo_etiqueta": "nom_geo"}
         ]
       },
-      "fuente":         "Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+      "fuente":         "Vialidades: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
     },
     {
       "tabla_postgis":   "Vegetacion",

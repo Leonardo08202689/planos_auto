@@ -84,7 +84,7 @@
           {"tabla_postgis": "cuerpo_agua_a", "tipo_geom": "area", "nombre": "Cuerpos de Agua", "color": "60,120,210,220"}
         ]
       },
-      "fuente":          "Red hidrográfica, Subcuencas hidrográficas de México, Escala 1:50000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+      "fuente":          "Red hidrográfica, subcuencas hidrográficas de México. Escala 1:50 000, edición 2. INEGI, 2010 (distribuido por CONABIO). Ríos, canales y cuerpos de agua: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
     },
     {
       "tipo":           "vertices",
@@ -122,7 +122,7 @@
           {"tabla_postgis": "vialidad_l",  "tipo_geom": "linea", "nombre": "Calles",     "color": "0,210,255,255", "ancho_linea": "0.6", "campo_etiqueta": "nom_geo"}
         ]
       },
-      "fuente":         "Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k)."
+      "fuente":         "Vialidades: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
     },
     {
       "tipo":           "raster",

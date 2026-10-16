@@ -12,9 +12,9 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 | Tipos de Roca | `Geologia` | Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000. [Consultar recurso en datos.gob.mx](https://www.datos.gob.mx/dataset/cartografia_geologica_republica_mexicana_escala_1-250-000/resource/2038cfc3-6e11-41c3-b6ee-27a013122409) |
 | Tipo de Clima | `Clima` | [Conjunto de datos vectoriales escala 1:1 000 000. Unidades climáticas](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=702825267568). INEGI, 2008. |
 | Tipos de Vegetación | `Vegetacion` | [Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. **Serie VII**. Conjunto Nacional](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=889463842781). INEGI, 2018. |
-| Hidrología Superficial | `hidrologia_superficial` | Red hidrográfica, Subcuencas hidrográficas de México, escala 1:50 000. Ríos, canales y cuerpos de agua: Carta Topográfica INEGI 1:50 000 (cnit50k). |
+| Hidrología Superficial | `hidrologia_superficial` | [Red hidrográfica, subcuencas hidrográficas de México](http://geoportal.conabio.gob.mx/metadatos/doc/html/redsub84gw.html). Escala 1:50 000, edición 2. INEGI, 2010 (distribuido por CONABIO). Ríos, canales y cuerpos de agua: [Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k)](https://www.inegi.org.mx/programas/topografia/50000/cnit50k/). INEGI. |
 | Vértices del Proyecto | *(generado)* | Vértices del polígono del proyecto (no es un dataset externo, se calcula de la geometría cargada por el usuario). |
-| Localización | raster + `cnit50k.gpkg` | Mapa Topográfico municipal, Hermosillo, Sonora, escala 1:50 000, serie III. Vialidades: Carta Topográfica INEGI 1:50 000 (cnit50k). |
+| Localización | raster + `cnit50k.gpkg` | Mapa Topográfico municipal, Hermosillo, Sonora, escala 1:50 000, serie III. Vialidades: [Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k)](https://www.inegi.org.mx/programas/topografia/50000/cnit50k/). INEGI. |
 | Rutas de Acceso | `Rutas_Acceso` | Rutas de acceso generadas a partir de la red vial de OpenStreetMap. |
 
 ## Figuras (planos de contexto regional)
