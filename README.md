@@ -1,13 +1,44 @@
-# Generador Automático de Planos — SINERGIA
+<div align="center">
 
-Plugin y script de QGIS que genera composiciones cartográficas completas
-(planos y figuras de un trámite ambiental) y las exporta a PNG de forma
-automática, a partir de capas PostGIS y plantillas QPT.
+<img src="assets/logo_sinergia.jpg" alt="SINERGIA" width="220">
 
-Cada corrida produce, además de los PNG, un **`index_planos.html`**: índice
-con miniaturas de todos los planos, su estado (generado / fallido / omitido)
-y liga al archivo. Ábrelo en el navegador para revisar la corrida completa de
-un vistazo.
+# Planos Auto
+
+**Generador automático de planos y figuras para trámites ambientales en QGIS**
+
+Selecciona el polígono del predio, elige el proyecto y obtén todos los planos
+(clima, geología, edafología, vegetación, hidrología, ANP, UAB…) listos en PNG.
+
+![QGIS](https://img.shields.io/badge/QGIS-3.34%2B-589632?logo=qgis&logoColor=white)
+![PostGIS](https://img.shields.io/badge/PostGIS-base%20central-336791?logo=postgresql&logoColor=white)
+![Python](https://img.shields.io/badge/Python-PyQGIS-3776AB?logo=python&logoColor=white)
+![Plataforma](https://img.shields.io/badge/Windows%20%7C%20Linux-lightgrey)
+![Estado](https://img.shields.io/badge/estado-experimental-orange)
+
+</div>
+
+---
+
+## En un vistazo
+
+| | |
+|---|---|
+| 🗺️ **Composiciones completas** | Mapa, leyenda, grid UTM, barra de escala, logo, fuente y tres insertos de localización (nacional / estatal / municipal) |
+| 🐘 **Todo desde PostGIS** | Una sola base compartida: cualquier computadora con la conexión genera los mismos planos, sin copiar archivos |
+| 📐 **Escala automática** | Calcula la escala redonda en la que cabe el predio y ajusta grid y barra solos |
+| 🧩 **Proyectos en JSON** | Plantillas LAI y LAI Municipal; clona un proyecto cambiando solo el factor de escala |
+| 🖱️ **Plugin sin terminal** | Instalación con doble clic, formulario de conexión y actualización desde el propio plugin |
+| 📄 **Índice HTML** | Cada corrida deja un `index_planos.html` con miniaturas y estado de cada plano |
+
+```mermaid
+flowchart LR
+    A[Polígono del predio<br/>seleccionado en QGIS] --> B[Proyecto JSON<br/>config/proyectos]
+    B --> C[generar_planos.py]
+    D[(PostGIS<br/>gis_empresa)] --> C
+    E[Plantillas QPT<br/>y estilos QML] --> C
+    C --> F[PNG por plano]
+    C --> G[index_planos.html]
+```
 
 ## Contenido
 
@@ -54,10 +85,11 @@ un vistazo.
    guardar los planos — todo con un formulario, sin editar archivos. Para
    cambiarlos después: botón **"Conexión…"** dentro del plugin.
 
-**Actualizaciones:** el botón **"Buscar actualizaciones…"** dentro del plugin
-descarga la versión más reciente de GitHub y la aplica solo, sin tocar tu
-conexión, tus proyectos ni tus planos ya generados. Después hay que cerrar y
-volver a abrir QGIS para que tome el código nuevo.
+> [!TIP]
+> **Actualizaciones:** el botón **"Buscar actualizaciones…"** dentro del plugin
+> descarga la versión más reciente de GitHub y la aplica solo, sin tocar tu
+> conexión, tus proyectos ni tus planos ya generados. Después hay que cerrar y
+> volver a abrir QGIS para que tome el código nuevo.
 
 <details>
 <summary>Instalación por terminal (equivalente)</summary>
@@ -134,6 +166,7 @@ overrides de ids/layout…) se editan directamente en el JSON — ver
 | `Plantilla_LAI.json` | Subconjunto curado para Licencia Ambiental Integral (18 planos) |
 | `Plantilla_LAI_Municipal.json` | Subconjunto reducido para trámites municipales (9 planos) |
 
+> [!IMPORTANT]
 > **Los proyectos reales son personales de cada computadora** y no se comparten
 > por Git (confidencialidad de clientes): `.gitignore` solo deja pasar las tres
 > plantillas de arriba. Si necesitas pasarle un proyecto a un colega, mándale
@@ -156,6 +189,9 @@ SOLO_CAPAS = ["Clima"]                # lista de 'nombre_capa'; vacía = todos
 ```
 
 ## Estructura del repositorio
+
+<details>
+<summary>Ver árbol de archivos</summary>
 
 ```
 planos_auto/
@@ -189,6 +225,7 @@ planos_auto/
 ├── .env                           ← Credenciales (en .gitignore)
 └── .env.example                   ← Plantilla de credenciales
 ```
+</details>
 
 ## Todas las capas viven en PostGIS
 
@@ -394,7 +431,7 @@ servidor está disponible sin depender de que alguien la deje encendida.
   **`192.168.100.132`**. Para conectarse desde fuera de la oficina hay que
   instalar Tailscale ([tailscale.com/download](https://tailscale.com/download))
   y autenticarse con la cuenta del equipo.
-- **Usar la IP, no `scianas.local`:** QGIS (Flatpak en Linux) no resuelve
+- ⚠️ **Usar la IP, no `scianas.local`:** QGIS (Flatpak en Linux) no resuelve
   nombres `.local`, aunque una terminal normal sí.
 - Dos roles en la base:
   - `qgis_user` — lectura y escritura (administradores).
@@ -419,8 +456,9 @@ servidor está disponible sin depender de que alguien la deje encendida.
 2. Si va a conectarse desde fuera de la oficina, además instala Tailscale y se
    autentica con la cuenta del equipo (paso aparte, no lo hace el plugin).
 
-La contraseña se pasa por un canal aparte (WhatsApp, correo…), **nunca por
-este repo**.
+> [!CAUTION]
+> La contraseña se pasa por un canal aparte (WhatsApp, correo…), **nunca por
+> este repo**.
 
 ## Fuentes de datos
 
@@ -436,3 +474,9 @@ plano en el JSON es lo que termina impreso en el pie del plano.
   aparte, fuera de QGIS). En una computadora sin ese archivo el plano no falla:
   se genera con el mapa base y el punto del proyecto, solo sin las rutas
   trazadas.
+
+---
+
+<div align="center">
+<sub>SINERGIA Consultores en Ingeniería Ambiental</sub>
+</div>
