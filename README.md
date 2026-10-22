@@ -414,41 +414,42 @@ LOGO_RUTA=/ruta/al/logo.jpg   # opcional, usa assets/logo_sinergia.jpg por defec
 
 ## Acceso a la base de datos (otras computadoras)
 
-La base (PostgreSQL/PostGIS) vive en un contenedor Docker en el **NAS Synology
-de la oficina** (`scianas`, DS224+), no en una computadora de trabajo, así el
-servidor está disponible sin depender de que alguien la deje encendida.
+La base (PostgreSQL/PostGIS, `gis_empresa`) vive en **`servidorsin`**, un
+servidor Ubuntu de la oficina dedicado a esto, no en una computadora de trabajo.
 
-**Configuración actual (2026-08-05):**
+| | Dirección para el plugin |
+|---|---|
+| Desde la oficina (LAN) | `192.168.100.24` |
+| Desde fuera (Tailscale) | `100.67.21.105` |
 
-- Servidor: contenedor `postgis/postgis` en el NAS, puerto **`55432`** (no el
-  5432 estándar — ya estaba ocupado por otro servicio del NAS).
-- Datos persistentes en una carpeta compartida del NAS (`postgis_data/data`),
-  sobreviven reinicios y actualizaciones del contenedor; reinicio automático
-  habilitado.
-- **Tailscale activo en el NAS** (paquete oficial de Synology): el servidor es
-  alcanzable dentro de la oficina y desde fuera, sin abrir puertos al internet
-  público. IP de Tailscale del NAS: **`100.105.239.92`**; IP de LAN:
-  **`192.168.100.132`**. Para conectarse desde fuera de la oficina hay que
-  instalar Tailscale ([tailscale.com/download](https://tailscale.com/download))
-  y autenticarse con la cuenta del equipo.
-- ⚠️ **Usar la IP, no `scianas.local`:** QGIS (Flatpak en Linux) no resuelve
-  nombres `.local`, aunque una terminal normal sí.
+- Puerto **`5432`** (el estándar; no hace falta escribirlo).
+- Para conectarse desde fuera de la oficina hay que instalar Tailscale
+  ([tailscale.com/download](https://tailscale.com/download)) y autenticarse
+  con la cuenta del equipo. Ojo: la IP `100.x` **solo funciona con Tailscale
+  activo**, aunque estés físicamente en la oficina; ahí usa la de LAN.
+- Acceso abierto solo a la LAN `192.168.100.0/24` y a Tailscale
+  (`100.64.0.0/10`), vía `ufw` y `pg_hba.conf` en el servidor; nada expuesto al
+  internet público.
 - Dos roles en la base:
   - `qgis_user` — lectura y escritura (administradores).
   - `planos_lector` — solo lectura (`GRANT SELECT`, con
     `ALTER DEFAULT PRIVILEGES` para que las tablas nuevas también queden
     visibles automáticamente).
-- Todas las capas de referencia que antes eran archivos locales (vías, ríos,
-  canales y el ráster topográfico) ya viven en PostGIS — cualquier computadora
-  con la conexión configurada las ve, sin copiar archivos.
+- Todas las capas de referencia (vías, ríos, canales y los rásters
+  topográficos municipales) viven en PostGIS — cualquier computadora con la
+  conexión configurada las ve, sin copiar archivos.
+
+> [!NOTE]
+> La base que antes corría en el NAS `scianas` (puerto `55432`) ya **no es la
+> oficial** y no recibe las capas nuevas. Si tu plugin apunta ahí, cámbialo con
+> el botón **"Conexión…"**.
 
 **Para dar acceso a un colega nuevo:**
 
 1. Instala QGIS + el plugin siguiendo
    [Instalación](#instalación-sin-terminal). La primera vez el plugin pide:
-   - **Dirección del servidor:** `192.168.100.132:55432` desde la oficina, o
-     `100.105.239.92:55432` (Tailscale) desde fuera — dirección y puerto
-     separados por `:`.
+   - **Dirección del servidor:** `192.168.100.24` desde la oficina, o
+     `100.67.21.105` (Tailscale) desde fuera.
    - **¿Es administrador?** — solo si va a editar la base.
    - **Contraseña:** la del rol que le corresponda (`qgis_user` si es
      administrador, `planos_lector` si no).
