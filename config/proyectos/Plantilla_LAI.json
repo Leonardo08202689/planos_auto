@@ -38,7 +38,7 @@
       "campo_categoria": "tipo_roca",
       "campo_etiqueta":  "tipo_roca",
       "paleta":          "geologia",
-      "fuente":          "Continúo Nacional de Geología de la República Mexicana escala 1:250,000."
+      "fuente":          "Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000."
     },
     {
       "tabla_postgis":   "Clima",
