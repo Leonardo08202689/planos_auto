@@ -29,6 +29,18 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 | Regiones Terrestres Prioritarias | `regiones_terrestres_prioritarias` | Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO). |
 | UAB Nacional | `uab_nacional` | Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT. |
 
+## Capas base INEGI (esquema `inegi`, Sonora completo, EPSG:6372)
+
+Cargadas con `herramientas/inegi/cargar_inegi_sonora.sh`.
+
+| Capa | Tabla en la BD | Fuente |
+|------|-----------------|--------|
+| Colonias y asentamientos humanos | `inegi.colonias` | [Delimitación de colonias y otros asentamientos humanos 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163078). INEGI, 2025 (elaborada con las autoridades municipales; Hermosillo: Dirección de Catastro, act. 11/2025). |
+| Servicios: escuelas, templos, salud, parques, cementerios… | `inegi.servicios_puntos`, `inegi.servicios_area`, `inegi.servicios_linea` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025 (cobertura nov-2024 a jul-2025). Capas `sip`, `sia`, `sil`. |
+| Manzanas, AGEB, localidades, municipios, estado | `inegi.manzanas`, `inegi.frentes_manzana`, `inegi.ageb_urbanas`, `inegi.ageb_rurales`, `inegi.localidades`, `inegi.localidades_rurales_puntos`, `inegi.municipios`, `inegi.estado`, `inegi.caserio_disperso`, `inegi.poligono_externo_localidad`, `inegi.poligono_externo_manzana`, `inegi.territorio_insular` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025. |
+| Vialidades | `inegi.vialidades` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025 (ejes de vialidad). |
+| Establecimientos (escuelas, hospitales, comercios…) | `inegi.denue` | [Directorio Estadístico Nacional de Unidades Económicas (DENUE)](https://www.inegi.org.mx/app/descarga/?ti=6), corte 05/2026. INEGI, 2026. |
+
 ## Notas
 
 - El campo **`"fuente"`** de cada capa en los archivos `config/proyectos/*.json` es la fuente oficial de esta tabla — si se actualiza un dataset (ej. INEGI publica una nueva serie), hay que actualizar el JSON del proyecto **y** esta tabla juntos, para que no queden desincronizados.

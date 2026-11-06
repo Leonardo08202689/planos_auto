@@ -219,6 +219,7 @@ planos_auto/
 ├── plantillas/                    ← Layouts QPT (ver "Plantillas de layout")
 ├── estilos/                       ← Archivos QML por capa
 ├── herramientas/rutas_cli.py      ← Generador de rutas de acceso (OSMnx), proceso aparte
+├── herramientas/inegi/           ← Carga de capas base INEGI (colonias, MG 2025, DENUE) a PostGIS
 ├── docs/fuentes_datos.html        ← Versión navegable de fuentes_datos.md
 ├── fuentes_datos.md               ← De dónde sale cada capa
 ├── assets/logo_sinergia.jpg
