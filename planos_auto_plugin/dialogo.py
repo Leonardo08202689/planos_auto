@@ -88,8 +88,8 @@ QProgressBar::chunk {{ background: {_ACENTO}; border-radius: 2px; }}
 
 
 def _es_plantilla(nombre: str) -> bool:
-    """Plantillas = proyectos que vienen en el repo (Plantilla_LAI,
-    Plantilla_LAI_Municipal, plantilla); el resto los crea el usuario."""
+    """Plantillas = proyectos que vienen en el repo (Plantilla_LAI y
+    Plantilla_LAI_Municipal); el resto los crea el usuario."""
     return nombre.lower().startswith("plantilla")
 
 
@@ -334,6 +334,8 @@ class DialogoPlanos(QDialog):
             os.path.splitext(f)[0]
             for f in (os.listdir(carpeta) if os.path.isdir(carpeta) else [])
             if f.endswith(".json")
+            # plantilla.json es el ejemplo genérico del repo: no se lista
+            and os.path.splitext(f)[0] != "plantilla"
         )
         # Señales bloqueadas durante todo el rearmado: _cargar_capas se llama
         # una sola vez, explícitamente, al final.
