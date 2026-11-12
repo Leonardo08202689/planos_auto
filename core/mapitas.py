@@ -44,7 +44,7 @@ def _s_highlight():
 def _s_punto():
     return QgsMarkerSymbol.createSimple({
         "name": "star", "color": "220,0,0,255",
-        "outline_color": "255,255,255,255", "size": "4.5",
+        "outline_color": "255,255,255,255", "size": "2.8", "outline_width": "0.2",
     })
 
 
