@@ -1053,6 +1053,7 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
             # El bloque de simbología mide lo que su contenido: sin huecos
             # cuando hay pocas categorías, con tope cuando hay muchas.
             leyenda.setResizeToContents(True)
+            leyenda.updateLegend()
             leyenda.adjustBoxSize()
             alto_ley = leyenda.sizeWithUnits().height()
             leyenda.setResizeToContents(False)
