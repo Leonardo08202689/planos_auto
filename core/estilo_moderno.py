@@ -50,6 +50,7 @@ from qgis.core import (
     QgsLayoutItemLabel,
     QgsLayoutItemLegend,
     QgsLayoutItemMap,
+    QgsLayoutItemMapGrid,
     QgsLayoutItemPicture,
     QgsLayoutItemPolyline,
     QgsLayoutItemScaleBar,
@@ -828,6 +829,11 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
         tabloide = comp.pageCollection().page(0).pageSize().width() > 400
         fa.setSize(5.5 if estatal else (7 if tabloide else 6))
         fa.setFont(QFont(opts["fuente_texto"]))
+        if not estatal:
+            # Coordenadas solo abajo y a la izquierda: arriba queda libre
+            # para el pie de figura y a la derecha está el panel.
+            for lado in (QgsLayoutItemMapGrid.Top, QgsLayoutItemMapGrid.Right):
+                g.setAnnotationDisplay(QgsLayoutItemMapGrid.HideAll, lado)
         fa.setColor(QColor("#444444"))
         g.setAnnotationTextFormat(fa)
         g.setLineSymbol(QgsLineSymbol.createSimple({"color": "255,255,255,120", "width": "0.15"}))
