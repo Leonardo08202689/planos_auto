@@ -1276,6 +1276,17 @@ def _pie_figura(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
 # Punto de entrada
 # ---------------------------------------------------------------------------
 
+def _quitar_marco_pagina(comp):
+    """Quita el rectángulo de orilla que traen las plantillas (sin id y del
+    tamaño de la hoja): el mapa y el panel ya tienen su propio marco."""
+    pag = comp.pageCollection().page(0).pageSize()
+    for it in list(comp.items()):
+        if isinstance(it, QgsLayoutItemShape) and not it.id():
+            s = it.sizeWithUnits()
+            if s.width() >= pag.width() * 0.95 and s.height() >= pag.height() * 0.95:
+                comp.removeLayoutItem(it)
+
+
 def aplicar_estilo_moderno(comp, cfg, cfg_capa, ids, ctx, log) -> None:
     """Aplica el estilo si está activo en la config. Nunca lanza excepción."""
     opts = _opciones(cfg)
@@ -1292,6 +1303,7 @@ def aplicar_estilo_moderno(comp, cfg, cfg_capa, ids, ctx, log) -> None:
             _pie_figura(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log)
         else:
             _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log)
+        _quitar_marco_pagina(comp)
         comp.refresh()
         log.debug(" ✓ Estilo moderno aplicado.")
     except Exception:
