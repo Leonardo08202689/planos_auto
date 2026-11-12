@@ -87,6 +87,12 @@ QProgressBar::chunk {{ background: {_ACENTO}; border-radius: 2px; }}
 """
 
 
+def _es_plantilla(nombre: str) -> bool:
+    """Plantillas = proyectos que vienen en el repo (Plantilla_LAI,
+    Plantilla_LAI_Municipal, plantilla); el resto los crea el usuario."""
+    return nombre.lower().startswith("plantilla")
+
+
 class _HandlerLogQt(logging.Handler):
     """Redirige los registros del logger 'Composiciones' al panel de texto."""
 
@@ -180,6 +186,8 @@ class DialogoPlanos(QDialog):
             btn.setToolTip(ayuda)
             btn.clicked.connect(accion)
             fila_proy.addWidget(btn)
+            if texto == "Eliminar":
+                self.btn_eliminar = btn
         lay_proy.addLayout(fila_proy)
         cuerpo.addWidget(tarjeta_proy)
 
@@ -331,9 +339,20 @@ class DialogoPlanos(QDialog):
         # una sola vez, explícitamente, al final.
         self.combo_proyecto.blockSignals(True)
         self.combo_proyecto.clear()
-        self.combo_proyecto.addItems(proyectos)
-        if seleccionar and seleccionar in proyectos:
-            self.combo_proyecto.setCurrentText(seleccionar)
+        plantillas = [p for p in proyectos if _es_plantilla(p)]
+        propios = sorted((p for p in proyectos if not _es_plantilla(p)), key=str.lower)
+        for titulo, grupo in (("PLANTILLAS", plantillas), ("MIS PROYECTOS", propios)):
+            if not grupo:
+                continue
+            if self.combo_proyecto.count():
+                self.combo_proyecto.insertSeparator(self.combo_proyecto.count())
+            self._agregar_encabezado(titulo)
+            for nombre in grupo:
+                self.combo_proyecto.addItem(nombre)
+        if not (seleccionar and seleccionar in proyectos):
+            seleccionar = (plantillas or propios or [None])[0]
+        if seleccionar:
+            self.combo_proyecto.setCurrentIndex(self.combo_proyecto.findText(seleccionar))
         self.combo_proyecto.blockSignals(False)
         if not proyectos:
             QMessageBox.warning(
@@ -341,6 +360,18 @@ class DialogoPlanos(QDialog):
                 f"No hay proyectos en:\n{carpeta}",
             )
         self._cargar_capas(self.combo_proyecto.currentText())
+
+    def _agregar_encabezado(self, titulo: str):
+        """Renglón de título en el combo: gris, en negritas, no seleccionable."""
+        self.combo_proyecto.addItem(titulo)
+        item = self.combo_proyecto.model().item(self.combo_proyecto.count() - 1)
+        item.setFlags(Qt.NoItemFlags)
+        item.setData(True, Qt.UserRole)
+        fuente = item.font()
+        fuente.setBold(True)
+        fuente.setPointSizeF(max(fuente.pointSizeF() - 1, 7))
+        item.setFont(fuente)
+        item.setForeground(QBrush(QColor("#6b7a8c")))
 
     def _configurar_conexion(self):
         from .configurar_conexion import DialogoConexion
@@ -460,6 +491,12 @@ class DialogoPlanos(QDialog):
 
     def _cargar_capas(self, proyecto: str):
         self.lista_capas.clear()
+        es_plantilla = bool(proyecto) and _es_plantilla(proyecto)
+        self.btn_eliminar.setEnabled(not es_plantilla)
+        self.btn_eliminar.setToolTip(
+            "Las plantillas vienen con el programa y no se eliminan"
+            if es_plantilla else "Eliminar el proyecto"
+        )
         if not proyecto:
             return
         ruta = os.path.join(self.base, "config", "proyectos", f"{proyecto}.json")
