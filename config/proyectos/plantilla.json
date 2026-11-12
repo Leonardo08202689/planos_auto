@@ -67,6 +67,7 @@
       "tabla_postgis":   "hidrologia_superficial",
       "nombre_plano":    "PLANO. HIDROLOGÍA SUPERFICIAL",
       "nombre_capa":     "Hidrologia_Superficial",
+      "solo_contorno":   true,
       "escala":          35000,
       "campo_categoria": "subcuenca",
       "campo_etiqueta":  "subcuenca",

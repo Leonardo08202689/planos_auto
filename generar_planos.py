@@ -49,6 +49,7 @@ from core.composicion import (
     unificar_etiquetas_mapitas,
     validar_extent,
 )
+from core.estilo_moderno import aplicar_estilo_moderno
 from core.exportar   import exportar_plano
 from core.mapitas    import configurar_mapitas, preparar_capas_referencia
 from core.reportes   import generar_indice_html
@@ -246,6 +247,21 @@ def generar_composiciones(cfg: dict) -> None:
         capas_ref = preparar_capas_referencia(
             centroid_geom, crs_origen, cfg["pg"], cfg_mapitas, project, log
         )
+
+    # ── Contexto para el estilo moderno (core/estilo_moderno.py) ─────────────
+    ctx_estilo = {
+        "project":       project,
+        "poly_layer":    poly_layer,
+        "punto_layer":   punto_layer,
+        "geom_poligono": feature_poligono.geometry(),
+        "crs_origen":    crs_origen,
+        "capas_ref":     capas_ref,
+        "output_dir":    output_dir,
+    }
+    # Capas cacheadas del estilo de una corrida anterior (el polígono pudo cambiar)
+    for capa_previa in list(project.mapLayers().values()):
+        if capa_previa.name().startswith("[estilo] "):
+            project.removeMapLayer(capa_previa.id())
 
     # ── Cache de plantillas (evita re-importar el mismo QPT) ──────────────────
     cache_plantillas: dict = {}
@@ -453,6 +469,10 @@ def generar_composiciones(cfg: dict) -> None:
             actualizar_leyenda(nueva_comp, ids, poly_layer, capa_vertices, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
+            aplicar_estilo_moderno(
+                nueva_comp, cfg, cfg_capa, ids,
+                dict(ctx_estilo, grupo_plano=grupo_plano), log,
+            )
             rutas = exportar_plano(
                 nueva_comp, cfg_capa, feature_poligono.id(),
                 output_dir, cfg["dpi"], formatos, log,
@@ -553,6 +573,10 @@ def generar_composiciones(cfg: dict) -> None:
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_extra_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
+            aplicar_estilo_moderno(
+                nueva_comp, cfg, cfg_capa, ids,
+                dict(ctx_estilo, grupo_plano=grupo_plano), log,
+            )
             rutas = exportar_plano(
                 nueva_comp, cfg_capa, feature_poligono.id(),
                 output_dir, cfg["dpi"], formatos, log,
@@ -640,6 +664,10 @@ def generar_composiciones(cfg: dict) -> None:
             actualizar_leyenda(nueva_comp, ids, capa_referencia, *capas_obj, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
+            aplicar_estilo_moderno(
+                nueva_comp, cfg, cfg_capa, ids,
+                dict(ctx_estilo, grupo_plano=grupo_plano), log,
+            )
             rutas = exportar_plano(
                 nueva_comp, cfg_capa, feature_poligono.id(),
                 output_dir, cfg["dpi"], formatos, log,
@@ -754,6 +782,10 @@ def generar_composiciones(cfg: dict) -> None:
             actualizar_leyenda(nueva_comp, ids, *capas_ruta, capa_destino, capa_entrada, log=log)
             _aplicar_etiquetas_globales(nueva_comp, ids, cfg, cfg_capa, log, capas_ref)
             nueva_comp.refresh()
+            aplicar_estilo_moderno(
+                nueva_comp, cfg, cfg_capa, ids,
+                dict(ctx_estilo, grupo_plano=grupo_plano), log,
+            )
             rutas = exportar_plano(
                 nueva_comp, cfg_capa, feature_poligono.id(),
                 output_dir, cfg["dpi"], formatos, log,
@@ -1001,6 +1033,10 @@ def generar_composiciones(cfg: dict) -> None:
         nueva_comp.refresh()
 
         # ── k. Exportación ─────────────────────────────────────────────────────
+        aplicar_estilo_moderno(
+            nueva_comp, cfg, cfg_capa, ids,
+            dict(ctx_estilo, grupo_plano=grupo_plano), log,
+        )
         rutas = exportar_plano(
             nueva_comp, cfg_capa, feature_poligono.id(),
             output_dir, cfg["dpi"], formatos, log,

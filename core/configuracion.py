@@ -70,6 +70,19 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
             )
 
 
+def _estilo_moderno(cfg_global: dict, cfg_proyecto: dict, env: dict):
+    """Fusiona 'estilo_moderno' de global.json y del proyecto (el proyecto
+    gana campo por campo; false lo apaga) y añade CEM_RUTA del .env."""
+    base = cfg_global.get("estilo_moderno", {})
+    proy = cfg_proyecto.get("estilo_moderno", {})
+    if base is False or proy is False:
+        return {"activo": False}
+    em = {**(base if isinstance(base, dict) else {}), **(proy if isinstance(proy, dict) else {})}
+    if env.get("CEM_RUTA") and not em.get("cem_ruta"):
+        em["cem_ruta"] = env["CEM_RUTA"]
+    return em
+
+
 def cargar_config(base: str, proyecto: str,
                   solo_capas: list = None, dpi: int = None) -> dict:
     """
@@ -109,6 +122,9 @@ def cargar_config(base: str, proyecto: str,
         "fecha_plano":   cfg_proyecto.get("fecha_plano", cfg_global.get("fecha_plano", "")),
         "mapitas":       cfg_proyecto.get("mapitas", cfg_global.get("mapitas", {})),
         "formatos":      cfg_proyecto.get("formatos", cfg_global.get("formatos", ["png"])),
+        # Acabado visual (core/estilo_moderno.py). El proyecto puede apagarlo
+        # o ajustar opciones; la ruta del CEM viene del .env (es local).
+        "estilo_moderno": _estilo_moderno(cfg_global, cfg_proyecto, env),
         "solo_capas":    solo_capas or [],
 
         # ── Rutas resueltas desde .env ────────────────────────────────────────
