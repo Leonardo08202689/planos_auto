@@ -606,15 +606,13 @@ class DialogoPlanos(QDialog):
         self._actualizar_conteo()
 
     def _cargar_opciones_estilo(self, cfg_proyecto: dict):
-        """Casilla de relieve: activa solo si el .env trae CEM_RUTA."""
-        hay_cem = bool(self._cem_ruta)
-        self.chk_relieve.setChecked(hay_cem)
+        """Casilla de relieve: el CEM se lee de la base (o de CEM_RUTA)."""
+        self.chk_relieve.setChecked(True)
+        self.chk_relieve.setEnabled(True)
         self.chk_relieve.setToolTip(
-            "Sombreado de relieve a partir del CEM en los planos de escala "
-            "detallada." if hay_cem else
-            "Para usarlo agrega CEM_RUTA=<ruta del CEM .tif> a tu archivo .env"
+            "Sombreado de relieve a partir del Continuo de Elevaciones "
+            "Mexicano (CEM 15 m) en los planos de escala detallada."
         )
-        self.chk_relieve.setEnabled(hay_cem)
 
     def _marcar_todo(self, marcado: bool):
         estado = Qt.Checked if marcado else Qt.Unchecked

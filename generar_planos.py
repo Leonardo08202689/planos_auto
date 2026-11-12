@@ -257,6 +257,7 @@ def generar_composiciones(cfg: dict) -> None:
         "crs_origen":    crs_origen,
         "capas_ref":     capas_ref,
         "output_dir":    output_dir,
+        "basemap":       basemap_layer,
     }
     # Capas cacheadas del estilo de una corrida anterior (el polígono pudo cambiar)
     for capa_previa in list(project.mapLayers().values()):

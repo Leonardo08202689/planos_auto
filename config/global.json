@@ -21,12 +21,13 @@
   "fecha_plano":   "",
 
   "estilo_moderno": {
-    "_comentario":           "Acabado visual de core/estilo_moderno.py. 'activo': false regresa al estilo de las plantillas. La ruta del CEM va en el .env (CEM_RUTA).",
+    "_comentario":           "Acabado visual de core/estilo_moderno.py. 'activo': false regresa al estilo de las plantillas. El relieve se calcula del CEM en PostGIS (cem_postgis); CEM_RUTA en el .env usa un archivo local en su lugar.",
     "activo":                true,
     "crs_mapa":              "EPSG:32612",
     "fuente_texto":          "Ubuntu Sans",
     "color_acento":          "#08306b",
     "opacidad_tematica":     0.5,
+    "cem_postgis":           "cartografia_base.cem_sonora_15m",
     "relieve_escala_max":    100000,
     "relieve_exageracion":   2.0,
     "relieve_opacidad":      0.38,

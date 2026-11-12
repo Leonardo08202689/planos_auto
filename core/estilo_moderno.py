@@ -30,6 +30,7 @@ el estilo de la plantilla: este módulo nunca debe tumbar una corrida.
 
 import math
 import os
+import re
 import traceback
 
 from qgis.PyQt.QtCore import QPointF, QSizeF, Qt
@@ -62,7 +63,9 @@ from qgis.core import (
     QgsMapLayerType,
     QgsMarkerSymbol,
     QgsPalLayerSettings,
+    QgsFeatureRequest,
     QgsProperty,
+    QgsSimpleLineSymbolLayer,
     QgsRasterLayer,
     QgsRectangle,
     QgsRuleBasedRenderer,
@@ -85,8 +88,10 @@ DEFAULTS = {
     "fuente_texto": "Ubuntu Sans",
     "color_acento": "#08306b",
     "opacidad_tematica": 0.5,
-    # Relieve sombreado: ruta local al CEM (GeoTIFF). Vacío = sin relieve.
+    # Relieve sombreado: ruta local al CEM (GeoTIFF). Si está vacía se lee
+    # el CEM de la base ('cem_postgis', esquema.tabla); ambos vacíos = sin relieve.
     "cem_ruta": "",
+    "cem_postgis": "cartografia_base.cem_sonora_15m",
     "relieve_escala_max": 100000,
     "relieve_exageracion": 2.0,
     "relieve_opacidad": 0.38,
@@ -296,13 +301,32 @@ def _satelite(project, base, variante):
     return _capa_cacheada(project, f"[estilo] Satélite {variante}", fabrica)
 
 
+def _cem_postgis(opts):
+    """Cadena GDAL 'PG:' al CEM guardado en PostGIS (mode=2: la tabla de
+    teselas se lee como un solo ráster)."""
+    tabla = opts.get("cem_postgis")
+    pg = opts.get("_pg") or {}
+    if not tabla or "." not in tabla or not pg.get("host"):
+        return None
+    esquema, nombre = tabla.split(".", 1)
+    partes = [f"host={pg['host']}", f"port={pg.get('port', 5432)}",
+              f"dbname={pg.get('dbname', '')}", f"user={pg.get('user', '')}"]
+    if pg.get("password"):
+        partes.append(f"password={pg['password']}")
+    partes += [f"schema={esquema}", f"table={nombre}", "column=rast", "mode=2"]
+    return "PG:" + " ".join(partes)
+
+
 def _relieve(project, map_item, opts, ctx, nombre, log):
     """Recorta el CEM al encuadre (con margen), lo pasa al CRS del mapa y
     calcula un hillshade multidireccional. Devuelve la capa o None."""
     ruta = opts.get("cem_ruta")
-    if not ruta or not os.path.exists(ruta):
-        if ruta:
-            log.warning(f" → CEM no encontrado ({ruta}); se omite el relieve.")
+    if ruta and not os.path.exists(ruta):
+        log.warning(f" → CEM no encontrado ({ruta}); se usa el de la base.")
+        ruta = None
+    if not ruta:
+        ruta = _cem_postgis(opts)
+    if not ruta:
         return None
     import processing  # noqa: import tardío (solo dentro de QGIS)
 
@@ -414,6 +438,98 @@ def _estado(project, ctx):
             _capa_cacheada(project, "[estilo] Límite estatal", contorno))
 
 
+_AGUA = re.compile(r"r[ií]o|arroyo|canal|corriente|cuerpo.*agua", re.I)
+_ETIQUETA_AGUA = {
+    "ríos y arroyos": "Ríos y arroyos intermitentes",
+    "cuerpos de agua": "Cuerpos de agua",
+    "ríos (cuerpo ancho)": "Ríos (cauce ancho)",
+}
+# Colores para unidades que se dibujan solo con contorno (subcuencas, etc.)
+_PALETA_CONTORNO = ["8,81,156", "0,109,44", "122,1,119", "153,52,4",
+                    "37,37,37", "0,90,50", "84,39,143", "140,45,4"]
+
+
+def _estilo_agua(capa):
+    """Ríos/arroyos en azul con halo blanco; cuerpos de agua azul claro."""
+    nombre = capa.name()
+    etiqueta = _ETIQUETA_AGUA.get(nombre.strip().lower(), nombre)
+    if capa.geometryType() == QgsWkbTypes.LineGeometry:
+        sym = QgsLineSymbol.createSimple({"line_color": "255,255,255,150", "line_width": "0.6"})
+        sym.appendSymbolLayer(QgsSimpleLineSymbolLayer(QColor(0, 120, 215), 0.32))
+    else:
+        sym = QgsFillSymbol.createSimple({
+            "color": "100,170,230,200", "outline_color": "31,120,180,255", "outline_width": "0.2",
+        })
+    capa.setRenderer(QgsSingleSymbolRenderer(sym))
+    capa.setOpacity(1.0)
+    _rule_single(capa, etiqueta)
+    capa.setCustomProperty("estilo/grupo_leyenda", "HIDROGRAFÍA")
+    capa.triggerRepaint()
+
+
+def _unidades_contorno(capa, campo, cfg_capa, opts):
+    """Unidades (p. ej. subcuencas) con contorno punteado de color propio,
+    relleno muy tenue y etiqueta 'Subcuenca\nNombre' del mismo color."""
+    r = capa.renderer()
+    valores = [cat.value() for cat in r.categories()] if r.type() == "categorizedSymbol" else []
+    if not valores or not campo or campo not in capa.fields().names():
+        return False
+    raiz = QgsRuleBasedRenderer.Rule(None)
+    casos = []
+    for i, v in enumerate(valores):
+        if v in (None, ""):
+            continue
+        color = _PALETA_CONTORNO[i % len(_PALETA_CONTORNO)]
+        v_sql = str(v).replace("'", "''")
+        raiz.appendChild(QgsRuleBasedRenderer.Rule(QgsFillSymbol.createSimple({
+            "color": color + ",55", "outline_color": color + ",255",
+            "outline_width": "0.8", "outline_style": "dash",
+        }), 0, 0, f"\"{campo}\" = '{v_sql}'", str(v)))
+        casos.append(f"WHEN \"{campo}\" = '{v_sql}' THEN '{color}'")
+    capa.setRenderer(QgsRuleBasedRenderer(raiz))
+    capa.setOpacity(float(opts["opacidad_tematica"]) + 0.05)
+
+    prefijo = cfg_capa.get("prefijo_etiqueta")
+    if prefijo is None:
+        prefijo = "Subcuenca" if "subcuenca" in campo.lower() else ""
+    ls = QgsPalLayerSettings()
+    ls.isExpression = True
+    ls.fieldName = (f"'{prefijo}' || '\\n' || \"{campo}\"" if prefijo else f'"{campo}"')
+    ls.setFormat(_fmt(opts, 9.0, True, opts["color_acento"], halo=True))
+    ls.placement = _placement_horizontal()
+    ls.multilineAlign = _multilinea_centro()
+    dd = ls.dataDefinedProperties()
+    if casos:
+        dd.setProperty(_prop("Color"), QgsProperty.fromExpression(
+            "CASE " + " ".join(casos) + " END"))
+    dd.setProperty(_prop("Show"), QgsProperty.fromExpression(
+        f'$area = maximum($area, group_by:="{campo}")'))
+    ls.setDataDefinedProperties(dd)
+    capa.setLabeling(QgsVectorLayerSimpleLabeling(ls))
+    capa.setLabelsEnabled(True)
+
+    titulo = cfg_capa.get("titulo_leyenda")
+    if not titulo:
+        titulo = ("Subcuencas hidrológicas" if "subcuenca" in campo.lower()
+                  else cfg_capa.get("nombre_leyenda_categoria") or capa.name())
+    capa.setCustomProperty("estilo/titulo_leyenda", titulo.upper())
+    capa.setCustomProperty("estilo/subgrupo", True)
+    capa.triggerRepaint()
+    return True
+
+
+def _hay_en_mapa(capa, map_item, project):
+    """¿La capa tiene algo dentro del encuadre? (para no listar en la
+    leyenda capas vacías, p. ej. canales que no pasan por el sitio)."""
+    try:
+        tr = QgsCoordinateTransform(map_item.crs(), capa.crs(), project)
+        rect = tr.transformBoundingBox(map_item.extent())
+        req = QgsFeatureRequest().setFilterRect(rect).setLimit(1).setNoAttributes()
+        return any(True for _ in capa.getFeatures(req))
+    except Exception:
+        return True
+
+
 def _etiquetas_halo(capa, opts, tam=8.0):
     if not capa.labelsEnabled() or capa.labeling() is None:
         return
@@ -487,6 +603,18 @@ def _resaltar_unidad(capa, campo, ctx, opts, color, otras, log):
     return etiqueta
 
 
+def _encuadrar_estado(map_item, contorno, project, margen=0.04):
+    try:
+        tr = QgsCoordinateTransform(contorno.crs(), map_item.crs(), project)
+        e = tr.transformBoundingBox(contorno.extent())
+    except Exception:
+        return
+    if e.isEmpty():
+        return
+    e.grow(max(e.width(), e.height()) * margen)
+    map_item.zoomToExtent(e)
+
+
 def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
     """Devuelve dict con lo que el panel necesita saber (capas para la
     leyenda, si es estatal, si hubo relieve)."""
@@ -529,6 +657,14 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
             continue
         if c.geometryType() == QgsWkbTypes.PolygonGeometry:
             r = c.renderer()
+            if (r is not None and r.type() == "categorizedSymbol"
+                    and cfg_capa.get("solo_contorno") and not estatal):
+                campo = cfg_capa.get("campo_categoria")
+                if _unidades_contorno(c, campo, cfg_capa, opts):
+                    continue
+            if _AGUA.search(c.name()) and not (r is not None and r.type() == "categorizedSymbol"):
+                _estilo_agua(c)
+                continue
             if r is not None and r.type() == "categorizedSymbol":
                 tematicas.append(c)
                 contorno = cfg_capa.get("solo_contorno")
@@ -557,6 +693,8 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
                 # sustituye el contorno + máscara del estilo.
                 referencia_estado.append(c)
             _etiquetas_halo(c, opts)
+        elif _AGUA.search(c.name()):
+            _estilo_agua(c)
         else:
             _etiquetas_halo(c, opts, 7.5)
     info["tematica"] = tematicas[0] if len(tematicas) == 1 else None
@@ -569,7 +707,9 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
         if c is poli:
             nuevo.append(_estrella_proyecto(project, ctx) if estatal else _poligono_proyecto(project, ctx))
         elif c is punto:
-            nuevo.append(_estrella_proyecto(project, ctx))
+            # En planos de detalle el polígono se ve; la estrella solo en estatales
+            nuevo.append(_estrella_proyecto(project, ctx) if estatal
+                         else _poligono_proyecto(project, ctx))
         else:
             nuevo.append(c)
     capas = nuevo
@@ -578,14 +718,17 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
     if estatal:
         mascara, contorno = _estado(project, ctx)
         capas = [c for c in capas if c is not base]
+        if base is None:
+            base = ctx.get("basemap")  # figuras con 'sin_basemap'
         if base is not None:
             capas.append(_satelite(project, base, "estatal"))
         if mascara is not None:
             # marcador, contorno, máscara, temas, satélite
             capas = capas[:1] + [contorno, mascara] + capas[1:]
             info["contorno"] = contorno
-            # El encuadre lo decide generar_planos ('centrar_en' en la config):
-            # la capa temática ya viene recortada a ese extent.
+            # Encuadre ajustado al estado (la escala de la config suele dejar
+            # mucho margen blanco alrededor).
+            _encuadrar_estado(map_item, contorno, project)
         if info["tematica"] is not None:
             campos = info["tematica"].fields().names()
             campo = next((c for c in ("nombre", "nom", "nom_uab", "name") if c in campos), None)
@@ -631,14 +774,16 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
         if isinstance(it, QgsLayoutItemPicture) and any(
                 s in f"{it.id()} {it.picturePath()}".lower() for s in ("norte", "north", "arrow")):
             it.setSvgFillColor(QColor("black"))
-            it.setSvgStrokeColor(QColor("white"))
+            it.setSvgStrokeColor(QColor("black"))
 
     map_item.invalidateCache()
     map_item.refresh()
     info["capas_leyenda"] = [c for c in capas
                              if c.type() == QgsMapLayerType.VectorLayer
                              and not c.name().startswith("centroides_")
-                             and not c.name().startswith("[estilo] Máscara")]
+                             and not c.name().startswith("[estilo] Máscara")
+                             and (not c.customProperty("estilo/grupo_leyenda")
+                                  or _hay_en_mapa(c, map_item, project))]
     return info
 
 
@@ -650,12 +795,27 @@ def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0):
     leyenda.setAutoUpdateModel(False)
     raiz = leyenda.model().rootGroup()
     raiz.clear()
-    for c in capas:
+    # Primero las capas sueltas, luego los grupos (p. ej. HIDROGRAFÍA)
+    sueltas = [c for c in capas if not c.customProperty("estilo/grupo_leyenda")]
+    agrupadas = [c for c in capas if c.customProperty("estilo/grupo_leyenda")]
+    grupos = {}
+    for c in sueltas + agrupadas:
         _rule_single(c, c.name().replace("[estilo] ", ""))
+        nombre_grupo = c.customProperty("estilo/grupo_leyenda")
+        if nombre_grupo:
+            if nombre_grupo not in grupos:
+                grupos[nombre_grupo] = raiz.addGroup(nombre_grupo)
+                QgsLegendRenderer.setNodeLegendStyle(grupos[nombre_grupo], QgsLegendStyle.Group)
+            nodo = grupos[nombre_grupo].addLayer(c)
+            QgsLegendRenderer.setNodeLegendStyle(nodo, QgsLegendStyle.Hidden)
+            continue
         nodo = raiz.addLayer(c)
         cat = c.renderer() is not None and c.renderer().type() == "categorizedSymbol"
+        sub = cat or bool(c.customProperty("estilo/subgrupo"))
+        if c.customProperty("estilo/titulo_leyenda"):
+            nodo.setName(c.customProperty("estilo/titulo_leyenda"))
         QgsLegendRenderer.setNodeLegendStyle(
-            nodo, QgsLegendStyle.Subgroup if cat else QgsLegendStyle.Hidden)
+            nodo, QgsLegendStyle.Subgroup if sub else QgsLegendStyle.Hidden)
     leyenda.setTitle(titulo or "")
     leyenda.setFrameEnabled(False)
     leyenda.setBackgroundEnabled(False)
@@ -961,6 +1121,7 @@ def aplicar_estilo_moderno(comp, cfg, cfg_capa, ids, ctx, log) -> None:
     opts = _opciones(cfg)
     if not opts:
         return
+    opts["_pg"] = cfg.get("pg") or {}
     try:
         map_item = comp.itemById(ids.get("mapa", "mapa_principal"))
         if map_item is None:
