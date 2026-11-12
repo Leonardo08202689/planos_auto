@@ -14,20 +14,81 @@ import sys
 import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtGui import QBrush, QColor
 from qgis.PyQt.QtWidgets import (
+    QAbstractItemView,
+    QCheckBox,
     QComboBox,
     QDialog,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
+    QProgressBar,
     QPushButton,
     QSpinBox,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
 )
+
+# Mismo azul de acento que usan los planos (estilo_moderno.color_acento)
+_ACENTO = "#08306b"
+
+_ESTILO = f"""
+#dlgPlanos {{ background: #f4f6f9; }}
+#cabecera {{ background: {_ACENTO}; }}
+#titulo {{ color: white; font-size: 17pt; font-weight: 600; }}
+#subtitulo {{ color: #c6d4e8; font-size: 9pt; }}
+#pildora {{
+    border: 1px solid rgba(255,255,255,0.35); border-radius: 12px;
+    padding: 4px 12px; color: white; background: rgba(255,255,255,0.08);
+}}
+#pildora:hover {{ background: rgba(255,255,255,0.18); }}
+#tarjeta {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; }}
+#seccion {{ color: #6b7a8c; font-size: 8pt; font-weight: 600; letter-spacing: 1px; }}
+#conteo {{ color: #6b7a8c; }}
+QPushButton#enlace {{
+    border: none; background: transparent; color: {_ACENTO};
+    padding: 2px 6px; font-weight: 600;
+}}
+QPushButton#enlace:hover {{ text-decoration: underline; }}
+QPushButton#plano_btn, QPushButton#secundario {{
+    border: 1px solid #cfd7e1; border-radius: 6px; background: white;
+    padding: 6px 12px; color: #24313f;
+}}
+QPushButton#plano_btn:hover, QPushButton#secundario:hover {{
+    background: #eef2f7; border-color: #b7c3d1;
+}}
+QPushButton#primario {{
+    border: none; border-radius: 6px; background: {_ACENTO}; color: white;
+    padding: 8px 22px; font-weight: 600;
+}}
+QPushButton#primario:hover {{ background: #0b4290; }}
+QPushButton#primario:disabled {{ background: #9fb0c6; }}
+#tarjeta QComboBox, #tarjeta QSpinBox {{
+    border: 1px solid #cfd7e1; border-radius: 6px; padding: 5px 8px;
+    background: white;
+}}
+QTreeWidget {{
+    border: 1px solid #e3e8ee; border-radius: 6px;
+    alternate-background-color: #f7f9fb; background: white;
+}}
+QTreeWidget::item {{ padding: 3px 0; }}
+QHeaderView::section {{
+    background: white; border: none; border-bottom: 1px solid #e3e8ee;
+    padding: 4px 6px; color: #6b7a8c; font-weight: 600;
+}}
+QProgressBar {{ border: none; background: #dde3ea; border-radius: 2px; }}
+QProgressBar::chunk {{ background: {_ACENTO}; border-radius: 2px; }}
+#log {{
+    border: 1px solid #dde3ea; border-radius: 8px; background: #1e2530;
+    color: #d6dde6; font-family: monospace; font-size: 9pt; padding: 6px;
+}}
+"""
 
 
 class _HandlerLogQt(logging.Handler):
@@ -57,7 +118,8 @@ class DialogoPlanos(QDialog):
             sys.path.insert(0, base)
 
         self.setWindowTitle("Planos Auto — Generador")
-        self.resize(700, 640)
+        self.resize(760, 780)
+        self._cem_ruta = ""
         self._construir_ui()
         if not os.path.exists(os.path.join(base, ".env")):
             QMessageBox.information(
@@ -73,72 +135,201 @@ class DialogoPlanos(QDialog):
     # ── UI ────────────────────────────────────────────────────────────────────
 
     def _construir_ui(self):
+        self.setObjectName("dlgPlanos")
+        self.setStyleSheet(_ESTILO)
         lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 12)
+        lay.setSpacing(10)
 
+        # Encabezado: título + estado de la conexión
+        cab = QFrame()
+        cab.setObjectName("cabecera")
+        fila_cab = QHBoxLayout(cab)
+        fila_cab.setContentsMargins(18, 12, 14, 12)
+        textos = QVBoxLayout()
+        textos.setSpacing(0)
+        titulo = QLabel("Planos Auto")
+        titulo.setObjectName("titulo")
+        subtitulo = QLabel("Generador de planos y figuras · SINERGIA Ambiental")
+        subtitulo.setObjectName("subtitulo")
+        textos.addWidget(titulo)
+        textos.addWidget(subtitulo)
+        fila_cab.addLayout(textos, 1)
+        self.led_conexion = QPushButton("●  Verificando…")
+        self.led_conexion.setObjectName("pildora")
+        self.led_conexion.setCursor(Qt.PointingHandCursor)
+        self.led_conexion.setToolTip("Clic para configurar la conexión")
+        self.led_conexion.clicked.connect(self._configurar_conexion)
+        fila_cab.addWidget(self.led_conexion)
+        lay.addWidget(cab)
+
+        cuerpo = QVBoxLayout()
+        cuerpo.setContentsMargins(14, 0, 14, 0)
+        cuerpo.setSpacing(10)
+        lay.addLayout(cuerpo, 1)
+
+        # Tarjeta: proyecto
+        tarjeta_proy, lay_proy = self._tarjeta("PROYECTO")
         fila_proy = QHBoxLayout()
-        fila_proy.addWidget(QLabel("Proyecto:"))
         self.combo_proyecto = QComboBox()
         self.combo_proyecto.currentTextChanged.connect(self._cargar_capas)
         fila_proy.addWidget(self.combo_proyecto, 1)
-        btn_nuevo_proy = QPushButton("Nuevo proyecto…")
-        btn_nuevo_proy.clicked.connect(self._nuevo_proyecto)
-        fila_proy.addWidget(btn_nuevo_proy)
-        btn_editar_proy = QPushButton("Editar datos…")
-        btn_editar_proy.clicked.connect(self._editar_proyecto)
-        fila_proy.addWidget(btn_editar_proy)
-        btn_borrar_proy = QPushButton("Eliminar…")
-        btn_borrar_proy.clicked.connect(self._eliminar_proyecto)
-        fila_proy.addWidget(btn_borrar_proy)
-        lay.addLayout(fila_proy)
+        for texto, ayuda, accion in (
+            ("Nuevo", "Crear un proyecto nuevo", self._nuevo_proyecto),
+            ("Editar", "Editar los datos del proyecto", self._editar_proyecto),
+            ("Eliminar", "Eliminar el proyecto", self._eliminar_proyecto),
+        ):
+            btn = QPushButton(texto)
+            btn.setObjectName("plano_btn")
+            btn.setToolTip(ayuda)
+            btn.clicked.connect(accion)
+            fila_proy.addWidget(btn)
+        lay_proy.addLayout(fila_proy)
+        cuerpo.addWidget(tarjeta_proy)
 
-        lay.addWidget(QLabel("Planos a generar:"))
-        self.lista_capas = QListWidget()
-        lay.addWidget(self.lista_capas, 2)
+        # Tarjeta: planos a generar
+        tarjeta_planos, lay_planos = self._tarjeta("PLANOS A GENERAR")
+        fila_sel = QHBoxLayout()
+        self.lbl_conteo = QLabel("")
+        self.lbl_conteo.setObjectName("conteo")
+        fila_sel.addWidget(self.lbl_conteo)
+        fila_sel.addStretch()
+        for texto, valor in (("Todas", True), ("Ninguna", False)):
+            btn = QPushButton(texto)
+            btn.setObjectName("enlace")
+            btn.setCursor(Qt.PointingHandCursor)
+            btn.clicked.connect(lambda _=False, v=valor: self._marcar_todo(v))
+            fila_sel.addWidget(btn)
+        lay_planos.addLayout(fila_sel)
+        self.lista_capas = QTreeWidget()
+        self.lista_capas.setColumnCount(3)
+        self.lista_capas.setHeaderLabels(["Nombre", "Tipo", "Escala"])
+        self.lista_capas.setRootIsDecorated(False)
+        self.lista_capas.setAlternatingRowColors(True)
+        self.lista_capas.setUniformRowHeights(True)
+        self.lista_capas.setSelectionMode(QAbstractItemView.NoSelection)
+        self.lista_capas.setFocusPolicy(Qt.NoFocus)
+        cabecera = self.lista_capas.header()
+        cabecera.setStretchLastSection(False)
+        cabecera.setSectionResizeMode(0, QHeaderView.Stretch)
+        cabecera.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        cabecera.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.lista_capas.itemChanged.connect(lambda *_: self._actualizar_conteo())
+        self.lista_capas.itemClicked.connect(self._alternar_item)
+        lay_planos.addWidget(self.lista_capas, 1)
+        cuerpo.addWidget(tarjeta_planos, 3)
 
+        # Tarjeta: opciones
+        tarjeta_opts, lay_opts = self._tarjeta("ACABADO")
         fila_opts = QHBoxLayout()
-        btn_todas = QPushButton("Todas")
-        btn_todas.clicked.connect(lambda: self._marcar_todo(True))
-        btn_ninguna = QPushButton("Ninguna")
-        btn_ninguna.clicked.connect(lambda: self._marcar_todo(False))
-        fila_opts.addWidget(btn_todas)
-        fila_opts.addWidget(btn_ninguna)
+        self.chk_estilo = QCheckBox("Estilo moderno")
+        self.chk_estilo.setToolTip(
+            "Panel lateral, leyenda limpia, imagen satelital suavizada y "
+            "barra de escala nueva (core/estilo_moderno.py). Apagado deja "
+            "las plantillas tal cual."
+        )
+        self.chk_estilo.toggled.connect(self._estilo_cambiado)
+        fila_opts.addWidget(self.chk_estilo)
+        fila_opts.addSpacing(14)
+        self.chk_relieve = QCheckBox("Relieve (CEM)")
+        fila_opts.addWidget(self.chk_relieve)
         fila_opts.addStretch()
-        self.led_conexion = QLabel("●")
-        self.led_conexion.setStyleSheet("color: grey; font-size: 16px;")
-        self.led_conexion.setToolTip("Verificando conexión…")
-        fila_opts.addWidget(self.led_conexion)
-        btn_conexion = QPushButton("Conexión…")
-        btn_conexion.clicked.connect(self._configurar_conexion)
-        fila_opts.addWidget(btn_conexion)
-        btn_actualizar = QPushButton("Buscar actualizaciones…")
-        btn_actualizar.clicked.connect(self._buscar_actualizacion)
-        fila_opts.addWidget(btn_actualizar)
-        fila_opts.addWidget(QLabel("DPI:"))
+        fila_opts.addWidget(QLabel("Resolución"))
         self.spin_dpi = QSpinBox()
         self.spin_dpi.setRange(72, 600)
+        self.spin_dpi.setSingleStep(50)
+        self.spin_dpi.setSuffix(" dpi")
         self.spin_dpi.setValue(200)
         fila_opts.addWidget(self.spin_dpi)
-        lay.addLayout(fila_opts)
+        lay_opts.addLayout(fila_opts)
+        cuerpo.addWidget(tarjeta_opts)
 
+        # Acciones
         fila_generar = QHBoxLayout()
-        self.btn_generar = QPushButton("Generar planos")
-        self.btn_generar.setDefault(True)
-        self.btn_generar.clicked.connect(self._generar)
-        fila_generar.addWidget(self.btn_generar, 2)
+        self.btn_actualizar = QPushButton("Buscar actualizaciones")
+        self.btn_actualizar.setObjectName("plano_btn")
+        self.btn_actualizar.clicked.connect(self._buscar_actualizacion)
+        fila_generar.addWidget(self.btn_actualizar)
+        fila_generar.addStretch()
         self.btn_guardar_capas = QPushButton("Guardar capas generadas…")
+        self.btn_guardar_capas.setObjectName("secundario")
         self.btn_guardar_capas.setToolTip(
             "Exporta a un GeoPackage las capas temporales que quedan en el "
             "panel de QGIS tras generar los planos (polígonos recortados, "
             "centroides, etiquetas…), para que no se pierdan al cerrar QGIS."
         )
         self.btn_guardar_capas.clicked.connect(self._guardar_capas_generadas)
-        fila_generar.addWidget(self.btn_guardar_capas, 1)
-        lay.addLayout(fila_generar)
+        fila_generar.addWidget(self.btn_guardar_capas)
+        self.btn_generar = QPushButton("Generar planos")
+        self.btn_generar.setObjectName("primario")
+        self.btn_generar.setDefault(True)
+        self.btn_generar.clicked.connect(self._generar)
+        fila_generar.addWidget(self.btn_generar)
+        cuerpo.addLayout(fila_generar)
 
-        lay.addWidget(QLabel("Log:"))
+        self.barra = QProgressBar()
+        self.barra.setTextVisible(False)
+        self.barra.setFixedHeight(4)
+        self.barra.setRange(0, 0)
+        self.barra.hide()
+        cuerpo.addWidget(self.barra)
+
+        # Registro (plegable)
+        fila_log = QHBoxLayout()
+        self.btn_log = QPushButton("▾  Registro")
+        self.btn_log.setObjectName("enlace")
+        self.btn_log.setCursor(Qt.PointingHandCursor)
+        self.btn_log.clicked.connect(self._alternar_log)
+        fila_log.addWidget(self.btn_log)
+        fila_log.addStretch()
+        self.lbl_estado = QLabel("")
+        self.lbl_estado.setObjectName("conteo")
+        fila_log.addWidget(self.lbl_estado)
+        cuerpo.addLayout(fila_log)
         self.panel_log = QPlainTextEdit()
+        self.panel_log.setObjectName("log")
         self.panel_log.setReadOnly(True)
-        lay.addWidget(self.panel_log, 3)
+        self.panel_log.setPlaceholderText(
+            "Aquí aparece el avance cuando generes los planos."
+        )
+        cuerpo.addWidget(self.panel_log, 2)
+
+    def _tarjeta(self, titulo: str):
+        marco = QFrame()
+        marco.setObjectName("tarjeta")
+        interior = QVBoxLayout(marco)
+        interior.setContentsMargins(12, 10, 12, 12)
+        interior.setSpacing(8)
+        etiqueta = QLabel(titulo)
+        etiqueta.setObjectName("seccion")
+        interior.addWidget(etiqueta)
+        return marco, interior
+
+    def _alternar_log(self):
+        visible = not self.panel_log.isVisible()
+        self.panel_log.setVisible(visible)
+        self.btn_log.setText(("▾" if visible else "▸") + "  Registro")
+
+    def _alternar_item(self, item, columna):
+        # Clic en cualquier parte de la fila marca/desmarca (no solo en la casilla)
+        if columna != 0:
+            item.setCheckState(
+                0, Qt.Unchecked if item.checkState(0) == Qt.Checked else Qt.Checked
+            )
+
+    def _estilo_cambiado(self, activo: bool):
+        self.chk_relieve.setEnabled(activo and bool(self._cem_ruta))
+
+    def _actualizar_conteo(self):
+        total = self.lista_capas.topLevelItemCount()
+        marcadas = len(self._capas_marcadas())
+        self.lbl_conteo.setText(f"{marcadas} de {total} seleccionados")
+        if not self.en_ejecucion:
+            self.btn_generar.setText(
+                f"Generar {marcadas} plano{'s' if marcadas != 1 else ''}"
+                if marcadas else "Generar planos"
+            )
+            self.btn_generar.setEnabled(marcadas > 0)
 
     # ── Carga de datos ────────────────────────────────────────────────────────
 
@@ -199,6 +390,8 @@ class DialogoPlanos(QDialog):
 
         env = leer_env(os.path.join(self.base, ".env"))
         ok = False
+        error = "Falta configurar el servidor"
+        self._cem_ruta = env.get("CEM_RUTA", "")
         if env.get("PG_HOST"):
             try:
                 import psycopg2
@@ -212,12 +405,19 @@ class DialogoPlanos(QDialog):
                 )
                 conn.close()
                 ok = True
-            except Exception:
+            except Exception as e:
                 ok = False
-        color = "#2ecc71" if ok else "#e74c3c"  # verde / rojo
+                error = f"{type(e).__name__}: {e}".strip()
+                self.panel_log.appendPlainText(
+                    f"Sin conexión a {env.get('PG_HOST')}: {error}"
+                )
         texto = "Conectado a la base de datos" if ok else "Sin conexión a la base de datos"
-        self.led_conexion.setStyleSheet(f"color: {color}; font-size: 16px;")
-        self.led_conexion.setToolTip(texto)
+        if not ok and env.get("PG_HOST"):
+            texto += f"\n{error}"
+        color = "#5fe39a" if ok else "#ff8a80"  # verde / rojo sobre el azul
+        self.led_conexion.setText("●  Conectado" if ok else "●  Sin conexión")
+        self.led_conexion.setStyleSheet(f"color: {color};")
+        self.led_conexion.setToolTip(texto + "\nClic para configurar la conexión")
 
     def _nuevo_proyecto(self):
         from .editor_proyecto import DialogoProyecto
@@ -282,29 +482,75 @@ class DialogoPlanos(QDialog):
             return
 
         self.spin_dpi.setValue(cfg.get("dpi", 200))
+        self._cargar_opciones_estilo(cfg)
+        self.lista_capas.blockSignals(True)
         for capa in cfg.get("capas", []):
             if not capa.get("nombre_plano"):
                 continue  # entradas de comentario (_grupo)
-            item = QListWidgetItem(
-                f"{capa['nombre_plano']}   —   escala 1:{capa.get('escala', '?')}"
-            )
-            item.setData(Qt.UserRole, capa["nombre_capa"])
+            nombre = capa["nombre_plano"].strip()
+            tipo = "Plano"
+            for prefijo, etiqueta in (("PLANO.", "Plano"), ("FIGURA.", "Figura")):
+                if nombre.upper().startswith(prefijo):
+                    nombre, tipo = nombre[len(prefijo):].strip(), etiqueta
+                    break
+            nombre = nombre[:1].upper() + nombre[1:].lower()
+            escala = capa.get("escala")
+            item = QTreeWidgetItem([
+                nombre, tipo,
+                f"1:{int(escala):,}" if isinstance(escala, (int, float)) else "—",
+            ])
+            item.setToolTip(0, capa["nombre_plano"])
+            item.setData(0, Qt.UserRole, capa["nombre_capa"])
             item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-            item.setCheckState(Qt.Checked)
-            self.lista_capas.addItem(item)
+            item.setCheckState(0, Qt.Checked)
+            item.setTextAlignment(2, Qt.AlignRight | Qt.AlignVCenter)
+            item.setForeground(1, QBrush(QColor("#6b7a8c")))
+            item.setForeground(2, QBrush(QColor("#6b7a8c")))
+            self.lista_capas.addTopLevelItem(item)
+        self.lista_capas.blockSignals(False)
+        self._actualizar_conteo()
+
+    def _cargar_opciones_estilo(self, cfg_proyecto: dict):
+        """Casillas de acabado con lo que diga global.json + proyecto."""
+        try:
+            with open(os.path.join(self.base, "config", "global.json"),
+                      encoding="utf-8") as fh:
+                em = json.load(fh).get("estilo_moderno", {})
+        except (OSError, json.JSONDecodeError):
+            em = {}
+        proy = cfg_proyecto.get("estilo_moderno", {})
+        if em is False or proy is False:
+            activo = False
+        else:
+            activo = bool({**(em or {}), **(proy or {})}.get("activo", False))
+        self.chk_estilo.setChecked(activo)
+        hay_cem = bool(self._cem_ruta)
+        self.chk_relieve.setChecked(hay_cem)
+        self.chk_relieve.setToolTip(
+            "Sombreado de relieve a partir del CEM en los planos de escala "
+            "detallada." if hay_cem else
+            "Para usarlo agrega CEM_RUTA=<ruta del CEM .tif> a tu archivo .env"
+        )
+        self._estilo_cambiado(activo)
 
     def _marcar_todo(self, marcado: bool):
         estado = Qt.Checked if marcado else Qt.Unchecked
-        for i in range(self.lista_capas.count()):
-            self.lista_capas.item(i).setCheckState(estado)
+        self.lista_capas.blockSignals(True)
+        for i in range(self.lista_capas.topLevelItemCount()):
+            self.lista_capas.topLevelItem(i).setCheckState(0, estado)
+        self.lista_capas.blockSignals(False)
+        self._actualizar_conteo()
 
     # ── Ejecución ─────────────────────────────────────────────────────────────
 
     def _capas_marcadas(self) -> list:
+        items = [
+            self.lista_capas.topLevelItem(i)
+            for i in range(self.lista_capas.topLevelItemCount())
+        ]
         return [
-            self.lista_capas.item(i).data(Qt.UserRole)
-            for i in range(self.lista_capas.count())
-            if self.lista_capas.item(i).checkState() == Qt.Checked
+            it.data(0, Qt.UserRole) for it in items
+            if it.checkState(0) == Qt.Checked
         ]
 
     def _generar(self):
@@ -320,23 +566,30 @@ class DialogoPlanos(QDialog):
             )
             return
         # Todas marcadas = sin filtro (mismo comportamiento que SOLO_CAPAS = [])
-        solo_capas = [] if len(marcadas) == self.lista_capas.count() else marcadas
+        solo_capas = [] if len(marcadas) == self.lista_capas.topLevelItemCount() else marcadas
 
         self.panel_log.clear()
+        if not self.panel_log.isVisible():
+            self._alternar_log()
         self.en_ejecucion = True
         self.btn_generar.setEnabled(False)
         self.btn_generar.setText("Generando…")
+        self.barra.show()
+        self.lbl_estado.setText("")
         QCoreApplication.processEvents()
+        resultado = "✓ Listo"
         try:
             self._ejecutar(proyecto, solo_capas, self.spin_dpi.value())
         except Exception:
+            resultado = "✗ Terminó con error (ver registro)"
             self.panel_log.appendPlainText(
                 "✗ ERROR INESPERADO:\n" + traceback.format_exc()
             )
         finally:
             self.en_ejecucion = False
-            self.btn_generar.setEnabled(True)
-            self.btn_generar.setText("Generar planos")
+            self.barra.hide()
+            self.lbl_estado.setText(resultado)
+            self._actualizar_conteo()
 
     def _ejecutar(self, proyecto: str, solo_capas: list, dpi: int):
         # Recargar módulos del repo para evitar caché en QGIS (igual que main.py):
@@ -366,6 +619,14 @@ class DialogoPlanos(QDialog):
         from generar_planos import generar_composiciones
 
         cfg = cargar_config(self.base, proyecto, solo_capas=solo_capas, dpi=dpi)
+        # Casillas de "Acabado": solo afectan esta corrida, no tocan los JSON
+        em = cfg.get("estilo_moderno")
+        if isinstance(em, dict):
+            em = dict(em)
+            em["activo"] = self.chk_estilo.isChecked()
+            if not self.chk_relieve.isChecked():
+                em["cem_ruta"] = ""
+            cfg["estilo_moderno"] = em
 
         # Pre-verificación con mensaje claro (el generador también valida,
         # pero su error quedaría solo como una línea en el log)
