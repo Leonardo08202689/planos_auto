@@ -69,10 +69,6 @@ QPushButton#primario {{
 }}
 QPushButton#primario:hover {{ background: #0b4290; }}
 QPushButton#primario:disabled {{ background: #9fb0c6; }}
-#tarjeta QComboBox, #tarjeta QSpinBox {{
-    border: 1px solid #cfd7e1; border-radius: 6px; padding: 5px 8px;
-    background: white;
-}}
 QTreeWidget {{
     border: 1px solid #e3e8ee; border-radius: 6px;
     alternate-background-color: #f7f9fb; background: white;
@@ -118,7 +114,7 @@ class DialogoPlanos(QDialog):
             sys.path.insert(0, base)
 
         self.setWindowTitle("Planos Auto — Generador")
-        self.resize(760, 780)
+        self.resize(760, 720)
         self._cem_ruta = ""
         self._construir_ui()
         if not os.path.exists(os.path.join(base, ".env")):
@@ -292,6 +288,9 @@ class DialogoPlanos(QDialog):
         self.panel_log.setPlaceholderText(
             "Aquí aparece el avance cuando generes los planos."
         )
+        self.panel_log.setMinimumHeight(140)
+        self.panel_log.hide()  # se abre solo al generar
+        self.btn_log.setText("▸  Registro")
         cuerpo.addWidget(self.panel_log, 2)
 
     def _tarjeta(self, titulo: str):
@@ -414,6 +413,8 @@ class DialogoPlanos(QDialog):
         texto = "Conectado a la base de datos" if ok else "Sin conexión a la base de datos"
         if not ok and env.get("PG_HOST"):
             texto += f"\n{error}"
+            if self.panel_log.isHidden():
+                self._alternar_log()
         color = "#5fe39a" if ok else "#ff8a80"  # verde / rojo sobre el azul
         self.led_conexion.setText("●  Conectado" if ok else "●  Sin conexión")
         self.led_conexion.setStyleSheet(f"color: {color};")
