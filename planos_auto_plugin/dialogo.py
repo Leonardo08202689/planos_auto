@@ -97,6 +97,31 @@ _URL_FUENTES = (
     "https://github.com/Leonardo08202689/planos_auto/blob/main/fuentes_datos.md"
 )
 
+def _abrir_en_navegador_linux(ruta: str) -> bool:
+    import shutil
+    import subprocess
+
+    if not shutil.which("gtk-launch"):
+        return False
+    for consulta in (
+        ["xdg-settings", "get", "default-web-browser"],
+        ["xdg-mime", "query", "default", "x-scheme-handler/https"],
+    ):
+        try:
+            app = subprocess.run(
+                consulta, capture_output=True, text=True, timeout=3
+            ).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if app.endswith(".desktop"):
+            subprocess.Popen(
+                ["gtk-launch", app, ruta], start_new_session=True,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            return True
+    return False
+
+
 _SOLO_PLANTILLA = "— Ninguno (usar la plantilla) —"
 
 
@@ -333,8 +358,14 @@ class DialogoPlanos(QDialog):
         """Abre docs/fuentes_datos.html en el navegador (viene con la
         instalación); si no está, la versión de GitHub."""
         local = os.path.join(self.base, "docs", "fuentes_datos.html")
-        url = QUrl.fromLocalFile(local) if os.path.exists(local) else QUrl(_URL_FUENTES)
-        QDesktopServices.openUrl(url)
+        if not os.path.exists(local):
+            QDesktopServices.openUrl(QUrl(_URL_FUENTES))
+            return
+        # En Linux el .html puede estar asociado a otra app (p. ej. ChatGPT);
+        # se abre con el navegador web predeterminado, no con esa asociación.
+        if sys.platform.startswith("linux") and _abrir_en_navegador_linux(local):
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(local))
 
     def _alternar_log(self):
         visible = not self.panel_log.isVisible()
