@@ -68,6 +68,7 @@ from qgis.core import (
     QgsSimpleLineSymbolLayer,
     QgsRasterLayer,
     QgsRectangle,
+    QgsRuleBasedLabeling,
     QgsRuleBasedRenderer,
     QgsScaleBarSettings,
     QgsSingleBandGrayRenderer,
@@ -647,6 +648,27 @@ def _encuadrar_estado(map_item, contorno, project, margen=0.04):
     map_item.zoomToExtent(e)
 
 
+def _unificar_fuente(labeling, familia):
+    """Cambia la familia de letra de un etiquetado (simple o por reglas)
+    conservando tamaño, color, negrita y halo."""
+    def _uno(ls):
+        fmt = ls.format()
+        f = fmt.font()
+        f.setFamily(familia)
+        fmt.setFont(f)
+        ls.setFormat(fmt)
+        return ls
+    try:
+        if isinstance(labeling, QgsVectorLayerSimpleLabeling):
+            labeling.setSettings(_uno(QgsPalLayerSettings(labeling.settings())))
+        elif isinstance(labeling, QgsRuleBasedLabeling):
+            for regla in labeling.rootRule().descendants():
+                if regla.settings() is not None:
+                    regla.setSettings(_uno(QgsPalLayerSettings(regla.settings())))
+    except Exception:
+        pass
+
+
 def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
     """Devuelve dict con lo que el panel necesita saber (capas para la
     leyenda, si es estatal, si hubo relieve)."""
@@ -805,6 +827,7 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
         fa = g.annotationTextFormat()
         tabloide = comp.pageCollection().page(0).pageSize().width() > 400
         fa.setSize(5.5 if estatal else (7 if tabloide else 6))
+        fa.setFont(QFont(opts["fuente_texto"]))
         fa.setColor(QColor("#444444"))
         g.setAnnotationTextFormat(fa)
         g.setLineSymbol(QgsLineSymbol.createSimple({"color": "255,255,255,120", "width": "0.15"}))
@@ -823,6 +846,12 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
             mp, ms = map_item.positionWithUnits(), map_item.sizeWithUnits()
             it.setResizeMode(QgsLayoutItemPicture.Zoom)
             _mover(it, mp.x() + ms.width() - lado - 5, mp.y() + 5, lado, lado)
+
+    # 7. Una sola familia tipográfica en todas las etiquetas del mapa
+    for c in capas:
+        if isinstance(c, QgsVectorLayer) and c.labelsEnabled() and c.labeling() is not None:
+            _unificar_fuente(c.labeling(), opts["fuente_texto"])
+            c.triggerRepaint()
 
     map_item.invalidateCache()
     map_item.refresh()
@@ -871,9 +900,9 @@ def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0, grande=False):
     leyenda.setColumnCount(1)
     leyenda.setWrapString("")
     estilos = [
-        (QgsLegendStyle.Title, _fmt(opts, 12 if grande else 10.5, True, espaciado=0.8), 0, Qt.AlignHCenter),
-        (QgsLegendStyle.Group, _fmt(opts, 8.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
-        (QgsLegendStyle.Subgroup, _fmt(opts, 8.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
+        (QgsLegendStyle.Title, _fmt(opts, 13.5 if grande else 10.5, True, espaciado=0.8), 0, Qt.AlignHCenter),
+        (QgsLegendStyle.Group, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
+        (QgsLegendStyle.Subgroup, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
         (QgsLegendStyle.SymbolLabel, _fmt(opts, tam), 0, Qt.AlignLeft),
         (QgsLegendStyle.Symbol, None, 2.0, Qt.AlignLeft),
     ]
@@ -1014,28 +1043,39 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     y_sep1 = T + alto_loc + 1.5
     y_sep2 = T + H * (0.425 if plano else 0.52)
     y_sep3 = T + H * (0.60 if plano else 0.685)
-    for id_, y in (("sep1", y_sep1), ("sep2", y_sep2), ("sep3", y_sep3)):
-        _linea(comp, id_, [(X + 6, y), (R - 6, y)])
-
     # Simbología
     leyenda = comp.itemById(ids.get("leyenda", "leyenda_principal"))
     if leyenda is not None:
         _estilo_leyenda(leyenda, opts, info["capas_leyenda"], "SIMBOLOGÍA",
-                        9 if plano else 7.5, grande=plano)
+                        10.5 if plano else 7.5, grande=plano)
+        if plano:
+            # El bloque de simbología mide lo que su contenido: sin huecos
+            # cuando hay pocas categorías, con tope cuando hay muchas.
+            leyenda.setResizeToContents(True)
+            leyenda.adjustBoxSize()
+            alto_ley = leyenda.sizeWithUnits().height()
+            leyenda.setResizeToContents(False)
+            y_sep2 = min(max(y_sep1 + 1 + alto_ley + 5, T + H * 0.34), T + H * 0.52)
+            y_sep3 = y_sep2 + H * 0.165
         _mover(leyenda, X, y_sep1 + 1, W, y_sep2 - y_sep1 - 2)
         leyenda.setZValue(10)
+    for id_, y in (("sep1", y_sep1), ("sep2", y_sep2), ("sep3", y_sep3)):
+        _linea(comp, id_, [(X + 6, y), (R - 6, y)])
 
     # Bloque técnico
     barra = _barra(comp, map_item, opts, 15 if plano else 12.5, tam=8 if plano else None)
     barra_w = barra.sizeWithUnits().width()
     _mover(barra, X + (W - barra_w) / 2, y_sep2 + 2.5)
     y = y_sep2 + 2.5 + barra.sizeWithUnits().height() + 1
-    _etiqueta(comp, opts, "lbl_km", "Kilómetros", X, y, W, 4, _fmt(opts, 7.5 if plano else 6.5, False, "#3a3a3a"))
+    if plano:
+        y -= 5.0  # la barra ya dice "km": sin rótulo "Kilómetros" aparte
+    else:
+        _etiqueta(comp, opts, "lbl_km", "Kilómetros", X, y, W, 4, _fmt(opts, 6.5, False, "#3a3a3a"))
     lbl_crs = comp.itemById(ids.get("lbl_coordsys", "lbl_coordsys"))
     zona = map_item.crs().description()
     _etiqueta(comp, opts, ids.get("lbl_coordsys", "lbl_coordsys"),
               "Coordenadas " + zona.replace("WGS 84 / ", "WGS 84 · ").replace("UTM zone", "UTM Zona"),
-              X, y + 5.5, W, 5, _fmt(opts, 8 if plano else 6.3, True), item=lbl_crs)
+              X, y + 5.5, W, 5, _fmt(opts, 8.5 if plano else 6.3, True), item=lbl_crs)
     lbl_f = comp.itemById(ids.get("lbl_fuente", "lbl_fuente"))
     fuente = (cfg_capa.get("fuente") or "").strip()
     if info.get("relieve") and opts["fuente_cem"] not in fuente:
@@ -1043,7 +1083,7 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     if fuente:
         _etiqueta(comp, opts, ids.get("lbl_fuente", "lbl_fuente"), "FUENTES: " + fuente,
                   X + 3, y + 12, W - 6, y_sep3 - (y + 12) - 1.5,
-                  _fmt(opts, 7 if plano else 5.5, False, "#4a4a4a"),
+                  _fmt(opts, 7.5 if plano else 5.5, False, "#4a4a4a"),
                   ha=Qt.AlignJustify, va=Qt.AlignTop, item=lbl_f)
     elif lbl_f is not None:
         comp.removeLayoutItem(lbl_f)
@@ -1065,7 +1105,7 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     _etiqueta(comp, opts, "lbl_plano_tag", tag, X, y_tag, W, 4,
               _fmt(opts, 8 if plano else 6.5, False, opts["color_acento"], 1.5))
     lbl_t = comp.itemById(ids.get("lbl_plano", "lbl_tipo_plano"))
-    tam_t = (13 if largo else 15) if plano else (9.5 if largo else 11)
+    tam_t = (12 if largo else 13) if plano else (9.5 if largo else 11)
     _etiqueta(comp, opts, ids.get("lbl_plano", "lbl_tipo_plano"), titulo,
               X + 2, y_tag + 4.5, W - 4, alto_t * (0.20 if largo else 0.14),
               _fmt(opts, tam_t, True), item=lbl_t)
@@ -1073,7 +1113,7 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     nombre = (cfg.get("nombre_proyecto") or "").strip()
     _etiqueta(comp, opts, ids.get("lbl_proyecto", "lbl_proyecto"),
               f"Proyecto: {nombre}" if nombre else "", X + 2, y_sep3 + alto_t * 0.81,
-              W - 4, alto_t * 0.12, _fmt(opts, 8.5 if plano else 6.5, False, "#4a4a4a"), item=lbl_p)
+              W - 4, alto_t * 0.12, _fmt(opts, 10 if plano else 6.5, False, "#4a4a4a"), item=lbl_p)
     for id_k, x in (("lbl_escala", X), ("lbl_fecha", X + W / 2)):
         it = comp.itemById(ids.get(id_k, id_k))
         if it is None:
