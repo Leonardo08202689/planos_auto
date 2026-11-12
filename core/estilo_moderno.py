@@ -1055,7 +1055,7 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
             leyenda.adjustBoxSize()
             alto_ley = leyenda.sizeWithUnits().height()
             leyenda.setResizeToContents(False)
-            y_sep2 = min(max(y_sep1 + 1 + alto_ley + 5, T + H * 0.34), T + H * 0.52)
+            y_sep2 = min(max(y_sep1 + 1 + alto_ley + 5, T + H * 0.27), T + H * 0.52)
             y_sep3 = y_sep2 + H * 0.165
         _mover(leyenda, X, y_sep1 + 1, W, y_sep2 - y_sep1 - 2)
         leyenda.setZValue(10)
