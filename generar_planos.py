@@ -20,6 +20,7 @@ from qgis.core import (
     QgsMarkerSymbol,
     QgsProject,
     QgsRasterLayer,
+    QgsRectangle,
     QgsSingleSymbolRenderer,
     QgsVectorLayer,
 )
@@ -113,6 +114,23 @@ def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log, capas_ref=None):
     set_label_text(comp, ids.get("lbl_coordsys", ""), cfg.get("coordenadas", ""), log)
     fijar_logo(comp, ids.get("logo", ""), cfg.get("logo_ruta", ""), log)
     unificar_etiquetas_mapitas(comp, ids)
+
+
+# Escalas intermedias (1:30 000, 1:40 000…) para no brincar de 1:25 000 a 1:50 000
+_ESCALAS_FINAS = [1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000,
+                  20000, 25000, 30000, 40000, 50000, 75000, 100000, 150000,
+                  200000, 250000, 300000, 400000, 500000, 750000, 1000000]
+
+
+def _crs_estilo(cfg, crs_origen):
+    """CRS en que el estilo moderno dibuja el mapa, o None si no aplica."""
+    em = cfg.get("estilo_moderno")
+    if not isinstance(em, dict) or not em.get("activo", True):
+        return None
+    crs = QgsCoordinateReferenceSystem(em.get("crs_mapa", "EPSG:32612"))
+    if not crs.isValid() or crs.authid() == crs_origen.authid():
+        return None
+    return crs
 
 
 def generar_composiciones(cfg: dict) -> None:
@@ -375,6 +393,22 @@ def generar_composiciones(cfg: dict) -> None:
         map_item.zoomToExtent(bbox_centro.buffered(margen))
         escala_minima = escala_redonda_arriba(map_item.scale())
 
+        # Con el estilo moderno el mapa se dibuja en UTM (crs_mapa): la escala
+        # medida en grados no es la misma, así que el encuadre se comprueba
+        # también en metros para que el proyecto quepa completo.
+        crs_estilo = _crs_estilo(cfg, crs_origen)
+        if crs_estilo is not None:
+            tr_estilo = QgsCoordinateTransform(crs_origen, crs_estilo, project)
+            bb_u = tr_estilo.transformBoundingBox(bbox_centro)
+            bb_u.grow(0.05 * max(bb_u.width(), bb_u.height()))
+            fw, fh = frame_size.width() / 1000.0, frame_size.height() / 1000.0
+            if fw > 0 and fh > 0:
+                necesaria = max(bb_u.width() / fw, bb_u.height() / fh)
+                if necesaria > escala_minima:
+                    escala_minima = next(
+                        (e for e in _ESCALAS_FINAS if e >= necesaria),
+                        escala_redonda_arriba(necesaria))
+
         escala_cfg = cfg_capa.get("escala")
         if not escala_cfg or escala_cfg == "auto":
             escala_capa = escala_minima
@@ -396,6 +430,18 @@ def generar_composiciones(cfg: dict) -> None:
         map_item.attemptMove(frame_pos)
 
         extent_en_escala = map_item.extent()
+        if crs_estilo is not None:
+            # Lo que se verá en UTM a esta escala, llevado de vuelta al CRS de
+            # trabajo: así los datos se cargan/recortan para toda la vista y
+            # no quedan franjas vacías en los bordes.
+            c_u = tr_estilo.transform(extent_en_escala.center())
+            w_u = frame_size.width() / 1000.0 * escala_capa * 0.55
+            h_u = frame_size.height() / 1000.0 * escala_capa * 0.55
+            vista_u = QgsRectangle(c_u.x() - w_u, c_u.y() - h_u, c_u.x() + w_u, c_u.y() + h_u)
+            vista = QgsCoordinateTransform(crs_estilo, crs_origen, project) \
+                .transformBoundingBox(vista_u)
+            extent_en_escala = QgsRectangle(extent_en_escala)
+            extent_en_escala.combineExtentWith(vista)
         validar_extent(extent_en_escala, cfg_capa["nombre_capa"], log, escala_capa)
 
         # BBox de la vista real para filtrar PostGIS: con escala automática la

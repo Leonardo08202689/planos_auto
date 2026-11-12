@@ -603,6 +603,38 @@ def _resaltar_unidad(capa, campo, ctx, opts, color, otras, log):
     return etiqueta
 
 
+_ESCALAS = [1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000, 20000,
+            25000, 30000, 40000, 50000, 75000, 100000, 150000, 200000, 250000, 500000]
+
+
+def _asegurar_proyecto_visible(map_item, ctx, project, log, margen=0.08):
+    """Que el polígono completo quepa en el mapa: centra en él y, si aun así
+    no cabe, sube a la siguiente escala redonda."""
+    g = ctx.get("geom_poligono")
+    if g is None:
+        return
+    try:
+        tr = QgsCoordinateTransform(ctx["crs_origen"], map_item.crs(), project)
+        bb = tr.transformBoundingBox(QgsGeometry(g).boundingBox())
+    except Exception:
+        return
+    bb.grow(max(bb.width(), bb.height()) * margen)
+    ext = map_item.extent()
+    if ext.contains(bb):
+        return
+    escala = map_item.scale()
+    ancho, alto = ext.width() / escala, ext.height() / escala  # metros de terreno por unidad de escala
+    nueva = next((e for e in _ESCALAS if e >= escala
+                  and ancho * e >= bb.width() and alto * e >= bb.height()), None)
+    if nueva is None:
+        nueva = max(bb.width() / ancho, bb.height() / alto) * 1.05
+    c = bb.center()
+    map_item.zoomToExtent(QgsRectangle(c.x() - 1, c.y() - 1, c.x() + 1, c.y() + 1))
+    map_item.setScale(nueva)
+    if round(nueva) != round(escala):
+        log.debug(f" → Escala ajustada a 1:{nueva:,.0f} para que quepa todo el proyecto.")
+
+
 def _encuadrar_estado(map_item, contorno, project, margen=0.04):
     try:
         tr = QgsCoordinateTransform(contorno.crs(), map_item.crs(), project)
@@ -638,6 +670,9 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
     escala = map_item.scale()
     estatal = escala >= float(opts["escala_figura_estatal"]) or cfg_capa.get("figura_estatal")
     info["estatal"] = bool(estatal)
+    if not estatal:
+        _asegurar_proyecto_visible(map_item, ctx, project, log)
+        escala = map_item.scale()
 
     capas = list(map_item.layers())
     base = next((c for c in capas if c.name() == "Google Satellite"), None)
@@ -732,7 +767,10 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
             info["contorno"] = contorno
             # Encuadre ajustado al estado (la escala de la config suele dejar
             # mucho margen blanco alrededor).
-            _encuadrar_estado(map_item, contorno, project)
+            if cfg_capa.get("centrar_en") or cfg_capa.get("recortar_a"):
+                # Solo si los datos se cargaron para todo el estado; si no,
+                # se verían cortados en el rectángulo de la consulta.
+                _encuadrar_estado(map_item, contorno, project)
         if info["tematica"] is not None:
             campos = info["tematica"].fields().names()
             campo = next((c for c in ("nombre", "nom", "nom_uab", "name") if c in campos), None)
