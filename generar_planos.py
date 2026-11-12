@@ -116,6 +116,12 @@ def _aplicar_etiquetas_globales(comp, ids, cfg, cfg_capa, log, capas_ref=None):
     unificar_etiquetas_mapitas(comp, ids)
 
 
+# Escalas intermedias (1:30 000, 1:40 000…) para no brincar de 1:25 000 a 1:50 000
+_ESCALAS_FINAS = [1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000,
+                  20000, 25000, 30000, 40000, 50000, 75000, 100000, 150000,
+                  200000, 250000, 300000, 400000, 500000, 750000, 1000000]
+
+
 def _crs_estilo(cfg, crs_origen):
     """CRS en que el estilo moderno dibuja el mapa, o None si no aplica."""
     em = cfg.get("estilo_moderno")
@@ -397,8 +403,11 @@ def generar_composiciones(cfg: dict) -> None:
             bb_u.grow(0.05 * max(bb_u.width(), bb_u.height()))
             fw, fh = frame_size.width() / 1000.0, frame_size.height() / 1000.0
             if fw > 0 and fh > 0:
-                escala_minima = max(escala_minima, escala_redonda_arriba(
-                    max(bb_u.width() / fw, bb_u.height() / fh)))
+                necesaria = max(bb_u.width() / fw, bb_u.height() / fh)
+                if necesaria > escala_minima:
+                    escala_minima = next(
+                        (e for e in _ESCALAS_FINAS if e >= necesaria),
+                        escala_redonda_arriba(necesaria))
 
         escala_cfg = cfg_capa.get("escala")
         if not escala_cfg or escala_cfg == "auto":
