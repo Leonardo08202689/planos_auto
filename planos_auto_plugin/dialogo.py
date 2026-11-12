@@ -13,8 +13,8 @@ import os
 import sys
 import traceback
 
-from qgis.PyQt.QtCore import QCoreApplication, Qt
-from qgis.PyQt.QtGui import QBrush, QColor
+from qgis.PyQt.QtCore import QCoreApplication, Qt, QUrl
+from qgis.PyQt.QtGui import QBrush, QColor, QDesktopServices
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -92,6 +92,10 @@ def _es_plantilla(nombre: str) -> bool:
     Plantilla_LAI_Municipal); el resto los crea el usuario."""
     return nombre.lower().startswith("plantilla")
 
+
+_URL_FUENTES = (
+    "https://github.com/Leonardo08202689/planos_auto/blob/main/fuentes_datos.md"
+)
 
 _SOLO_PLANTILLA = "— Ninguno (usar la plantilla) —"
 
@@ -296,6 +300,12 @@ class DialogoPlanos(QDialog):
         self.lbl_estado = QLabel("")
         self.lbl_estado.setObjectName("conteo")
         fila_log.addWidget(self.lbl_estado)
+        btn_fuentes = QPushButton("Fuentes de datos ↗")
+        btn_fuentes.setObjectName("enlace")
+        btn_fuentes.setCursor(Qt.PointingHandCursor)
+        btn_fuentes.setToolTip("De qué dataset oficial sale cada capa (INEGI, CONANP, CONABIO…)")
+        btn_fuentes.clicked.connect(self._abrir_fuentes)
+        fila_log.addWidget(btn_fuentes)
         cuerpo.addLayout(fila_log)
         self.panel_log = QPlainTextEdit()
         self.panel_log.setObjectName("log")
@@ -318,6 +328,13 @@ class DialogoPlanos(QDialog):
         etiqueta.setObjectName("seccion")
         interior.addWidget(etiqueta)
         return marco, interior
+
+    def _abrir_fuentes(self):
+        """Abre docs/fuentes_datos.html en el navegador (viene con la
+        instalación); si no está, la versión de GitHub."""
+        local = os.path.join(self.base, "docs", "fuentes_datos.html")
+        url = QUrl.fromLocalFile(local) if os.path.exists(local) else QUrl(_URL_FUENTES)
+        QDesktopServices.openUrl(url)
 
     def _alternar_log(self):
         visible = not self.panel_log.isVisible()
