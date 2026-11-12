@@ -218,15 +218,6 @@ class DialogoPlanos(QDialog):
         # Tarjeta: opciones
         tarjeta_opts, lay_opts = self._tarjeta("ACABADO")
         fila_opts = QHBoxLayout()
-        self.chk_estilo = QCheckBox("Estilo moderno")
-        self.chk_estilo.setToolTip(
-            "Panel lateral, leyenda limpia, imagen satelital suavizada y "
-            "barra de escala nueva (core/estilo_moderno.py). Apagado deja "
-            "las plantillas tal cual."
-        )
-        self.chk_estilo.toggled.connect(self._estilo_cambiado)
-        fila_opts.addWidget(self.chk_estilo)
-        fila_opts.addSpacing(14)
         self.chk_relieve = QCheckBox("Relieve (CEM)")
         fila_opts.addWidget(self.chk_relieve)
         fila_opts.addStretch()
@@ -315,9 +306,6 @@ class DialogoPlanos(QDialog):
             item.setCheckState(
                 0, Qt.Unchecked if item.checkState(0) == Qt.Checked else Qt.Checked
             )
-
-    def _estilo_cambiado(self, activo: bool):
-        self.chk_relieve.setEnabled(activo and bool(self._cem_ruta))
 
     def _actualizar_conteo(self):
         total = self.lista_capas.topLevelItemCount()
@@ -512,19 +500,7 @@ class DialogoPlanos(QDialog):
         self._actualizar_conteo()
 
     def _cargar_opciones_estilo(self, cfg_proyecto: dict):
-        """Casillas de acabado con lo que diga global.json + proyecto."""
-        try:
-            with open(os.path.join(self.base, "config", "global.json"),
-                      encoding="utf-8") as fh:
-                em = json.load(fh).get("estilo_moderno", {})
-        except (OSError, json.JSONDecodeError):
-            em = {}
-        proy = cfg_proyecto.get("estilo_moderno", {})
-        if em is False or proy is False:
-            activo = False
-        else:
-            activo = bool({**(em or {}), **(proy or {})}.get("activo", False))
-        self.chk_estilo.setChecked(activo)
+        """Casilla de relieve: activa solo si el .env trae CEM_RUTA."""
         hay_cem = bool(self._cem_ruta)
         self.chk_relieve.setChecked(hay_cem)
         self.chk_relieve.setToolTip(
@@ -532,7 +508,7 @@ class DialogoPlanos(QDialog):
             "detallada." if hay_cem else
             "Para usarlo agrega CEM_RUTA=<ruta del CEM .tif> a tu archivo .env"
         )
-        self._estilo_cambiado(activo)
+        self.chk_relieve.setEnabled(hay_cem)
 
     def _marcar_todo(self, marcado: bool):
         estado = Qt.Checked if marcado else Qt.Unchecked
@@ -620,11 +596,11 @@ class DialogoPlanos(QDialog):
         from generar_planos import generar_composiciones
 
         cfg = cargar_config(self.base, proyecto, solo_capas=solo_capas, dpi=dpi)
-        # Casillas de "Acabado": solo afectan esta corrida, no tocan los JSON
+        # Casilla de relieve: solo afecta esta corrida, no toca los JSON.
+        # El estilo moderno va siempre (lo controla config/global.json).
         em = cfg.get("estilo_moderno")
         if isinstance(em, dict):
             em = dict(em)
-            em["activo"] = self.chk_estilo.isChecked()
             if not self.chk_relieve.isChecked():
                 em["cem_ruta"] = ""
             cfg["estilo_moderno"] = em
