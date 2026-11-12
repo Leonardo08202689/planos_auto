@@ -93,6 +93,9 @@ def _es_plantilla(nombre: str) -> bool:
     return nombre.lower().startswith("plantilla")
 
 
+_SOLO_PLANTILLA = "— Ninguno (usar la plantilla) —"
+
+
 class _HandlerLogQt(logging.Handler):
     """Redirige los registros del logger 'Composiciones' al panel de texto."""
 
@@ -120,7 +123,7 @@ class DialogoPlanos(QDialog):
             sys.path.insert(0, base)
 
         self.setWindowTitle("Planos Auto — Generador")
-        self.resize(760, 720)
+        self.resize(760, 800)
         self._cem_ruta = ""
         self._construir_ui()
         if not os.path.exists(os.path.join(base, ".env")):
@@ -170,11 +173,22 @@ class DialogoPlanos(QDialog):
         cuerpo.setSpacing(10)
         lay.addLayout(cuerpo, 1)
 
+        # Tarjeta: plantilla
+        tarjeta_plant, lay_plant = self._tarjeta("PLANTILLA")
+        self.combo_plantilla = QComboBox()
+        self.combo_plantilla.setToolTip(
+            "Juego de planos base. Se usa tal cual si no eliges proyecto, "
+            "y es la que se copia al crear uno nuevo."
+        )
+        self.combo_plantilla.currentTextChanged.connect(self._seleccion_cambiada)
+        lay_plant.addWidget(self.combo_plantilla)
+        cuerpo.addWidget(tarjeta_plant)
+
         # Tarjeta: proyecto
         tarjeta_proy, lay_proy = self._tarjeta("PROYECTO")
         fila_proy = QHBoxLayout()
         self.combo_proyecto = QComboBox()
-        self.combo_proyecto.currentTextChanged.connect(self._cargar_capas)
+        self.combo_proyecto.currentTextChanged.connect(self._seleccion_cambiada)
         fila_proy.addWidget(self.combo_proyecto, 1)
         for texto, ayuda, accion in (
             ("Nuevo", "Crear un proyecto nuevo", self._nuevo_proyecto),
@@ -188,6 +202,8 @@ class DialogoPlanos(QDialog):
             fila_proy.addWidget(btn)
             if texto == "Eliminar":
                 self.btn_eliminar = btn
+            elif texto == "Editar":
+                self.btn_editar = btn
         lay_proy.addLayout(fila_proy)
         cuerpo.addWidget(tarjeta_proy)
 
@@ -337,43 +353,49 @@ class DialogoPlanos(QDialog):
             # plantilla.json es el ejemplo genérico del repo: no se lista
             and os.path.splitext(f)[0] != "plantilla"
         )
-        # Señales bloqueadas durante todo el rearmado: _cargar_capas se llama
-        # una sola vez, explícitamente, al final.
-        self.combo_proyecto.blockSignals(True)
-        self.combo_proyecto.clear()
         plantillas = [p for p in proyectos if _es_plantilla(p)]
         propios = sorted((p for p in proyectos if not _es_plantilla(p)), key=str.lower)
-        for titulo, grupo in (("PLANTILLAS", plantillas), ("MIS PROYECTOS", propios)):
-            if not grupo:
-                continue
-            if self.combo_proyecto.count():
-                self.combo_proyecto.insertSeparator(self.combo_proyecto.count())
-            self._agregar_encabezado(titulo)
-            for nombre in grupo:
-                self.combo_proyecto.addItem(nombre)
-        if not (seleccionar and seleccionar in proyectos):
-            seleccionar = (plantillas or propios or [None])[0]
-        if seleccionar:
-            self.combo_proyecto.setCurrentIndex(self.combo_proyecto.findText(seleccionar))
-        self.combo_proyecto.blockSignals(False)
+
+        # Señales bloqueadas durante todo el rearmado: _cargar_capas se llama
+        # una sola vez, explícitamente, al final.
+        anterior = self.combo_plantilla.currentText()
+        for combo in (self.combo_plantilla, self.combo_proyecto):
+            combo.blockSignals(True)
+            combo.clear()
+        self.combo_plantilla.addItems(plantillas)
+        self.combo_proyecto.addItem(_SOLO_PLANTILLA)
+        self.combo_proyecto.addItems(propios)
+
+        if seleccionar in plantillas:
+            self.combo_plantilla.setCurrentText(seleccionar)
+        else:
+            if anterior in plantillas:
+                self.combo_plantilla.setCurrentText(anterior)
+            if seleccionar in propios:
+                self.combo_proyecto.setCurrentText(seleccionar)
+        for combo in (self.combo_plantilla, self.combo_proyecto):
+            combo.blockSignals(False)
         if not proyectos:
             QMessageBox.warning(
                 self, "Planos Auto",
                 f"No hay proyectos en:\n{carpeta}",
             )
-        self._cargar_capas(self.combo_proyecto.currentText())
+        self._seleccion_cambiada()
 
-    def _agregar_encabezado(self, titulo: str):
-        """Renglón de título en el combo: gris, en negritas, no seleccionable."""
-        self.combo_proyecto.addItem(titulo)
-        item = self.combo_proyecto.model().item(self.combo_proyecto.count() - 1)
-        item.setFlags(Qt.NoItemFlags)
-        item.setData(True, Qt.UserRole)
-        fuente = item.font()
-        fuente.setBold(True)
-        fuente.setPointSizeF(max(fuente.pointSizeF() - 1, 7))
-        item.setFont(fuente)
-        item.setForeground(QBrush(QColor("#6b7a8c")))
+    def _proyecto_activo(self) -> str:
+        """El proyecto elegido; si no hay, la plantilla."""
+        if self.combo_proyecto.currentIndex() > 0:
+            return self.combo_proyecto.currentText()
+        return self.combo_plantilla.currentText()
+
+    def _seleccion_cambiada(self, *_):
+        hay_proyecto = self.combo_proyecto.currentIndex() > 0
+        self.btn_eliminar.setEnabled(hay_proyecto)
+        self.btn_editar.setToolTip(
+            "Editar los datos del proyecto" if hay_proyecto
+            else "Editar los datos de la plantilla"
+        )
+        self._cargar_capas(self._proyecto_activo())
 
     def _configurar_conexion(self):
         from .configurar_conexion import DialogoConexion
@@ -445,13 +467,16 @@ class DialogoPlanos(QDialog):
         from .editor_proyecto import DialogoProyecto
 
         dlg = DialogoProyecto(self.base, proyecto_existente=None, parent=self)
+        # Copiar los planos de la plantilla elegida arriba
+        if hasattr(dlg, "combo_plantilla"):
+            dlg.combo_plantilla.setCurrentText(self.combo_plantilla.currentText())
         if dlg.exec_() and dlg.slug_guardado:
             self._cargar_proyectos(seleccionar=dlg.slug_guardado)
 
     def _editar_proyecto(self):
         from .editor_proyecto import DialogoProyecto
 
-        proyecto = self.combo_proyecto.currentText()
+        proyecto = self._proyecto_activo()
         if not proyecto:
             QMessageBox.warning(self, "Planos Auto", "Elige un proyecto primero.")
             return
@@ -460,7 +485,7 @@ class DialogoPlanos(QDialog):
             self._cargar_proyectos(seleccionar=dlg.slug_guardado)
 
     def _eliminar_proyecto(self):
-        proyecto = self.combo_proyecto.currentText()
+        proyecto = self._proyecto_activo()
         if not proyecto:
             QMessageBox.warning(self, "Planos Auto", "Elige un proyecto primero.")
             return
@@ -493,12 +518,6 @@ class DialogoPlanos(QDialog):
 
     def _cargar_capas(self, proyecto: str):
         self.lista_capas.clear()
-        es_plantilla = bool(proyecto) and _es_plantilla(proyecto)
-        self.btn_eliminar.setEnabled(not es_plantilla)
-        self.btn_eliminar.setToolTip(
-            "Las plantillas vienen con el programa y no se eliminan"
-            if es_plantilla else "Eliminar el proyecto"
-        )
         if not proyecto:
             return
         ruta = os.path.join(self.base, "config", "proyectos", f"{proyecto}.json")
@@ -572,7 +591,7 @@ class DialogoPlanos(QDialog):
     def _generar(self):
         if self.en_ejecucion:
             return
-        proyecto = self.combo_proyecto.currentText()
+        proyecto = self._proyecto_activo()
         if not proyecto:
             return
         marcadas = self._capas_marcadas()
@@ -712,7 +731,7 @@ class DialogoPlanos(QDialog):
             )
             return
 
-        proyecto = self.combo_proyecto.currentText() or "capas"
+        proyecto = self._proyecto_activo() or "capas"
         sugerido = os.path.join(
             os.path.expanduser("~"),
             f"{sanitizar_nombre(proyecto)}_capas_generadas.gpkg",
