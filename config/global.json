@@ -20,6 +20,19 @@
   "coordenadas":   "COORDENADAS UTM WGS84, R12",
   "fecha_plano":   "",
 
+  "estilo_moderno": {
+    "_comentario":           "Acabado visual de core/estilo_moderno.py. 'activo': false regresa al estilo de las plantillas. La ruta del CEM va en el .env (CEM_RUTA).",
+    "activo":                true,
+    "crs_mapa":              "EPSG:32612",
+    "fuente_texto":          "Ubuntu Sans",
+    "color_acento":          "#08306b",
+    "opacidad_tematica":     0.5,
+    "relieve_escala_max":    100000,
+    "relieve_exageracion":   2.0,
+    "relieve_opacidad":      0.38,
+    "escala_figura_estatal": 500000
+  },
+
   "mapitas": {
     "_comentario":        "Configura los insertos de localización automáticos.",
     "schema":             "cartografia_base",

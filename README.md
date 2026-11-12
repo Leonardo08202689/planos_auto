@@ -52,6 +52,7 @@ flowchart LR
 8. [Configuración de un plano (referencia de campos)](#configuración-de-un-plano-referencia-de-campos)
 9. [Tipos especiales de plano](#tipos-especiales-de-plano-tipo)
 10. [Plantillas de layout y mapitas](#plantillas-de-layout-y-mapitas)
+    - [Estilo moderno](#estilo-moderno)
 11. [Conexión y variables de entorno](#conexión-y-variables-de-entorno)
 12. [Acceso a la base de datos (otras computadoras)](#acceso-a-la-base-de-datos-otras-computadoras)
 13. [Fuentes de datos](#fuentes-de-datos)
@@ -388,6 +389,51 @@ municipio se detectan solos a partir del centroide del proyecto contra
 `cartografia_base.mexico_estados` / `mexico_municipios`. Una plantilla sin
 entrada en `mapitas_layout` simplemente no lleva insertos automáticos.
 
+### Estilo moderno
+
+Después de armar cada composición y antes de exportarla,
+`core/estilo_moderno.py` le da un acabado uniforme. No cambia qué datos se
+muestran, solo cómo se ven:
+
+| Dónde | Qué hace |
+|---|---|
+| Mapa | Lo pasa a UTM (`crs_mapa`) conservando centro y escala; satélite atenuado; capas temáticas más transparentes con borde blanco; etiquetas con halo en vez de recuadro; polígono del proyecto en rojo con relleno suave |
+| Relieve | Si hay `CEM_RUTA` en el `.env` y la escala es ≤ `relieve_escala_max`, recorta el CEM al encuadre, lo reproyecta y agrega un hillshade multidireccional en modo *multiplicar* |
+| Figuras estatales | A escala ≥ `escala_figura_estatal`: vela en blanco todo lo que no es el estado, contorno estatal negro y resalta la unidad que contiene al proyecto o la más cercana (con su distancia en la leyenda) |
+| `Plantilla_Corporativa` y `Plantilla_figuras` | Panel lateral en un solo recuadro con separadores finos: 2 mapitas, simbología alineada a la izquierda, bloque técnico (barra en km, coordenadas, fuentes) y cuadro de título con jerarquía |
+| `Plantilla_Figurasv2` | Franja de simbología a dos columnas y pie de tres columnas (logo · título · proyección y fecha); barra de escala de línea con halo sobre el mapa |
+
+Se configura en `config/global.json` y cada proyecto puede sobreescribir
+cualquier campo o apagarlo con `"estilo_moderno": false`:
+
+```json
+"estilo_moderno": {
+  "activo":                true,
+  "crs_mapa":              "EPSG:32612",
+  "fuente_texto":          "Ubuntu Sans",
+  "color_acento":          "#08306b",
+  "opacidad_tematica":     0.5,
+  "relieve_escala_max":    100000,
+  "relieve_exageracion":   2.0,
+  "relieve_opacidad":      0.38,
+  "escala_figura_estatal": 500000
+}
+```
+
+Campos por plano que usa el estilo:
+
+| Campo | Efecto |
+|---|---|
+| `"solo_contorno": true` | La capa temática se dibuja solo con contorno punteado y relleno casi transparente (útil para subcuencas, que cubren todo el encuadre) |
+| `"sin_relieve": true` | No agrega relieve sombreado a ese plano |
+| `"figura_estatal": true` | Fuerza el tratamiento estatal aunque la escala sea menor |
+| `"color_resaltado": "49,130,189"` | Color de la unidad resaltada en figuras estatales |
+
+Para que una figura estatal muestre el estado completo, usa `"centrar_en"`
+(el encuadre lo decide `generar_planos.py` y la capa temática se recorta a él).
+Si algo falla, el plano se exporta igual con el estilo de la plantilla y queda
+una advertencia en el log.
+
 ### Formatos de salida
 
 En `config/global.json` (o por proyecto):
@@ -411,6 +457,7 @@ PG_USER=qgis_user
 PG_PASSWORD=tu_contraseña
 OUTPUT_BASE=/ruta/a/planos_salida
 LOGO_RUTA=/ruta/al/logo.jpg   # opcional, usa assets/logo_sinergia.jpg por defecto
+CEM_RUTA=/ruta/al/cem.tif     # opcional, relieve sombreado del estilo moderno
 ```
 
 ## Acceso a la base de datos (otras computadoras)
@@ -470,6 +517,13 @@ versión navegable en `docs/fuentes_datos.html`. El campo `"fuente"` de cada
 plano en el JSON es lo que termina impreso en el pie del plano.
 
 ## Pendientes conocidos
+
+- `proyectos.hidrologia_superficial` tiene 200 registros con el carácter
+  `�` (U+FFFD) en vez de letras acentuadas (p. ej. "A. Los P�pagos"). La
+  letra original se perdió al importar, así que hay que volver a cargar la
+  tabla desde la fuente indicando la codificación (`-lco ENCODING=LATIN1` o
+  `PGCLIENTENCODING=LATIN1` en `ogr2ogr`). Para ubicarlos:
+  `SELECT DISTINCT subcuenca FROM proyectos.hidrologia_superficial WHERE subcuenca LIKE '%' || chr(65533) || '%';`
 
 - `FIGURA. VÍAS DE ACCESO AL SITIO` depende de un GeoPackage generado por
   proyecto con `herramientas/rutas_cli.py` (requiere OSMnx y corre como proceso
