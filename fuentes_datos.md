@@ -22,7 +22,6 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 | Capa | Tabla en la BD | Fuente |
 |------|-----------------|--------|
 | POET Sonora | `poet_sonora` | Programa de Ordenamiento Ecológico Territorial del Estado de Sonora. |
-| Áreas Naturales Protegidas | `ANP_Conjunto` | ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO. |
 | AICA (Áreas de Importancia para la Conservación de Aves) | `aica_nacional` | Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO). |
 | ANP Estatales | `anp_estatales` | Comisión de Ecología y Desarrollo Sustentable del Estado de Sonora (CEDES). |
 | Regiones Hidrológicas Prioritarias | `regiones_hidrologicas_prioritarias` | Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO). |

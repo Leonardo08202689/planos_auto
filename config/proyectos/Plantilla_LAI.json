@@ -136,23 +136,6 @@
       "fuente":         "Usos de suelo del proyecto (agregar manualmente sobre el plano exportado)."
     },
     {
-      "tipo":           "capas_combinadas",
-      "nombre_plano":   "PLANO. ÁREAS NATURALES PROTEGIDAS",
-      "nombre_capa":    "ANP_Conjunto",
-      "escala":         1650000,
-      "grid_intervalo": 80000,
-      "barra_escala_segmento": 40000,
-      "marcador":       "punto",
-      "capas_postgis": [
-        {"tabla_postgis": "anp_estatales", "nombre": "ANP Estatal", "sin_bbox_filter": true, "color": "40,160,70,220", "color_borde": "20,100,40,255", "patron": "cross", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "aica_nacional", "nombre": "AICA", "sin_bbox_filter": true, "color": "235,190,20,220", "color_borde": "150,110,10,255", "patron": "b_diagonal", "estilo_borde": "dash", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "regiones_terrestres_prioritarias", "nombre": "RTP", "sin_bbox_filter": true, "color": "230,120,30,220", "color_borde": "150,70,10,255", "patron": "f_diagonal", "estilo_borde": "solid", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "regiones_hidrologicas_prioritarias", "nombre": "RHP", "sin_bbox_filter": true, "color": "50,130,220,220", "color_borde": "20,70,150,255", "patron": "horizontal", "estilo_borde": "dash_dot", "campo_etiqueta": "nombre"},
-        {"tabla_postgis": "anp_federales", "nombre": "ANP Federal", "sin_bbox_filter": true, "color": "160,50,160,220", "color_borde": "90,20,90,255", "patron": "vertical", "estilo_borde": "dash", "campo_etiqueta": "nombre"}
-      ],
-      "fuente":         "ANP Federal: CONANP. ANP Estatal: CEDES Sonora. AICA/RTP/RHP: CONABIO."
-    },
-    {
       "_grupo": "Figuras (Plantilla_Figurasv2) — una por tipo de ANP, sin basemap, recortadas al estado de Sonora",
       "tabla_postgis":   "anp_federales",
       "nombre_plano":    "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS FEDERALES",
