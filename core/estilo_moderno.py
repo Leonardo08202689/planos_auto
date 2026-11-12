@@ -971,7 +971,7 @@ def _barra(comp, map_item, opts, mm_seg=12.5, halo=False, item=None, tam=None):
 _IDS_EXTRA = ("marco_panel", "sep_loc", "sep1", "sep2", "sep3", "cap_nac", "cap_est",
               "lbl_plano_tag", "lbl_km", "marco_leyenda", "lbl_simbologia", "leyenda_b",
               "div1", "div2", "barra_escala_figura", "sep4", "cap_proy", "cap_esc",
-              "cap_fec", "sep_ef", "sep_logo")
+              "cap_fec", "sep_ef", "sep_logo", "sep_fig1", "sep_fig2")
 
 
 def _limpiar_previos(comp):
@@ -1216,8 +1216,10 @@ def _pie_figura(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     barra.setId("barra_escala_figura")
     _mover(barra, 12 * k, map_bottom - barra.sizeWithUnits().height() - 4)
 
-    s = _rect(comp, "marco_leyenda", 0, Y1, W, Y2 - Y1, relleno="255,255,255,0", z=2)
-    s.setFrameEnabled(False)
+    # Sin cajas pegadas a la orilla de la hoja: solo líneas finas alineadas
+    # con el mapa separan mapa, simbología y cuadro de título.
+    for id_, y in (("sep_fig1", Y1), ("sep_fig2", Y2)):
+        _linea(comp, id_, [(6.6 * k, y), (W - 6.6 * k, y)], "60,60,60", "0.3")
     _etiqueta(comp, opts, "lbl_simbologia", "SIMBOLOGÍA", 8 * k, Y1 + 2.5, 60, 5,
               _fmt(opts, 8.5, True, espaciado=0.8))
 
@@ -1240,11 +1242,7 @@ def _pie_figura(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
 
     marco2 = comp.itemById("Marco2")
     if marco2 is not None:
-        _mover(marco2, 0, Y2, W, H - Y2)
-        marco2.setSymbol(QgsFillSymbol.createSimple({
-            "color": "255,255,255,0", "outline_color": "30,30,30", "outline_width": "0.3"}))
-    else:
-        _rect(comp, "Marco2", 0, Y2, W, H - Y2, relleno="255,255,255,0", z=2)
+        comp.removeLayoutItem(marco2)
     for id_, x in (("div1", 52 * k), ("div2", 164 * k)):
         _linea(comp, id_, [(x, Y2 + 5), (x, H - 5)], "150,150,150", "0.25")
 
@@ -1281,7 +1279,7 @@ def _quitar_marco_pagina(comp):
     tamaño de la hoja): el mapa y el panel ya tienen su propio marco."""
     pag = comp.pageCollection().page(0).pageSize()
     for it in list(comp.items()):
-        if isinstance(it, QgsLayoutItemShape) and not it.id():
+        if isinstance(it, QgsLayoutItemShape):
             s = it.sizeWithUnits()
             if s.width() >= pag.width() * 0.95 and s.height() >= pag.height() * 0.95:
                 comp.removeLayoutItem(it)
