@@ -970,7 +970,8 @@ def _barra(comp, map_item, opts, mm_seg=12.5, halo=False, item=None, tam=None):
 
 _IDS_EXTRA = ("marco_panel", "sep_loc", "sep1", "sep2", "sep3", "cap_nac", "cap_est",
               "lbl_plano_tag", "lbl_km", "marco_leyenda", "lbl_simbologia", "leyenda_b",
-              "div1", "div2", "barra_escala_figura")
+              "div1", "div2", "barra_escala_figura", "sep4", "cap_proy", "cap_esc",
+              "cap_fec", "sep_ef")
 
 
 def _limpiar_previos(comp):
@@ -1091,6 +1092,10 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     # Cuadro de título
     tag, titulo = _sin_prefijo(cfg_capa.get("nombre_plano", ""))
     alto_t = T + H - y_sep3
+    if plano:
+        _cuadro_titulo_plano(comp, ids, map_item, cfg, opts, X, W, R, y_sep3, alto_t, tag, titulo)
+        return
+    alto_t = T + H - y_sep3
     logo = comp.itemById(ids.get("logo", "logo_empresa"))
     if logo is not None:
         logo.setResizeMode(QgsLayoutItemPicture.Zoom)
@@ -1123,6 +1128,61 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
                        if id_k == "lbl_escala" else f"Fecha: {_fecha(cfg)}")
         _etiqueta(comp, opts, ids.get(id_k, id_k), it.text(), x, T + H - 6.5, W / 2, 5,
                   _fmt(opts, 8.5 if plano else 7), item=it)
+
+
+def _cuadro_titulo_plano(comp, ids, map_item, cfg, opts, X, W, R, y0, alto, tag, titulo):
+    """Cuadro de título de los planos tabloide: logo, trámite, tipo y título
+    al centro; abajo una ficha con rótulos pequeños (PROYECTO, ESCALA,
+    FECHA) y su valor debajo, todo alineado a la izquierda."""
+    gris, tinta = "#7a8594", "#1f1f1f"
+    mx = 7.0                     # margen interior del panel
+    xi, wi = X + mx, W - 2 * mx
+    pie = y0 + alto              # borde inferior del panel
+
+    logo = comp.itemById(ids.get("logo", "logo_empresa"))
+    if logo is not None:
+        logo.setResizeMode(QgsLayoutItemPicture.Zoom)
+        _mover(logo, X + 12, y0 + alto * 0.05, W - 24, alto * 0.20)
+        logo.setZValue(10)
+
+    y = y0 + alto * 0.30
+    lic = comp.itemById(ids.get("lbl_licencia", "lbl_licencia"))
+    _etiqueta(comp, opts, ids.get("lbl_licencia", "lbl_licencia"),
+              (cfg.get("tipo_tramite") or "").upper(), X, y, W, 5,
+              _fmt(opts, 7.5, True, gris, 0.9), item=lic)
+    _etiqueta(comp, opts, "lbl_plano_tag", tag, X, y + 8, W, 4.5,
+              _fmt(opts, 8, True, opts["color_acento"], 2.0))
+    lbl_t = comp.itemById(ids.get("lbl_plano", "lbl_tipo_plano"))
+    largo = len(titulo) > 22
+    _etiqueta(comp, opts, ids.get("lbl_plano", "lbl_tipo_plano"), titulo,
+              X + 3, y + 13.5, W - 6, 13 if largo else 8,
+              _fmt(opts, 13, True, tinta), item=lbl_t)
+
+    # Ficha inferior
+    y_f = pie - 30
+    _linea(comp, "sep4", [(xi, y_f), (xi + wi, y_f)])
+    nombre = (cfg.get("nombre_proyecto") or "").strip()
+    _etiqueta(comp, opts, "cap_proy", "PROYECTO", xi, y_f + 2.5, wi, 3.5,
+              _fmt(opts, 6.5, True, gris, 0.8), ha=Qt.AlignLeft)
+    lbl_p = comp.itemById(ids.get("lbl_proyecto", "lbl_proyecto"))
+    _etiqueta(comp, opts, ids.get("lbl_proyecto", "lbl_proyecto"), nombre,
+              xi, y_f + 6.5, wi, 9, _fmt(opts, 9.5, False, tinta),
+              ha=Qt.AlignLeft, va=Qt.AlignTop, item=lbl_p)
+    y_e = pie - 12
+    mitad = wi / 2
+    for cap_id, cap, id_k, valor, x in (
+            ("cap_esc", "ESCALA", "lbl_escala",
+             f"1:{int(round(map_item.scale())):,}".replace(",", " "), xi),
+            ("cap_fec", "FECHA", "lbl_fecha", _fecha(cfg), xi + mitad)):
+        _etiqueta(comp, opts, cap_id, cap, x, y_e, mitad, 3.5,
+                  _fmt(opts, 6.5, True, gris, 0.8), ha=Qt.AlignLeft)
+        it = comp.itemById(ids.get(id_k, id_k))
+        if it is None:
+            it = QgsLayoutItemLabel(comp)
+            comp.addLayoutItem(it)
+        _etiqueta(comp, opts, ids.get(id_k, id_k), valor, x, y_e + 4, mitad, 5,
+                  _fmt(opts, 9.5, False, tinta), ha=Qt.AlignLeft, item=it)
+    _linea(comp, "sep_ef", [(xi + mitad - 3, y_e), (xi + mitad - 3, y_e + 8.5)])
 
 
 # ---------------------------------------------------------------------------
