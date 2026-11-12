@@ -1052,11 +1052,12 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
         if plano:
             # El bloque de simbología mide lo que su contenido: sin huecos
             # cuando hay pocas categorías, con tope cuando hay muchas.
-            leyenda.setResizeToContents(True)
             leyenda.updateLegend()
-            leyenda.adjustBoxSize()
-            alto_ley = leyenda.sizeWithUnits().height()
-            leyenda.setResizeToContents(False)
+            try:
+                alto_ley = QgsLegendRenderer(
+                    leyenda.model(), leyenda.legendSettings()).minimumSize().height()
+            except Exception:
+                alto_ley = H * 0.3
             y_sep2 = min(max(y_sep1 + 1 + alto_ley + 5, T + H * 0.27), T + H * 0.52)
             y_sep3 = y_sep2 + H * 0.165
         _mover(leyenda, X, y_sep1 + 1, W, y_sep2 - y_sep1 - 2)
