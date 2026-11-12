@@ -661,6 +661,7 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
                     and cfg_capa.get("solo_contorno") and not estatal):
                 campo = cfg_capa.get("campo_categoria")
                 if _unidades_contorno(c, campo, cfg_capa, opts):
+                    info["etiquetas_propias"] = True
                     continue
             if _AGUA.search(c.name()) and not (r is not None and r.type() == "categorizedSymbol"):
                 _estilo_agua(c)
@@ -700,6 +701,9 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
     info["tematica"] = tematicas[0] if len(tematicas) == 1 else None
     if estatal:
         capas = [c for c in capas if c not in referencia_estado]
+    if info.get("etiquetas_propias"):
+        # Las unidades ya se etiquetan solas: los centroides duplicarían el nombre
+        capas = [c for c in capas if not c.name().startswith("centroides_")]
 
     # 3. Marcador del proyecto
     nuevo = []
