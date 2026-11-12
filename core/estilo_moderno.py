@@ -1141,27 +1141,34 @@ def _cuadro_titulo_plano(comp, ids, map_item, cfg, opts, X, W, R, y0, alto, tag,
     xi, wi = X + mx, W - 2 * mx
     pie = y0 + alto              # borde inferior del panel
 
+    # Bloque central (logo, trámite, tipo, título) centrado en vertical
+    # entre la línea de arriba y la ficha de abajo: sin huecos raros sin
+    # importar cuánto mida la simbología.
+    y_f = pie - 30
+    largo = len(titulo) > 22
+    alto_logo, alto_tit = 22.0, (13.0 if largo else 8.0)
+    alto_grupo = alto_logo + 7 + 5 + 3 + 4.5 + 1 + alto_tit
+    y = y0 + max(3.0, (y_f - y0 - alto_grupo) / 2)
+
     logo = comp.itemById(ids.get("logo", "logo_empresa"))
     if logo is not None:
         logo.setResizeMode(QgsLayoutItemPicture.Zoom)
-        _mover(logo, X + 12, y0 + alto * 0.05, W - 24, alto * 0.20)
+        _mover(logo, X + 12, y, W - 24, alto_logo)
         logo.setZValue(10)
-
-    y = y0 + alto * 0.30
+    y += alto_logo + 7
     lic = comp.itemById(ids.get("lbl_licencia", "lbl_licencia"))
     _etiqueta(comp, opts, ids.get("lbl_licencia", "lbl_licencia"),
               (cfg.get("tipo_tramite") or "").upper(), X, y, W, 5,
               _fmt(opts, 7.5, True, gris, 0.9), item=lic)
-    _etiqueta(comp, opts, "lbl_plano_tag", tag, X, y + 8, W, 4.5,
+    y += 5 + 3
+    _etiqueta(comp, opts, "lbl_plano_tag", tag, X, y, W, 4.5,
               _fmt(opts, 8, True, opts["color_acento"], 2.0))
+    y += 4.5 + 1
     lbl_t = comp.itemById(ids.get("lbl_plano", "lbl_tipo_plano"))
-    largo = len(titulo) > 22
     _etiqueta(comp, opts, ids.get("lbl_plano", "lbl_tipo_plano"), titulo,
-              X + 3, y + 13.5, W - 6, 13 if largo else 8,
-              _fmt(opts, 13, True, tinta), item=lbl_t)
+              X + 3, y, W - 6, alto_tit, _fmt(opts, 13, True, tinta), item=lbl_t)
 
     # Ficha inferior
-    y_f = pie - 30
     _linea(comp, "sep4", [(xi, y_f), (xi + wi, y_f)])
     nombre = (cfg.get("nombre_proyecto") or "").strip()
     _etiqueta(comp, opts, "cap_proy", "PROYECTO", xi, y_f + 2.5, wi, 3.5,
