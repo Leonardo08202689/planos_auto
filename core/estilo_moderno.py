@@ -971,7 +971,7 @@ def _barra(comp, map_item, opts, mm_seg=12.5, halo=False, item=None, tam=None):
 _IDS_EXTRA = ("marco_panel", "sep_loc", "sep1", "sep2", "sep3", "cap_nac", "cap_est",
               "lbl_plano_tag", "lbl_km", "marco_leyenda", "lbl_simbologia", "leyenda_b",
               "div1", "div2", "barra_escala_figura", "sep4", "cap_proy", "cap_esc",
-              "cap_fec", "sep_ef")
+              "cap_fec", "sep_ef", "sep_logo")
 
 
 def _limpiar_previos(comp):
@@ -1155,7 +1155,9 @@ def _cuadro_titulo_plano(comp, ids, map_item, cfg, opts, X, W, R, y0, alto, tag,
         logo.setResizeMode(QgsLayoutItemPicture.Zoom)
         _mover(logo, X + 12, y, W - 24, alto_logo)
         logo.setZValue(10)
-    y += alto_logo + 7
+    y += alto_logo + 3.5
+    _linea(comp, "sep_logo", [(xi + 8, y), (xi + wi - 8, y)])
+    y += 3.5
     lic = comp.itemById(ids.get("lbl_licencia", "lbl_licencia"))
     _etiqueta(comp, opts, ids.get("lbl_licencia", "lbl_licencia"),
               (cfg.get("tipo_tramite") or "").upper(), X, y, W, 5,
