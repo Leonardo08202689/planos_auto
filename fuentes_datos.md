@@ -29,6 +29,12 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 | Regiones Terrestres Prioritarias | `regiones_terrestres_prioritarias` | Comisión Nacional para el Conocimiento y Uso de la Biodiversidad (CONABIO). |
 | UAB Nacional | `uab_nacional` | Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT. |
 
+## Relieve
+
+| Capa | Tabla en la BD | Fuente |
+|------|-----------------|--------|
+| Continuo de Elevaciones Mexicano (Sonora) | `cartografia_base.cem_sonora_15m` | Continuo de Elevaciones Mexicano (CEM), Sonora, resolución 15 m. INEGI. Se usa para el sombreado de relieve de los planos (`core/estilo_moderno.py`). |
+
 ## Capas base INEGI (esquema `inegi`, Sonora completo, EPSG:6372)
 
 Cargadas con `herramientas/inegi/cargar_inegi_sonora.sh`.
