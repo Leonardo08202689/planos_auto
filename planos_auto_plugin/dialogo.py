@@ -271,6 +271,19 @@ class DialogoPlanos(QDialog):
         # Tarjeta: opciones
         tarjeta_opts, lay_opts = self._tarjeta("ACABADO")
         fila_opts = QHBoxLayout()
+        fila_opts.addWidget(QLabel("Tipo de plano"))
+        self.combo_estilo = QComboBox()
+        self.combo_estilo.addItems(["Moderno", "Clásico"])
+        self.combo_estilo.setToolTip(
+            "Moderno: panel lateral, imagen satelital suavizada y relieve "
+            "(core/estilo_moderno.py).\nClásico: las plantillas tal cual, "
+            "como se generaban antes del estilo moderno."
+        )
+        self.combo_estilo.currentIndexChanged.connect(
+            lambda i: self.chk_relieve.setEnabled(i == 0)
+        )
+        fila_opts.addWidget(self.combo_estilo)
+        fila_opts.addSpacing(14)
         self.chk_relieve = QCheckBox("Relieve (CEM)")
         fila_opts.addWidget(self.chk_relieve)
         fila_opts.addStretch()
@@ -608,7 +621,7 @@ class DialogoPlanos(QDialog):
     def _cargar_opciones_estilo(self, cfg_proyecto: dict):
         """Casilla de relieve: el CEM se lee de la base (o de CEM_RUTA)."""
         self.chk_relieve.setChecked(True)
-        self.chk_relieve.setEnabled(True)
+        self.chk_relieve.setEnabled(self.combo_estilo.currentIndex() == 0)
         self.chk_relieve.setToolTip(
             "Sombreado de relieve a partir del Continuo de Elevaciones "
             "Mexicano (CEM 15 m) en los planos de escala detallada."
@@ -700,10 +713,11 @@ class DialogoPlanos(QDialog):
         from generar_planos import generar_composiciones
 
         cfg = cargar_config(self.base, proyecto, solo_capas=solo_capas, dpi=dpi)
-        # Casilla de relieve: solo afecta esta corrida, no toca los JSON.
-        # El estilo moderno va siempre (lo controla config/global.json).
+        # Tipo de plano y relieve: solo afectan esta corrida, no tocan los JSON.
         em = cfg.get("estilo_moderno")
-        if isinstance(em, dict):
+        if self.combo_estilo.currentIndex() == 1:
+            cfg["estilo_moderno"] = {"activo": False}
+        elif isinstance(em, dict):
             em = dict(em)
             if not self.chk_relieve.isChecked():
                 em["cem_ruta"] = ""
