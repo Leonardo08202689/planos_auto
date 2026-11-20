@@ -32,6 +32,7 @@ from core.capas      import (
     cargar_raster_postgis,
     cargar_recortar_gpkg,
     cargar_recortar_shapefile,
+    crear_capa_radios,
     extraer_vertices_poligono,
     obtener_extent_mascara,
     recortar_a_mascara,
@@ -64,7 +65,11 @@ from core.simbologia import (
     aplicar_renderer_categorizado,
     capa_legend_ubicacion_actual,
     construir_simbolo_patron,
+    renderer_desde_spec,
 )
+
+# 'tipo_geom' corto de las entradas de capas_postgis → tipo WKB de PostGIS
+_WKB_SPEC = {"punto": "Point", "linea": "MultiLineString", "area": "MultiPolygon"}
 from core.utils      import (
     color_para_categoria,
     crear_logger,
@@ -643,11 +648,28 @@ def generar_composiciones(cfg: dict) -> None:
         if es_combinada:
             capas_obj = []
 
+            # Anillos de distancia al proyecto (arriba de las demás capas)
+            for spec in cfg_capa.get("radios", []):
+                capa_rad = crear_capa_radios(spec, feature_poligono.geometry(), crs_origen)
+                capa_rad.setRenderer(QgsSingleSymbolRenderer(QgsFillSymbol.createSimple({
+                    "color":         spec.get("color", "255,0,0,20"),
+                    "outline_color": spec.get("color_borde", "230,35,27,255"),
+                    "outline_width": spec.get("ancho_borde", "0.6"),
+                    "outline_style": spec.get("estilo_borde", "dash"),
+                })))
+                if spec.get("etiquetar", True):
+                    aplicar_etiquetas_linea(capa_rad, "format_number(\"radio_m\", 0) || ' m'", log,
+                                            es_expresion=True)
+                capas_obj.append(capa_rad)
+
             for spec in cfg_capa.get("capas_postgis", []):
                 cfg_tabla = dict(cfg.get("defaults_capa", {}))
                 cfg_tabla.update(spec)
                 cfg_tabla.setdefault("nombre_capa", spec["tabla_postgis"])
-                capa_pg_i = cargar_capa_postgis(cfg_tabla, cfg["pg"], bbox_wkt_visible, log)
+                geom_spec = spec.get("tipo_geom", "area")
+                cfg_tabla["tipo_geom"] = _WKB_SPEC.get(geom_spec, geom_spec)
+                pg_spec = dict(cfg["pg"], schema=spec.get("schema", cfg["pg"]["schema"]))
+                capa_pg_i = cargar_capa_postgis(cfg_tabla, pg_spec, bbox_wkt_visible, log)
                 if not capa_pg_i:
                     continue
                 capa_r = recortar_y_reproyectar(
@@ -657,14 +679,18 @@ def generar_composiciones(cfg: dict) -> None:
                 if not capa_r:
                     continue
                 capa_r.setName(spec.get("nombre", spec["tabla_postgis"]))
-                capa_r.setRenderer(QgsSingleSymbolRenderer(construir_simbolo_patron(
-                    spec.get("color", "120,180,120,220"),
-                    spec.get("color_borde", "60,100,60,255"),
-                    spec.get("patron", "solid"),
-                    spec.get("estilo_borde", "solid"),
-                )))
+                capa_r.setRenderer(renderer_desde_spec(spec))
                 if spec.get("campo_etiqueta"):
-                    aplicar_etiquetas_poligonos_grandes(capa_r, spec["campo_etiqueta"], log)
+                    if geom_spec == "linea":
+                        aplicar_etiquetas_linea(capa_r, spec["campo_etiqueta"], log,
+                                                es_expresion=True)
+                    elif geom_spec == "punto":
+                        aplicar_etiquetas_pal(capa_r, spec["campo_etiqueta"], log,
+                                              es_expresion=True)
+                    else:
+                        aplicar_etiquetas_poligonos_grandes(
+                            capa_r, spec["campo_etiqueta"], log,
+                            spec.get("umbral_etiqueta", 0.15))
                 capas_obj.append(capa_r)
 
             for spec in cfg_capa.get("capas_shapefile", []):

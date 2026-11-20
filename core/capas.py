@@ -320,6 +320,43 @@ def extraer_vertices_poligono(feature_poligono, crs, log):
     return capa_vertices
 
 
+def crear_capa_radios(spec: dict, geom_poligono, crs):
+    """
+    Anillos de distancia alrededor del proyecto (p. ej. radio de 500 m de
+    afectación, o 500/1000/1500/2000 m de colindancia), como capa de
+    polígonos en memoria en 'crs'. 'metros' acepta un número o una lista;
+    'desde' = 'poligono' (buffer del polígono, default) o 'punto' (centroide).
+    El buffer se calcula en UTM para que sean metros reales.
+    """
+    metros = spec["metros"] if isinstance(spec["metros"], list) else [spec["metros"]]
+    centro = QgsCoordinateTransform(
+        crs, QgsCoordinateReferenceSystem("EPSG:4326"), QgsProject.instance()
+    ).transform(geom_poligono.centroid().asPoint())
+    epsg_utm = (32600 if centro.y() >= 0 else 32700) + int((centro.x() + 180) // 6) + 1
+    utm = QgsCoordinateReferenceSystem(f"EPSG:{epsg_utm}")
+    a_utm = QgsCoordinateTransform(crs, utm, QgsProject.instance())
+    de_utm = QgsCoordinateTransform(utm, crs, QgsProject.instance())
+    base = QgsGeometry(geom_poligono)
+    if spec.get("desde") == "punto":
+        base = base.centroid()
+    base.transform(a_utm)
+
+    capa = QgsVectorLayer(f"Polygon?crs={crs.authid()}", spec.get("nombre", "Radios"), "memory")
+    capa.dataProvider().addAttributes([QgsField("radio_m", QVariant.Int)])
+    capa.updateFields()
+    features = []
+    for m in metros:
+        f = QgsFeature(capa.fields())
+        anillo = base.buffer(m, 72)
+        anillo.transform(de_utm)
+        f.setGeometry(anillo)
+        f.setAttribute("radio_m", m)
+        features.append(f)
+    capa.dataProvider().addFeatures(features)
+    capa.updateExtents()
+    return capa
+
+
 def recortar_y_reproyectar(capa, crs_destino, extent_en_escala, log,
                            margen: float = 0.02, nombre_log: str = "capa"):
     """

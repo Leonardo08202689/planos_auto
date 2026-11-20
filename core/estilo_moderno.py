@@ -874,7 +874,9 @@ def _estilizar_mapa(comp, map_item, cfg_capa, opts, ctx, log):
 # Leyendas
 # ---------------------------------------------------------------------------
 
-def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0, grande=False):
+def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0, grande=False, compacto=1.0):
+    """'compacto' (< 1) reduce en proporción símbolos y separaciones, para
+    leyendas con muchas entradas que no caben a tamaño normal."""
     leyenda.setAutoUpdateModel(False)
     raiz = leyenda.model().rootGroup()
     raiz.clear()
@@ -907,10 +909,10 @@ def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0, grande=False):
     leyenda.setWrapString("")
     estilos = [
         (QgsLegendStyle.Title, _fmt(opts, 13.5 if grande else 10.5, True, espaciado=0.8), 0, Qt.AlignHCenter),
-        (QgsLegendStyle.Group, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
-        (QgsLegendStyle.Subgroup, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5, Qt.AlignLeft),
+        (QgsLegendStyle.Group, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5 * compacto, Qt.AlignLeft),
+        (QgsLegendStyle.Subgroup, _fmt(opts, 9.5 if grande else 7.2, True, opts["color_acento"], 0.5), 3.5 * compacto, Qt.AlignLeft),
         (QgsLegendStyle.SymbolLabel, _fmt(opts, tam), 0, Qt.AlignLeft),
-        (QgsLegendStyle.Symbol, None, 2.0, Qt.AlignLeft),
+        (QgsLegendStyle.Symbol, None, 2.0 * compacto, Qt.AlignLeft),
     ]
     for st, fmt, top, al in estilos:
         s = leyenda.style(st)
@@ -922,12 +924,13 @@ def _estilo_leyenda(leyenda, opts, capas, titulo=None, tam=8.0, grande=False):
     t = leyenda.style(QgsLegendStyle.Title)
     t.setMargin(QgsLegendStyle.Bottom, 3)
     leyenda.setStyle(QgsLegendStyle.Title, t)
+    alto_sim = 3.8 * max(compacto, 0.75)
     leyenda.setSymbolWidth(6.5)
-    leyenda.setSymbolHeight(3.8)
+    leyenda.setSymbolHeight(alto_sim)
     leyenda.setBoxSpace(0 if not titulo else 3)
     for nodo in raiz.findLayers():
         try:
-            QgsMapLayerLegendUtils.setLegendNodeSymbolSize(nodo, 0, QSizeF(6.5, 3.8))
+            QgsMapLayerLegendUtils.setLegendNodeSymbolSize(nodo, 0, QSizeF(6.5, alto_sim))
         except Exception:
             pass
         leyenda.model().refreshLayerLegend(nodo)
@@ -1053,17 +1056,26 @@ def _panel_lateral(comp, ids, map_item, info, cfg, cfg_capa, opts, ctx, log):
     # Simbología
     leyenda = comp.itemById(ids.get("leyenda", "leyenda_principal"))
     if leyenda is not None:
-        _estilo_leyenda(leyenda, opts, info["capas_leyenda"], "SIMBOLOGÍA",
-                        10.5 if plano else 7.5, grande=plano)
-        if plano:
-            # El bloque de simbología mide lo que su contenido: sin huecos
-            # cuando hay pocas categorías, con tope cuando hay muchas.
+        # Si la simbología no cabe en su espacio (figuras con varias capas
+        # categorizadas), se baja la letra paso a paso en vez de recortarla.
+        alto_max = (T + H * 0.52 if plano else y_sep2) - y_sep1 - 7
+        tam = 10.5 if plano else 7.5
+        for paso in range(5):
+            _estilo_leyenda(leyenda, opts, info["capas_leyenda"], "SIMBOLOGÍA",
+                            tam, grande=plano and paso < 2, compacto=1.0 - 0.15 * paso)
             leyenda.updateLegend()
             try:
                 alto_ley = QgsLegendRenderer(
                     leyenda.model(), leyenda.legendSettings()).minimumSize().height()
             except Exception:
                 alto_ley = H * 0.3
+                break
+            if alto_ley <= alto_max:
+                break
+            tam -= 0.8 if plano else 0.6
+        if plano:
+            # El bloque de simbología mide lo que su contenido: sin huecos
+            # cuando hay pocas categorías, con tope cuando hay muchas.
             y_sep2 = min(max(y_sep1 + 1 + alto_ley + 5, T + H * 0.27), T + H * 0.52)
             y_sep3 = y_sep2 + H * 0.165
         _mover(leyenda, X, y_sep1 + 1, W, y_sep2 - y_sep1 - 2)
@@ -1151,8 +1163,10 @@ def _cuadro_titulo_plano(comp, ids, map_item, cfg, opts, X, W, R, y0, alto, tag,
     # entre la línea de arriba y la ficha de abajo: sin huecos raros sin
     # importar cuánto mida la simbología.
     y_f = pie - 30
-    largo = len(titulo) > 22
-    alto_logo, alto_tit = 22.0, (13.0 if largo else 8.0)
+    lineas = math.ceil(len(titulo) / 22) if titulo else 1
+    alto_tit = 8.0 if lineas == 1 else 6.5 * lineas
+    # Con títulos de 3+ renglones o poco espacio, el logo cede altura
+    alto_logo = max(10.0, min(22.0, (y_f - y0) - 6 - (7 + 5 + 3 + 4.5 + 1 + alto_tit)))
     alto_grupo = alto_logo + 7 + 5 + 3 + 4.5 + 1 + alto_tit
     y = y0 + max(3.0, (y_f - y0 - alto_grupo) / 2)
 
