@@ -166,7 +166,7 @@ overrides de ids/layout…) se editan directamente en el JSON — ver
 | `plantilla.json` | Base completa: todos los planos y figuras disponibles |
 | `Plantilla_LAI.json` | Subconjunto curado para Licencia Ambiental Integral (18 planos) |
 | `Plantilla_LAI_Municipal.json` | Subconjunto reducido para trámites municipales (9 planos) |
-| `Plantilla_PPA.json` | Programa de Prevención de Accidentes (4 planos): geología, colindancias, vialidades y localización con escenarios de vulnerabilidad. El plano de escenarios de riesgo lo agrega cada quien con sus cálculos (ver `radios`) |
+| `Plantilla_PPA.json` | Programa de Prevención de Accidentes (5 planos): escenarios de riesgo, geología, colindancias, vialidades y localización con escenarios de vulnerabilidad. El de escenarios de riesgo sale sin radios: cada quien agrega los suyos (ver `radios`) |
 
 > [!IMPORTANT]
 > **Los proyectos reales son personales de cada computadora** y no se comparten
@@ -389,9 +389,10 @@ rojo punteado), `patron` (trama, como en `capas_postgis`) y `etiquetar`
 (default `true`).
 
 Un plano `capas_combinadas` puede llevar solo `radios`. Así se arma el plano
-de escenarios de riesgo de un PPA, que **no** viene en `Plantilla_PPA`
-porque sus radios y tanques salen de la modelación de cada proyecto: se
-agrega al JSON del proyecto, un radio por escenario:
+de escenarios de riesgo de un PPA. En `Plantilla_PPA` viene con
+`"radios": []` (sale solo el área del proyecto) porque sus radios y tanques
+salen de la modelación de cada proyecto: se llenan en el JSON del proyecto,
+un radio por escenario:
 
 ```json
 {
