@@ -720,7 +720,7 @@ class DialogoPlanos(QDialog):
         elif isinstance(em, dict):
             em = dict(em)
             if not self.chk_relieve.isChecked():
-                em["cem_ruta"] = ""
+                em["cem_ruta"] = em["cem_postgis"] = ""
             cfg["estilo_moderno"] = em
 
         # Pre-verificación con mensaje claro (el generador también valida,
