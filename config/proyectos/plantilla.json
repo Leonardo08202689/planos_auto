@@ -50,7 +50,7 @@
       "campo_categoria": "etiqueta_clima",
       "campo_etiqueta":  "etiqueta_clima",
       "paleta":          "clima",
-      "fuente":          "Climas 1902-2011, resolución 250 m (raster, escala de referencia 1:1 000 000). INEGI, 2022."
+      "fuente":          "Climas 1902-2011, resolución 250 m (raster, escala de referencia 1:1 000 000). INEGI, 2020."
     },
     {
       "tabla_postgis":   "Vegetacion",
