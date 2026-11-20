@@ -41,7 +41,7 @@
       "fuente":          "Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000."
     },
     {
-      "tabla_postgis":   "Clima",
+      "tabla_postgis":   "Clima_1902_2011",
       "nombre_plano":    "PLANO. TIPOS DE CLIMA",
       "nombre_capa":     "Clima",
       "titulo_capa":     "TIPO DE CLIMA",
@@ -50,7 +50,7 @@
       "campo_categoria": "etiqueta_clima",
       "campo_etiqueta":  "etiqueta_clima",
       "paleta":          "clima",
-      "fuente":          "Conjunto de datos vectoriales escala 1:1 000 000. Unidades climáticas. INEGI, 2008."
+      "fuente":          "Climas 1902-2011, resolución 250 m (raster, escala de referencia 1:1 000 000). INEGI, 2022."
     },
     {
       "tabla_postgis":   "Vegetacion",
