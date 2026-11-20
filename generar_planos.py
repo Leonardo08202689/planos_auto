@@ -1148,6 +1148,11 @@ def generar_composiciones(cfg: dict) -> None:
         if resultado:
             resultados.append(resultado)
 
+    # Las plantillas importadas solo sirven para clonar las Comp_*: no se
+    # dejan en el panel de Diseños (se reimportan del QPT en cada corrida).
+    for plantilla in cache_plantillas.values():
+        project.layoutManager().removeLayout(plantilla)
+
     # ── Índice HTML con miniaturas de todos los planos ────────────────────────
     if resultados:
         generar_indice_html(resultados, output_dir, cfg["nombre_proyecto"], log)
