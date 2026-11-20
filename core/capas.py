@@ -11,6 +11,7 @@ from qgis.core import (
     QgsFeatureRequest,
     QgsGeometry,
     QgsField,
+    QgsPointXY,
     QgsProcessingContext,
     QgsProject,
     QgsRasterLayer,
@@ -326,6 +327,8 @@ def crear_capa_radios(spec: dict, geom_poligono, crs):
     afectación, o 500/1000/1500/2000 m de colindancia), como capa de
     polígonos en memoria en 'crs'. 'metros' acepta un número o una lista;
     'desde' = 'poligono' (buffer del polígono, default) o 'punto' (centroide).
+    'punto_xy' = [x, y] centra el radio en otro punto (p. ej. un tanque),
+    en el CRS 'crs_xy' (default EPSG:32612).
     El buffer se calcula en UTM para que sean metros reales.
     """
     metros = spec["metros"] if isinstance(spec["metros"], list) else [spec["metros"]]
@@ -336,13 +339,20 @@ def crear_capa_radios(spec: dict, geom_poligono, crs):
     utm = QgsCoordinateReferenceSystem(f"EPSG:{epsg_utm}")
     a_utm = QgsCoordinateTransform(crs, utm, QgsProject.instance())
     de_utm = QgsCoordinateTransform(utm, crs, QgsProject.instance())
-    base = QgsGeometry(geom_poligono)
-    if spec.get("desde") == "punto":
-        base = base.centroid()
-    base.transform(a_utm)
+    if spec.get("punto_xy"):
+        x, y = spec["punto_xy"]
+        base = QgsGeometry.fromPointXY(QgsPointXY(x, y))
+        base.transform(QgsCoordinateTransform(
+            QgsCoordinateReferenceSystem(spec.get("crs_xy", "EPSG:32612")), utm,
+            QgsProject.instance()))
+    else:
+        base = QgsGeometry(geom_poligono)
+        if spec.get("desde") == "punto":
+            base = base.centroid()
+        base.transform(a_utm)
 
     capa = QgsVectorLayer(f"Polygon?crs={crs.authid()}", spec.get("nombre", "Radios"), "memory")
-    capa.dataProvider().addAttributes([QgsField("radio_m", QVariant.Int)])
+    capa.dataProvider().addAttributes([QgsField("radio_m", QVariant.Double)])
     capa.updateFields()
     features = []
     for m in metros:

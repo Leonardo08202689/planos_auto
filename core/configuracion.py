@@ -74,10 +74,11 @@ def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
                 f"pero no define 'ruta_gpkg' (debe generarse aparte con "
                 f"herramientas/rutas_cli.py; ya no se calcula en vivo)."
             )
-        if es_combinada and not capa.get("capas_postgis") and not capa.get("capas_shapefile"):
+        if (es_combinada and not capa.get("capas_postgis")
+                and not capa.get("capas_shapefile") and not capa.get("radios")):
             raise ValueError(
                 f"[{proyecto}] El plano '{nombre}' (entrada #{i}) es tipo='capas_combinadas' "
-                f"pero no define 'capas_postgis' ni 'capas_shapefile'."
+                f"pero no define 'capas_postgis', 'capas_shapefile' ni 'radios'."
             )
         if (not es_vertices and not es_raster and not es_rutas and not es_combinada
                 and not de_proyecto and not capa.get("tabla_postgis")):

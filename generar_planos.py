@@ -651,14 +651,15 @@ def generar_composiciones(cfg: dict) -> None:
             # Anillos de distancia al proyecto (arriba de las demás capas)
             for spec in cfg_capa.get("radios", []):
                 capa_rad = crear_capa_radios(spec, feature_poligono.geometry(), crs_origen)
-                capa_rad.setRenderer(QgsSingleSymbolRenderer(QgsFillSymbol.createSimple({
-                    "color":         spec.get("color", "255,0,0,20"),
-                    "outline_color": spec.get("color_borde", "230,35,27,255"),
-                    "outline_width": spec.get("ancho_borde", "0.6"),
-                    "outline_style": spec.get("estilo_borde", "dash"),
-                })))
+                capa_rad.setRenderer(QgsSingleSymbolRenderer(construir_simbolo_patron(
+                    spec.get("color", "255,0,0,20"),
+                    spec.get("color_borde", "230,35,27,255"),
+                    spec.get("patron", "solid"),
+                    spec.get("estilo_borde", "dash"),
+                    spec.get("ancho_borde", "0.6"),
+                )))
                 if spec.get("etiquetar", True):
-                    aplicar_etiquetas_linea(capa_rad, "format_number(\"radio_m\", 0) || ' m'", log,
+                    aplicar_etiquetas_linea(capa_rad, "to_string(round(\"radio_m\", 1)) || ' m'", log,
                                             es_expresion=True)
                 capas_obj.append(capa_rad)
 
