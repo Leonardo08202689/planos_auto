@@ -1,81 +1,9 @@
 {
-  "_comentario": "Plantilla PPA: los 5 planos/figuras de un Programa de Prevención de Accidentes — escenarios de riesgo, geología, colindancias, vialidades y localización con escenarios de vulnerabilidad (capas INEGI del esquema inegi vía capas_base de global.json). En 'PLANO. ESCENARIOS DE RIESGO' ajustar radios y 'punto_xy' de cada tanque según la modelación del proyecto. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "_comentario": "Plantilla PPA: geología, colindancias, vialidades y localización con escenarios de vulnerabilidad (capas INEGI del esquema inegi vía capas_base de global.json). El plano de escenarios de riesgo no viene incluido: cada quien lo agrega con sus radios y la ubicación de sus tanques (ver 'radios' en el README y la plantilla de layout Plantilla_Zonas_Riesgo). Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
   "nombre_proyecto": "NOMBRE DEL PROYECTO",
   "tipo_tramite": "PROGRAMA DE PREVENCIÓN DE ACCIDENTES",
   "capa_poligono": "poligono_trabajo",
   "capas": [
-    {
-      "tipo": "capas_combinadas",
-      "nombre_plano": "PLANO. ESCENARIOS DE RIESGO",
-      "nombre_capa": "Zonas_Riesgo",
-      "escala": 1500,
-      "marcador": "poligono",
-      "layout_nombre": "Plantilla_Zonas_Riesgo",
-      "_comentario": "Radios de la modelación de escenarios del proyecto. 'punto_xy' = [x, y] del tanque en EPSG:32612; sin él se centran en el polígono.",
-      "radios": [
-        {
-          "metros": 4,
-          "nombre": "Inflamabilidad diésel planta (4 m)",
-          "color": "232,35,27,255",
-          "color_borde": "58,0,0,255",
-          "patron": "solid",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        },
-        {
-          "metros": 3,
-          "nombre": "Inflamabilidad diésel incendio (3 m)",
-          "color": "232,35,27,255",
-          "color_borde": "58,0,0,255",
-          "patron": "solid",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        },
-        {
-          "metros": 27,
-          "nombre": "Dardo de fuego Gas LP (27 m)",
-          "color": "245,166,35,230",
-          "color_borde": "138,75,0,255",
-          "patron": "f_diagonal",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        },
-        {
-          "metros": 69,
-          "nombre": "Toxicidad Gas LP (69 m)",
-          "color": "255,106,26,200",
-          "color_borde": "200,75,0,255",
-          "patron": "solid",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        },
-        {
-          "metros": 145,
-          "nombre": "Bola de fuego Gas LP (145 m)",
-          "color": "0,0,0,0",
-          "color_borde": "227,26,28,255",
-          "patron": "solid",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        },
-        {
-          "metros": 150.4,
-          "nombre": "Explosividad Gas LP (150.4 m)",
-          "color": "0,0,0,0",
-          "color_borde": "123,0,0,255",
-          "patron": "solid",
-          "estilo_borde": "solid",
-          "etiquetar": false,
-          "desde": "punto"
-        }
-      ],
-      "fuente": "Radios de afectación según la modelación de escenarios de riesgo del proyecto."
-    },
     {
       "tabla_postgis": "Geologia",
       "nombre_plano": "FIGURA. DISTRIBUCIÓN DE LA GEOLOGÍA",
