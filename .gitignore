@@ -6,6 +6,7 @@ config/proyectos/*.json
 !config/proyectos/plantilla.json
 !config/proyectos/Plantilla_LAI.json
 !config/proyectos/Plantilla_LAI_Municipal.json
+!config/proyectos/Plantilla_PPA.json
 
 # ── Salida generada ──
 salida/

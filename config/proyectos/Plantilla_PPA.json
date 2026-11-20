@@ -1,0 +1,544 @@
+{
+  "_comentario": "Plantilla PPA: planos y figuras para Programas de Prevención de Accidentes. Son los de la plantilla LAI más las figuras de colindancias, vialidades, geología y la localización con escenarios de vulnerabilidad (capas INEGI del esquema inegi vía capas_base de global.json). Los escenarios de riesgo (Plantilla_Zonas_Riesgo) dependen de la modelación de cada proyecto y se arman a mano. Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "nombre_proyecto": "NOMBRE DEL PROYECTO",
+  "tipo_tramite": "PROGRAMA DE PREVENCIÓN DE ACCIDENTES",
+  "capa_poligono": "poligono_trabajo",
+  "capas": [
+    {
+      "_grupo": "Planos (Plantilla_Corporativa)",
+      "tabla_postgis": "suelos_edafologia_serie3",
+      "nombre_plano": "PLANO. TIPOS DE SUELOS",
+      "nombre_capa": "Tipo_de_Suelo",
+      "titulo_capa": "TIPO DE SUELO",
+      "escala": 5000,
+      "tipo_geom": "MultiPolygon",
+      "key": "id",
+      "campo_categoria": "nombre_grupo1",
+      "campo_etiqueta": "nombre_grupo1",
+      "paleta": "suelos",
+      "fuente": "Conjunto nacional de información edafológica. Escala 1:250 000 Serie III. INEGI, 2024."
+    },
+    {
+      "tabla_postgis": "Geologia",
+      "nombre_plano": "PLANO. TIPOS DE ROCA",
+      "nombre_capa": "Tipos_de_Roca",
+      "titulo_capa": "TIPOS DE ROCA",
+      "escala": 5000,
+      "key": "id",
+      "campo_categoria": "tipo_roca",
+      "campo_etiqueta": "tipo_roca",
+      "paleta": "geologia",
+      "fuente": "Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000."
+    },
+    {
+      "tabla_postgis": "Clima",
+      "nombre_plano": "PLANO. TIPOS DE CLIMA",
+      "nombre_capa": "Clima",
+      "titulo_capa": "TIPO DE CLIMA",
+      "escala": 5000,
+      "key": "id",
+      "campo_categoria": "etiqueta_clima",
+      "campo_etiqueta": "etiqueta_clima",
+      "paleta": "clima",
+      "fuente": "Conjunto de datos vectoriales escala 1:1 000 000. Unidades climáticas. INEGI, 2008."
+    },
+    {
+      "tabla_postgis": "Vegetacion",
+      "nombre_plano": "PLANO. TIPO DE VEGETACIÓN",
+      "nombre_capa": "Vegetacion",
+      "titulo_capa": "TIPOS DE VEGETACIÓN",
+      "escala": 5000,
+      "campo_categoria": "descripcio",
+      "campo_etiqueta": "descripcio",
+      "paleta": "vegetacion",
+      "fuente": "Conjunto de datos vectoriales de uso del suelo y vegetación. Escala 1:250 000. Serie VII. Conjunto Nacional. INEGI, 2018."
+    },
+    {
+      "tabla_postgis": "hidrologia_superficial",
+      "nombre_plano": "PLANO. HIDROLOGÍA SUPERFICIAL",
+      "nombre_capa": "Hidrologia_Superficial",
+      "solo_contorno": true,
+      "escala": 35000,
+      "campo_categoria": "subcuenca",
+      "campo_etiqueta": "subcuenca",
+      "nombre_leyenda_categoria": "SUBCUENCA",
+      "paleta": "agua",
+      "opacidad": 0.55,
+      "grid_intervalo": 2500,
+      "marcador": "punto",
+      "capas_extra": {
+        "grupo_leyenda": "CORRIENTES",
+        "capas": [
+          {
+            "tabla_postgis": "corriente_ag_l",
+            "tipo_geom": "linea",
+            "nombre": "Ríos y Arroyos",
+            "color": "50,110,200,255"
+          },
+          {
+            "tabla_postgis": "corriente_ag_a",
+            "tipo_geom": "area",
+            "nombre": "Ríos (cuerpo ancho)",
+            "color": "70,130,220,200"
+          },
+          {
+            "tabla_postgis": "canal_l",
+            "tipo_geom": "linea",
+            "nombre": "Canales",
+            "color": "40,170,190,255"
+          },
+          {
+            "tabla_postgis": "cuerpo_agua_a",
+            "tipo_geom": "area",
+            "nombre": "Cuerpos de Agua",
+            "color": "60,120,210,220"
+          }
+        ]
+      },
+      "fuente": "Red hidrográfica, subcuencas hidrográficas de México. Escala 1:50 000, edición 2. INEGI, 2010 (distribuido por CONABIO). Ríos, canales y cuerpos de agua: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
+    },
+    {
+      "tipo": "vertices",
+      "nombre_plano": "PLANO. VÉRTICES DEL PROYECTO",
+      "nombre_capa": "Vertices_Proyecto",
+      "escala": 2000,
+      "opacidad": 1.0,
+      "grid_intervalo": 100,
+      "fuente": "Vértices del polígono del proyecto."
+    },
+    {
+      "tipo": "raster",
+      "tabla_postgis_raster": "raster_26030",
+      "nombre_plano": "PLANO. LOCALIZACIÓN REGIONAL",
+      "nombre_capa": "Localizacion",
+      "escala": 50000,
+      "opacidad": 0.7,
+      "grid_intervalo": 2500,
+      "barra_escala_segmento": 1250,
+      "marcador": "punto",
+      "fuente": "Mapa Topográfico municipal, Hermosillo, Sonora. Escala 1:245 000, elaborado con información topográfica 1:50 000 serie III. INEGI, 2024."
+    },
+    {
+      "tipo": "raster",
+      "nombre_plano": "PLANO. LOCALIZACIÓN",
+      "nombre_capa": "Localizacion_Detalle",
+      "escala": 10000,
+      "grid_intervalo": 500,
+      "barra_escala_segmento": 250,
+      "marcador": "poligono",
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "carretera_l",
+            "tipo_geom": "linea",
+            "nombre": "Carreteras",
+            "color": "230,20,20,255",
+            "ancho_linea": "1.2",
+            "campo_etiqueta": "cod_carr"
+          },
+          {
+            "tabla_postgis": "camino_l",
+            "tipo_geom": "linea",
+            "nombre": "Caminos",
+            "color": "255,140,0,255",
+            "ancho_linea": "0.8",
+            "campo_etiqueta": "tipo"
+          },
+          {
+            "tabla_postgis": "vialidad_l",
+            "tipo_geom": "linea",
+            "nombre": "Calles",
+            "color": "0,210,255,255",
+            "ancho_linea": "0.6",
+            "campo_etiqueta": "nom_geo"
+          }
+        ]
+      },
+      "fuente": "Vialidades: Conjunto Nacional de Información Topográfica escala 1:50 000 (CNIT50k). INEGI."
+    },
+    {
+      "tipo": "raster",
+      "nombre_plano": "PLANO. USOS DE SUELO DEL PROYECTO",
+      "nombre_capa": "Usos_de_Suelo_Proyecto",
+      "escala": 1500,
+      "grid_intervalo": 50,
+      "barra_escala_segmento": 25,
+      "marcador": "poligono",
+      "fuente": "Usos de suelo del proyecto (agregar manualmente sobre el plano exportado)."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_Figurasv2) — una por tipo de ANP, sin basemap, recortadas al estado de Sonora",
+      "tabla_postgis": "anp_federales",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS FEDERALES",
+      "nombre_capa": "ANP_Federales",
+      "titulo_capa": "ANP Federales en Sonora",
+      "escala": 4000000,
+      "campo_categoria": "num_anp",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta": "num_anp",
+      "paleta": "geologia",
+      "grid_intervalo": 200000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap": true,
+      "leyenda_centrada": true,
+      "recortar_a": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "centrar_en": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "mexico_estados",
+            "tipo_geom": "area",
+            "nombre": "Estado de Sonora",
+            "color": "255,255,255,0",
+            "color_borde": "60,60,60,255",
+            "ancho_borde": "0.5",
+            "sin_bbox_filter": true,
+            "filtro_extra": "cve_ent = '26'"
+          }
+        ]
+      },
+      "fuente": "CONANP."
+    },
+    {
+      "tabla_postgis": "anp_estatales",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A ÁREAS NATURALES PROTEGIDAS ESTATALES",
+      "nombre_capa": "ANP_Estatales",
+      "titulo_capa": "ANP Estatales en Sonora",
+      "escala": 4000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta": "nombre",
+      "numerar_leyenda": true,
+      "paleta": "geologia",
+      "grid_intervalo": 200000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap": true,
+      "leyenda_centrada": true,
+      "recortar_a": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "centrar_en": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "mexico_estados",
+            "tipo_geom": "area",
+            "nombre": "Estado de Sonora",
+            "color": "255,255,255,0",
+            "color_borde": "60,60,60,255",
+            "ancho_borde": "0.5",
+            "sin_bbox_filter": true,
+            "filtro_extra": "cve_ent = '26'"
+          }
+        ]
+      },
+      "fuente": "CEDES Sonora."
+    },
+    {
+      "tabla_postgis": "regiones_terrestres_prioritarias",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES TERRESTRES PRIORITARIAS",
+      "nombre_capa": "RTP",
+      "titulo_capa": "RTP en Sonora",
+      "escala": 4000000,
+      "campo_categoria": "clave",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta": "clave",
+      "paleta": "geologia",
+      "grid_intervalo": 200000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap": true,
+      "leyenda_centrada": true,
+      "recortar_a": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "centrar_en": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "mexico_estados",
+            "tipo_geom": "area",
+            "nombre": "Estado de Sonora",
+            "color": "255,255,255,0",
+            "color_borde": "60,60,60,255",
+            "ancho_borde": "0.5",
+            "sin_bbox_filter": true,
+            "filtro_extra": "cve_ent = '26'"
+          }
+        ]
+      },
+      "fuente": "CONABIO."
+    },
+    {
+      "tabla_postgis": "regiones_hidrologicas_prioritarias",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO RESPECTO A REGIONES HIDROLÓGICAS PRIORITARIAS",
+      "nombre_capa": "RHP",
+      "titulo_capa": "RHP en Sonora",
+      "escala": 4000000,
+      "campo_categoria": "rhpri4mgw_",
+      "campo_legenda_extra": "nombre",
+      "campo_etiqueta": "rhpri4mgw_",
+      "paleta": "geologia",
+      "grid_intervalo": 200000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap": true,
+      "leyenda_centrada": true,
+      "recortar_a": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "centrar_en": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "mexico_estados",
+            "tipo_geom": "area",
+            "nombre": "Estado de Sonora",
+            "color": "255,255,255,0",
+            "color_borde": "60,60,60,255",
+            "ancho_borde": "0.5",
+            "sin_bbox_filter": true,
+            "filtro_extra": "cve_ent = '26'"
+          }
+        ]
+      },
+      "fuente": "CONABIO."
+    },
+    {
+      "tabla_postgis": "aica_nacional",
+      "nombre_plano": "FIGURA. UBICACIÓN DE LA AICA MÁS PRÓXIMA AL PROYECTO",
+      "nombre_capa": "AICA",
+      "titulo_capa": "AICA en Sonora",
+      "escala": 4000000,
+      "campo_categoria": "nombre",
+      "campo_etiqueta": "auto",
+      "paleta": "geologia",
+      "grid_intervalo": 200000,
+      "marcador": "punto",
+      "sin_bbox_filter": true,
+      "sin_basemap": true,
+      "leyenda_centrada": true,
+      "recortar_a": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "centrar_en": {
+        "schema": "cartografia_base",
+        "tabla_postgis": "mexico_estados",
+        "filtro_extra": "cve_ent = '26'"
+      },
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "capas_extra": {
+        "capas": [
+          {
+            "tabla_postgis": "mexico_estados",
+            "tipo_geom": "area",
+            "nombre": "Estado de Sonora",
+            "color": "255,255,255,0",
+            "color_borde": "60,60,60,255",
+            "ancho_borde": "0.5",
+            "sin_bbox_filter": true,
+            "filtro_extra": "cve_ent = '26'"
+          }
+        ]
+      },
+      "fuente": "CONABIO."
+    },
+    {
+      "_grupo": "Figuras (Plantilla_figuras)",
+      "tabla_postgis": "poet_sonora",
+      "nombre_plano": "FIGURA. PROGRAMA DE ORDENAMIENTO ECOLÓGICO TERRITORIAL DE SONORA",
+      "nombre_capa": "POET",
+      "titulo_capa": "Unidad de Gestión Ambiental",
+      "escala": 10000,
+      "campo_categoria": "uga",
+      "campo_legenda_extra": "clave",
+      "campo_etiqueta_expresion": "concat(\"uga\", ', ', \"clave\")",
+      "grid_intervalo": 400,
+      "layout_nombre": "Plantilla_figuras",
+      "sin_bbox_filter": true,
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Programa de Ordenamiento Ecológico Territorial del Estado de Sonora."
+    },
+    {
+      "tabla_postgis": "uab_nacional",
+      "nombre_plano": "FIGURA. UBICACIÓN DEL PROYECTO EN REFERENCIA A LAS UNIDADES AMBIENTALES BIOFÍSICAS",
+      "nombre_capa": "UAB",
+      "titulo_capa": "Región Ambiental",
+      "escala": 1000000,
+      "campo_categoria": "nom",
+      "campo_etiqueta": "nom",
+      "paleta": "geologia",
+      "grid_intervalo": 50000,
+      "marcador": "punto",
+      "leyenda_solo_ubicacion": true,
+      "sin_bbox_filter": true,
+      "leyenda_centrada": true,
+      "layout_nombre": "Plantilla_Figurasv2",
+      "ids_override": {
+        "mapa": "Mapa 1"
+      },
+      "fuente": "Modelo de Ordenamiento Ecológico General del Territorio (MOEGT), SEMARNAT."
+    },
+    {
+      "tipo": "rutas_acceso",
+      "ruta_gpkg": "/home/leonardo/Codigos/Rutas/MiProyecto_rutas_acceso.gpkg",
+      "nombre_plano": "FIGURA. VÍAS DE ACCESO AL SITIO",
+      "nombre_capa": "Rutas_Acceso",
+      "escala": 50000,
+      "grid_intervalo": 2500,
+      "barra_escala_segmento": 1250,
+      "layout_nombre": "Plantilla_figuras",
+      "ids_override": {
+        "mapa": "mapa_principal"
+      },
+      "fuente": "Rutas de acceso generadas a partir de la red vial (OpenStreetMap)."
+    },
+    {
+      "_grupo": "PPA — colindancias y vulnerabilidad (capas INEGI, esquema inegi)"
+    },
+    {
+      "tabla_postgis": "Geologia",
+      "nombre_plano": "FIGURA. DISTRIBUCIÓN DE LA GEOLOGÍA",
+      "nombre_capa": "Geologia_Figura",
+      "titulo_capa": "TIPOS DE ROCA",
+      "escala": 5000,
+      "key": "id",
+      "campo_categoria": "tipo_roca",
+      "campo_etiqueta": "tipo_roca",
+      "paleta": "geologia",
+      "layout_nombre": "Plantilla_Geologia",
+      "fuente": "Servicio Geológico Mexicano (SGM), Continuo Nacional de Geología de la República Mexicana, escala 1:250,000."
+    },
+    {
+      "tipo": "capas_combinadas",
+      "nombre_plano": "FIGURA. COLINDANCIAS (COLONIAS Y ASENTAMIENTOS HUMANOS)",
+      "nombre_capa": "Colindancias",
+      "escala": 20000,
+      "marcador": "poligono",
+      "layout_nombre": "Plantilla_Colindancias",
+      "radios": [
+        {
+          "metros": [
+            500,
+            1000,
+            1500,
+            2000
+          ],
+          "desde": "poligono",
+          "nombre": "Radios de distancia",
+          "color": "255,255,255,0",
+          "color_borde": "255,255,255,255",
+          "ancho_borde": "0.35"
+        }
+      ],
+      "capas_postgis": [
+        {
+          "_ref": "areas_vulnerables"
+        },
+        {
+          "_ref": "colonias"
+        }
+      ],
+      "fuente": "INEGI, Marco Geoestadístico (colonias) y Directorio Estadístico Nacional de Unidades Económicas (DENUE)."
+    },
+    {
+      "tipo": "capas_combinadas",
+      "nombre_plano": "FIGURA. VIALIDADES",
+      "nombre_capa": "Vialidades",
+      "escala": 15000,
+      "marcador": "poligono",
+      "layout_nombre": "Plantilla_Vialidades",
+      "capas_postgis": [
+        {
+          "_ref": "vialidades"
+        }
+      ],
+      "fuente": "INEGI, Marco Geoestadístico, red de vialidades."
+    },
+    {
+      "tipo": "capas_combinadas",
+      "nombre_plano": "PLANO. LOCALIZACIÓN CON ESCENARIOS DE VULNERABILIDAD",
+      "nombre_capa": "Localizacion_Vulnerabilidad",
+      "escala": 15000,
+      "marcador": "poligono",
+      "layout_nombre": "Plantilla_Localizacion_Vulnerabilidad",
+      "radios": [
+        {
+          "metros": 500,
+          "desde": "poligono",
+          "nombre": "Radio de 500 m del proyecto"
+        }
+      ],
+      "capas_postgis": [
+        {
+          "_ref": "areas_vulnerables"
+        },
+        {
+          "_ref": "vialidades"
+        },
+        {
+          "_ref": "colonias"
+        }
+      ],
+      "fuente": "INEGI, Marco Geoestadístico (colonias y vialidades) y Directorio Estadístico Nacional de Unidades Económicas (DENUE)."
+    }
+  ],
+  "defaults_capa": {
+    "geom_col": "geom",
+    "tipo_geom": "MultiPolygon",
+    "key": "gid",
+    "opacidad": 0.6,
+    "grid_intervalo": 300,
+    "escala": 5000
+  }
+}
