@@ -166,11 +166,12 @@ overrides de ids/layout…) se editan directamente en el JSON — ver
 | `plantilla.json` | Base completa: todos los planos y figuras disponibles |
 | `Plantilla_LAI.json` | Subconjunto curado para Licencia Ambiental Integral (18 planos) |
 | `Plantilla_LAI_Municipal.json` | Subconjunto reducido para trámites municipales (9 planos) |
+| `Plantilla_PPA.json` | Programa de Prevención de Accidentes (5 planos): escenarios de riesgo, geología, colindancias, vialidades y localización con escenarios de vulnerabilidad |
 
 > [!IMPORTANT]
 > **Los proyectos reales son personales de cada computadora** y no se comparten
 > por Git (confidencialidad de clientes): `.gitignore` solo deja pasar las tres
-> plantillas de arriba. Si necesitas pasarle un proyecto a un colega, mándale
+> plantillas de arriba (y `Plantilla_PPA.json`). Si necesitas pasarle un proyecto a un colega, mándale
 > ese `.json` por fuera del repo.
 
 ## Uso desde la consola Python (alternativa)
@@ -381,9 +382,13 @@ proyecto, encima de las demás capas, etiquetados con su distancia:
 ```
 
 `metros` es un número o una lista; `desde` es `"poligono"` (buffer del
-polígono, default) o `"punto"` (centroide); opcionales `color`,
-`color_borde`, `ancho_borde`, `estilo_borde` (default rojo punteado) y
-`etiquetar` (default `true`). Ejemplo (plano PPA de localización con
+polígono, default) o `"punto"` (centroide); `punto_xy` = `[x, y]` (en
+`crs_xy`, default `EPSG:32612`) lo centra en otro punto, p. ej. un tanque.
+Opcionales `color`, `color_borde`, `ancho_borde`, `estilo_borde` (default
+rojo punteado), `patron` (trama, como en `capas_postgis`) y `etiquetar`
+(default `true`). Un plano `capas_combinadas` puede llevar solo `radios`:
+así se arma el plano de escenarios de riesgo de `Plantilla_PPA` (un radio
+por escenario, con su `punto_xy` y radio de la modelación del proyecto). Ejemplo (plano PPA de localización con
 escenarios de vulnerabilidad):
 
 ```json
