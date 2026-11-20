@@ -8,13 +8,16 @@ import textwrap
 from qgis.core import (
     Qgis,
     QgsCategorizedSymbolRenderer,
+    QgsFeatureRequest,
     QgsField,
     QgsFillSymbol,
     QgsLinePatternFillSymbolLayer,
+    QgsLineSymbol,
     QgsMarkerSymbol,
     QgsPalLayerSettings,
     QgsProperty,
     QgsRendererCategory,
+    QgsSimpleLineSymbolLayer,
     QgsSingleSymbolRenderer,
     QgsSymbol,
     QgsSymbolLayerUtils,
@@ -84,6 +87,52 @@ def construir_simbolo_patron(
         simbolo.appendSymbolLayer(_capa_lineas(_ANGULOS_PATRON[patron]))
 
     return simbolo
+
+
+def renderer_desde_spec(spec: dict):
+    """Renderer de una entrada de 'capas_postgis' (figuras combinadas).
+    'tipo_geom' ('punto', 'linea' o 'area') decide el tipo de símbolo; con
+    'categorias' = {"campo": <campo o expresión QGIS>, "valores": [{"valor",
+    "etiqueta", "color", ...}]} se categoriza, si no es un solo símbolo.
+    Cada valor (o la spec misma) admite: color, color_borde, forma y tamano
+    (punto), ancho_linea (línea; con color_borde lleva casing), patron y
+    estilo_borde (área)."""
+    geom = spec.get("tipo_geom", "area")
+
+    def simbolo(s):
+        color = s.get("color", "120,180,120,220")
+        borde = s.get("color_borde", "60,100,60,255")
+        if geom == "punto":
+            return QgsMarkerSymbol.createSimple({
+                "name": s.get("forma", "circle"), "color": color,
+                "outline_color": borde, "size": s.get("tamano", "2.6"),
+            })
+        if geom == "linea":
+            ancho = float(s.get("ancho_linea", "0.6"))
+            linea = QgsLineSymbol.createSimple({
+                "color": color, "line_width": str(ancho), "capstyle": "round",
+            })
+            if "color_borde" in s:
+                linea.insertSymbolLayer(0, QgsSimpleLineSymbolLayer(
+                    QgsSymbolLayerUtils.decodeColor(borde), ancho + 0.4))
+            return linea
+        return construir_simbolo_patron(
+            color, borde, s.get("patron", "solid"), s.get("estilo_borde", "solid"))
+
+    cats = spec.get("categorias")
+    if not cats:
+        return QgsSingleSymbolRenderer(simbolo(spec))
+    # Cada valor hereda de la spec lo que no defina (p. ej. color_borde, tamano)
+    renderer = QgsCategorizedSymbolRenderer(cats["campo"], [
+        QgsRendererCategory(v["valor"], simbolo({**spec, **v}), v.get("etiqueta", v["valor"]))
+        for v in cats["valores"]
+    ])
+    if cats.get("orden"):
+        # Orden de dibujo (lo mayor encima): p. ej. carreteras sobre calles
+        renderer.setOrderBy(QgsFeatureRequest.OrderBy(
+            [QgsFeatureRequest.OrderByClause(cats["orden"], True)]))
+        renderer.setOrderByEnabled(True)
+    return renderer
 
 
 def aplicar_estilo_poligono(poly_layer) -> None:
@@ -331,15 +380,17 @@ def aplicar_etiquetas_pal(
     log.debug(f" ✓ Etiquetas PAL configuradas en campo '{campo}'")
 
 
-def aplicar_etiquetas_linea(capa, campo: str, log) -> None:
+def aplicar_etiquetas_linea(capa, campo: str, log, es_expresion: bool = False) -> None:
     """Etiquetas PAL para capas de líneas (vías, ríos, etc.), colocadas
     paralelas a la línea. 'OverPoint' (usado por aplicar_etiquetas_pal) no
-    aplica a geometrías de línea y QGIS simplemente no dibuja nada."""
+    aplica a geometrías de línea y QGIS simplemente no dibuja nada.
+    En polígonos la etiqueta corre sobre el contorno (anillos de radio)."""
     if not campo:
         return
 
     pal           = QgsPalLayerSettings()
     pal.fieldName = campo
+    pal.isExpression = es_expresion
     pal.enabled   = True
     pal.placement = QgsPalLayerSettings.Line
 

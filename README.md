@@ -357,6 +357,57 @@ y `grupo_leyenda`. Los `patron` disponibles son `solid`, `cross`, `horizontal`,
 un patrón de líneas superpuesto (no en vez del color), para que se distingan
 entre sí sin verse deslavadas.
 
+Además, cada spec de `capas_postgis` admite:
+
+| Clave | Valores | Uso |
+|-------|---------|-----|
+| `schema` | p. ej. `"inegi"` | Esquema de la tabla (default: `PG_SCHEMA` del `.env`) |
+| `tipo_geom` | `"area"` \| `"linea"` \| `"punto"` | Tipo de símbolo (default `"area"`). En líneas, `color_borde` agrega un borde (casing); en puntos, `forma` y `tamano` |
+| `categorias` | `{"campo", "valores": [{"valor", "etiqueta", "color", ...}], "orden"}` | Categoriza por un campo **o expresión QGIS** (p. ej. `CASE … END`); cada valor hereda lo que no defina de la spec. `orden` = expresión de orden de dibujo (mayor encima) |
+| `umbral_etiqueta` | `0`–`1` | En áreas, etiqueta solo polígonos con área ≥ umbral × la mayor (default `0.15`; `0` = todos) |
+| `_ref` | nombre en `capas_base` | Usa una capa compartida de `config/global.json → capas_base` (o `capas_base` del proyecto); las demás claves de la entrada la sobreescriben |
+
+`capas_base` trae listas `areas_vulnerables` (DENUE: escuelas, guarderías,
+salud, templos, recreación), `colonias` (por tipo de asentamiento) y
+`vialidades` (carretera / primaria / secundaria), todas del esquema `inegi`.
+
+El plano `capas_combinadas` acepta también `radios`: anillos de distancia al
+proyecto, encima de las demás capas, etiquetados con su distancia:
+
+```json
+"radios": [
+  { "metros": [500, 1000, 1500, 2000], "desde": "poligono", "nombre": "Radios de distancia" }
+]
+```
+
+`metros` es un número o una lista; `desde` es `"poligono"` (buffer del
+polígono, default) o `"punto"` (centroide); opcionales `color`,
+`color_borde`, `ancho_borde`, `estilo_borde` (default rojo punteado) y
+`etiquetar` (default `true`). Ejemplo (plano PPA de localización con
+escenarios de vulnerabilidad):
+
+```json
+{
+  "tipo": "capas_combinadas",
+  "nombre_plano": "PLANO. LOCALIZACIÓN CON ESCENARIOS DE VULNERABILIDAD",
+  "nombre_capa": "Localizacion_Vulnerabilidad",
+  "escala": 15000,
+  "marcador": "poligono",
+  "layout_nombre": "Plantilla_Localizacion_Vulnerabilidad",
+  "radios": [{ "metros": 500, "nombre": "Radio de 500 m del proyecto" }],
+  "capas_postgis": [
+    { "_ref": "areas_vulnerables" },
+    { "_ref": "vialidades" },
+    { "_ref": "colonias" }
+  ],
+  "fuente": "INEGI, Marco Geoestadístico (colonias y vialidades) y DENUE."
+}
+```
+
+Las figuras de colindancias (`Plantilla_Colindancias`, radios de 500 a
+2000 m + `areas_vulnerables` + `colonias`) y de vialidades
+(`Plantilla_Vialidades`, solo `vialidades`) siguen el mismo patrón.
+
 ## Plantillas de layout y mapitas
 
 | QPT | Uso |
@@ -364,6 +415,11 @@ entre sí sin verse deslavadas.
 | `Plantilla_Corporativa.qpt` | Planos (3 insertos: nacional / estatal / municipal) |
 | `Plantilla_figuras.qpt` | Figuras (1 inserto de localización) |
 | `Plantilla_Figurasv2.qpt` | Figuras de contexto regional (variante usada por las figuras de ANP/RTP/RHP/UAB) |
+| `Plantilla_Zonas_Riesgo.qpt` | Plano PPA: escenarios de riesgo (Gas LP / diésel) sobre satélite, 11×17 |
+| `Plantilla_Geologia.qpt` | Figura: distribución de la geología (tipos de roca), carta |
+| `Plantilla_Colindancias.qpt` | Figura: colonias, asentamientos y áreas vulnerables (DENUE) con radios de distancia, carta |
+| `Plantilla_Vialidades.qpt` | Figura: red vial INEGI por jerarquía (carretera / primaria / secundaria), carta |
+| `Plantilla_Localizacion_Vulnerabilidad.qpt` | Plano PPA: localización con áreas vulnerables, vialidades, colonias y radio de 500 m, 11×17 |
 
 La plantilla por default se define en `config/global.json → layout_nombre`;
 cada plano puede sobreescribirla con `"layout_nombre"`.

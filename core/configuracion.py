@@ -28,6 +28,24 @@ def leer_proyecto(base: str, proyecto: str) -> dict:
         return json.load(fh)
 
 
+def _resolver_refs(cfg_proyecto: dict, capas_base: dict, proyecto: str) -> None:
+    """Sustituye en 'capas_postgis' las entradas {"_ref": "colonias", ...} por
+    la definición compartida de 'capas_base' (global.json o el proyecto); las
+    demás claves de la entrada sobreescriben a las de la base."""
+    for capa in cfg_proyecto.get("capas", []):
+        specs = capa.get("capas_postgis", [])
+        for i, spec in enumerate(specs):
+            ref = spec.get("_ref")
+            if ref is None:
+                continue
+            if ref not in capas_base:
+                raise ValueError(
+                    f"[{proyecto}] El plano '{capa.get('nombre_plano')}' usa "
+                    f"'_ref': '{ref}', que no existe en 'capas_base'."
+                )
+            specs[i] = {**capas_base[ref], **{k: v for k, v in spec.items() if k != "_ref"}}
+
+
 def _validar_capas(cfg_proyecto: dict, proyecto: str) -> None:
     """
     Valida lo mínimo indispensable de cada plano; lanza ValueError con
@@ -103,6 +121,8 @@ def cargar_config(base: str, proyecto: str,
     with open(os.path.join(base, "config", "global.json"), encoding="utf-8") as fh:
         cfg_global = json.load(fh)
     cfg_proyecto = leer_proyecto(base, proyecto)
+    _resolver_refs(cfg_proyecto, {**cfg_global.get("capas_base", {}),
+                                  **cfg_proyecto.get("capas_base", {})}, proyecto)
     _validar_capas(cfg_proyecto, proyecto)
 
     return {

@@ -51,6 +51,64 @@
       },
       "Plantilla_figuras": {
         "Mapa 2": { "nivel": "municipal" }
+      },
+      "Plantilla_Zonas_Riesgo": {
+        "Mapa 2": { "nivel": "nacional" },
+        "Mapa 3": { "nivel": "estatal"  }
+      },
+      "Plantilla_Localizacion_Vulnerabilidad": {
+        "Mapa 2": { "nivel": "nacional" },
+        "Mapa 3": { "nivel": "estatal"  }
+      },
+      "Plantilla_Geologia":     { "Mapa 2": { "nivel": "municipal" } },
+      "Plantilla_Colindancias": { "Mapa 2": { "nivel": "municipal" } },
+      "Plantilla_Vialidades":   { "Mapa 2": { "nivel": "municipal" } }
+    }
+  },
+
+  "capas_base": {
+    "_comentario": "Capas reutilizables en 'capas_postgis' de cualquier proyecto con {\"_ref\": \"<nombre>\"}; las demás claves de la entrada sobreescriben a estas.",
+    "areas_vulnerables": {
+      "schema": "inegi", "tabla_postgis": "denue", "tipo_geom": "punto",
+      "nombre": "Áreas vulnerables",
+      "filtro_extra": "codigo_act ~ '^(611|621|622|623|6244|8132|712|7139)'",
+      "categorias": {
+        "campo": "CASE WHEN \"codigo_act\" LIKE '611%' THEN 'Escuelas' WHEN \"codigo_act\" LIKE '6244%' THEN 'Guarderías' WHEN \"codigo_act\" LIKE '62%' THEN 'Servicios de salud' WHEN \"codigo_act\" LIKE '8132%' THEN 'Templos e iglesias' ELSE 'Recreación y cultura' END",
+        "valores": [
+          { "valor": "Escuelas",             "forma": "square",     "color": "31,119,255,255" },
+          { "valor": "Guarderías",           "forma": "pentagon",   "color": "155,89,182,255" },
+          { "valor": "Servicios de salud",   "forma": "cross_fill", "color": "232,35,27,255" },
+          { "valor": "Templos e iglesias",   "forma": "star",       "color": "255,191,0,255" },
+          { "valor": "Recreación y cultura", "forma": "circle",     "color": "46,204,64,255" }
+        ]
+      },
+      "color_borde": "0,0,0,255", "tamano": "3"
+    },
+    "colonias": {
+      "schema": "inegi", "tabla_postgis": "colonias", "tipo_geom": "area",
+      "nombre": "Colonias y asentamientos",
+      "campo_etiqueta": "nom_asen", "umbral_etiqueta": 0,
+      "categorias": {
+        "campo": "tipo",
+        "valores": [
+          { "valor": "COLONIA",           "etiqueta": "Colonia",           "color": "255,217,102,90",  "color_borde": "230,168,0,255" },
+          { "valor": "FRACCIONAMIENTO",   "etiqueta": "Fraccionamiento",   "color": "244,163,192,90",  "color_borde": "214,51,108,255" },
+          { "valor": "PARQUE INDUSTRIAL", "etiqueta": "Parque industrial", "color": "159,197,232,60",  "color_borde": "61,133,198,255" }
+        ]
+      }
+    },
+    "vialidades": {
+      "schema": "inegi", "tabla_postgis": "vialidades", "tipo_geom": "linea",
+      "nombre": "Vialidades",
+      "campo_etiqueta": "CASE WHEN \"nomvial\" IN ('Ninguno', 'No Aplica') THEN NULL WHEN \"nomvial\" ILIKE \"tipovial\" || '%' THEN \"nomvial\" ELSE \"tipovial\" || ' ' || \"nomvial\" END",
+      "categorias": {
+        "campo": "CASE WHEN \"tipovial\" = 'Carretera' THEN 'Carretera' WHEN \"tipovial\" IN ('Boulevard', 'Avenida') THEN 'Vialidad primaria' ELSE 'Vialidad secundaria' END",
+        "orden": "CASE WHEN \"tipovial\" = 'Carretera' THEN 3 WHEN \"tipovial\" IN ('Boulevard', 'Avenida') THEN 2 ELSE 1 END",
+        "valores": [
+          { "valor": "Carretera",           "color": "232,35,27,255",   "color_borde": "90,0,0,255",    "ancho_linea": "1.4" },
+          { "valor": "Vialidad primaria",   "color": "255,191,0,255",   "color_borde": "107,79,0,255",  "ancho_linea": "1.0" },
+          { "valor": "Vialidad secundaria", "color": "255,255,255,255", "color_borde": "85,85,85,255",  "ancho_linea": "0.5" }
+        ]
       }
     }
   }
