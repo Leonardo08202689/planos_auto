@@ -166,7 +166,7 @@ overrides de ids/layout…) se editan directamente en el JSON — ver
 | `plantilla.json` | Base completa: todos los planos y figuras disponibles |
 | `Plantilla_LAI.json` | Subconjunto curado para Licencia Ambiental Integral (18 planos) |
 | `Plantilla_LAI_Municipal.json` | Subconjunto reducido para trámites municipales (9 planos) |
-| `Plantilla_PPA.json` | Programa de Prevención de Accidentes (5 planos): escenarios de riesgo, geología, colindancias, vialidades y localización con escenarios de vulnerabilidad |
+| `Plantilla_PPA.json` | Programa de Prevención de Accidentes (4 planos): geología, colindancias, vialidades y localización con escenarios de vulnerabilidad. El plano de escenarios de riesgo lo agrega cada quien con sus cálculos (ver `radios`) |
 
 > [!IMPORTANT]
 > **Los proyectos reales son personales de cada computadora** y no se comparten
@@ -386,10 +386,34 @@ polígono, default) o `"punto"` (centroide); `punto_xy` = `[x, y]` (en
 `crs_xy`, default `EPSG:32612`) lo centra en otro punto, p. ej. un tanque.
 Opcionales `color`, `color_borde`, `ancho_borde`, `estilo_borde` (default
 rojo punteado), `patron` (trama, como en `capas_postgis`) y `etiquetar`
-(default `true`). Un plano `capas_combinadas` puede llevar solo `radios`:
-así se arma el plano de escenarios de riesgo de `Plantilla_PPA` (un radio
-por escenario, con su `punto_xy` y radio de la modelación del proyecto). Ejemplo (plano PPA de localización con
-escenarios de vulnerabilidad):
+(default `true`).
+
+Un plano `capas_combinadas` puede llevar solo `radios`. Así se arma el plano
+de escenarios de riesgo de un PPA, que **no** viene en `Plantilla_PPA`
+porque sus radios y tanques salen de la modelación de cada proyecto: se
+agrega al JSON del proyecto, un radio por escenario:
+
+```json
+{
+  "tipo": "capas_combinadas",
+  "nombre_plano": "PLANO. ESCENARIOS DE RIESGO",
+  "nombre_capa": "Zonas_Riesgo",
+  "escala": 1500,
+  "marcador": "poligono",
+  "layout_nombre": "Plantilla_Zonas_Riesgo",
+  "radios": [
+    { "nombre": "Dardo de fuego Gas LP (27 m)", "metros": 27, "punto_xy": [508832, 3207510],
+      "color": "245,166,35,230", "color_borde": "138,75,0,255", "patron": "f_diagonal",
+      "estilo_borde": "solid", "etiquetar": false },
+    { "nombre": "Bola de fuego Gas LP (145 m)", "metros": 145, "punto_xy": [508832, 3207510],
+      "color": "0,0,0,0", "color_borde": "227,26,28,255", "estilo_borde": "solid", "etiquetar": false }
+  ],
+  "fuente": "Radios de afectación según la modelación de escenarios de riesgo del proyecto."
+}
+```
+
+Ejemplo de localización con escenarios de vulnerabilidad (este sí viene en
+`Plantilla_PPA`):
 
 ```json
 {
