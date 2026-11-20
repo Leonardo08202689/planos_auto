@@ -183,7 +183,7 @@
    </dd_properties>
   </text-style>
  </LayoutItem>
- <LayoutItem type="65641" position="357.963,220.944,mm" halign="4" templateUuid="{09e8312c-4ce0-4f7c-8fef-f39e6a43eded}" itemRotation="0" marginY="0" zValue="47" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="357.963,220.944,mm" opacity="1" blendMode="0" uuid="{09e8312c-4ce0-4f7c-8fef-f39e6a43eded}" id="lbl_fuente" valign="128" labelText="Fuente: Conjunto de Datos Nacionales de Unidades Climaticas, Escaka 1:1000 000, INEGI&#xa;&#xa;" referencePoint="0" htmlState="0" size="54.1768,11.5986,mm" outlineWidthM="0.3,mm" marginX="0">
+ <LayoutItem type="65641" position="357.963,220.944,mm" halign="4" templateUuid="{09e8312c-4ce0-4f7c-8fef-f39e6a43eded}" itemRotation="0" marginY="0" zValue="47" visibility="1" frameJoinStyle="miter" excludeFromExports="0" frame="false" groupUuid="" positionLock="true" background="false" positionOnPage="357.963,220.944,mm" opacity="1" blendMode="0" uuid="{09e8312c-4ce0-4f7c-8fef-f39e6a43eded}" id="lbl_fuente" valign="128" labelText="Fuente: Climas 1902-2011, resolución 250 m, escala de referencia 1:1 000 000, INEGI, 2022&#xa;&#xa;" referencePoint="0" htmlState="0" size="54.1768,11.5986,mm" outlineWidthM="0.3,mm" marginX="0">
   <FrameColor alpha="255" red="0" green="0" blue="0"/>
   <BackgroundColor alpha="255" red="255" green="255" blue="255"/>
   <LayoutObject>
