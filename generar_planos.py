@@ -709,7 +709,7 @@ def generar_composiciones(cfg: dict) -> None:
                     aplicar_etiquetas_poligonos_grandes(capa_shp, spec["campo_etiqueta"], log)
                 capas_obj.append(capa_shp)
 
-            if not capas_obj:
+            if not capas_obj and (cfg_capa.get("capas_postgis") or cfg_capa.get("capas_shapefile")):
                 log.error(" ✗ No se pudo cargar ninguna capa de la figura combinada.")
                 return _fallo()
 

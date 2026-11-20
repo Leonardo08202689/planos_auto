@@ -1,9 +1,20 @@
 {
-  "_comentario": "Plantilla PPA: geología, colindancias, vialidades y localización con escenarios de vulnerabilidad (capas INEGI del esquema inegi vía capas_base de global.json). El plano de escenarios de riesgo no viene incluido: cada quien lo agrega con sus radios y la ubicación de sus tanques (ver 'radios' en el README y la plantilla de layout Plantilla_Zonas_Riesgo). Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
+  "_comentario": "Plantilla PPA: geología, colindancias, vialidades y localización con escenarios de vulnerabilidad (capas INEGI del esquema inegi vía capas_base de global.json). El plano de escenarios de riesgo sale sin radios: cada quien agrega los suyos con la ubicación de sus tanques (ver 'radios' en el README). Clonar y editar nombre_proyecto/capa_poligono para un proyecto nuevo.",
   "nombre_proyecto": "NOMBRE DEL PROYECTO",
   "tipo_tramite": "PROGRAMA DE PREVENCIÓN DE ACCIDENTES",
   "capa_poligono": "poligono_trabajo",
   "capas": [
+    {
+      "tipo": "capas_combinadas",
+      "nombre_plano": "PLANO. ESCENARIOS DE RIESGO",
+      "nombre_capa": "Zonas_Riesgo",
+      "escala": 1500,
+      "marcador": "poligono",
+      "layout_nombre": "Plantilla_Zonas_Riesgo",
+      "_comentario": "Sale solo con el área del proyecto. Para dibujar los escenarios, agregar en 'radios' uno por escenario con 'metros' y 'punto_xy' = [x, y] del tanque en EPSG:32612 (ver 'radios' en el README).",
+      "radios": [],
+      "fuente": "Radios de afectación según la modelación de escenarios de riesgo del proyecto."
+    },
     {
       "tabla_postgis": "Geologia",
       "nombre_plano": "FIGURA. DISTRIBUCIÓN DE LA GEOLOGÍA",
