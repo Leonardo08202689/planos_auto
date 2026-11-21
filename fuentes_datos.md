@@ -34,13 +34,14 @@ Cada capa vive en la base de datos PostGIS (esquema `proyectos` u otros) y se re
 |------|-----------------|--------|
 | Continuo de Elevaciones Mexicano (Sonora) | `cartografia_base.cem_sonora_15m` | Continuo de Elevaciones Mexicano (CEM), Sonora, resolución 15 m. INEGI. Se usa para el sombreado de relieve de los planos (`core/estilo_moderno.py`). |
 
-## Capas base INEGI (esquema `inegi`, Sonora completo, EPSG:6372)
+## Capas base INEGI (esquema `inegi`, Sonora completo salvo colonias nacional, EPSG:6372)
 
 Cargadas con `herramientas/inegi/cargar_inegi_sonora.sh`.
 
 | Capa | Tabla en la BD | Fuente |
 |------|-----------------|--------|
-| Colonias y asentamientos humanos | `inegi.colonias` | [Delimitación de colonias y otros asentamientos humanos 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163078). INEGI, 2025 (elaborada con las autoridades municipales; Hermosillo: Dirección de Catastro, act. 11/2025). |
+| Colonias y asentamientos humanos (nacional) | `inegi.colonias_nacional` | [Delimitación de colonias y otros asentamientos humanos 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163078), conjunto integrado nacional (`00_integrado.zip`, 32 entidades, 79 775 asentamientos). INEGI, 2025. Es la que usan los planos (`capas_base.colonias` en `config/global.json`). Viene en UTF-8: se carga sin `SHAPE_ENCODING`. |
+| Colonias y asentamientos humanos (Sonora) | `inegi.colonias` | [Delimitación de colonias y otros asentamientos humanos 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163078). INEGI, 2025 (elaborada con las autoridades municipales; Hermosillo: Dirección de Catastro, act. 11/2025). |
 | Servicios: escuelas, templos, salud, parques, cementerios… | `inegi.servicios_puntos`, `inegi.servicios_area`, `inegi.servicios_linea` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025 (cobertura nov-2024 a jul-2025). Capas `sip`, `sia`, `sil`. |
 | Manzanas, AGEB, localidades, municipios, estado | `inegi.manzanas`, `inegi.frentes_manzana`, `inegi.ageb_urbanas`, `inegi.ageb_rurales`, `inegi.localidades`, `inegi.localidades_rurales_puntos`, `inegi.municipios`, `inegi.estado`, `inegi.caserio_disperso`, `inegi.poligono_externo_localidad`, `inegi.poligono_externo_manzana`, `inegi.territorio_insular` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025. |
 | Vialidades | `inegi.vialidades` | [Marco Geoestadístico 2025](https://www.inegi.org.mx/app/biblioteca/ficha.html?upc=794551163061). INEGI, 2025 (ejes de vialidad). |

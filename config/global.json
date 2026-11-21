@@ -85,7 +85,7 @@
       "color_borde": "0,0,0,255", "tamano": "3"
     },
     "colonias": {
-      "schema": "inegi", "tabla_postgis": "colonias", "tipo_geom": "area",
+      "schema": "inegi", "tabla_postgis": "colonias_nacional", "tipo_geom": "area",
       "nombre": "Colonias y asentamientos",
       "campo_etiqueta": "nom_asen", "umbral_etiqueta": 0,
       "categorias": {
